@@ -1,0 +1,9 @@
+{
+  "name": "@workit/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node -P tsconfig.json -r tsconfig-paths/register src/main.ts",
+    "build": "tsc -p tsconfig.json"
+  }
+}

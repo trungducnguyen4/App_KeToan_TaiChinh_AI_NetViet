@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@domain/*": ["packages/domain/src/*"]
+    },
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "../../dist/apps/api",
+    "rootDir": "../../",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "isolatedModules": false,
+    "noEmit": false
+  },
+  "include": ["src/**/*.ts"]
+}

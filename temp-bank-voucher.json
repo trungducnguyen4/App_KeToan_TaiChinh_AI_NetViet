@@ -1,0 +1,23 @@
+{
+  "voucherType": "BC",
+  "paymentChannel": "bank",
+  "voucherNo": "BC-TEST-001",
+  "voucherDate": "2026-07-09",
+  "currency": "VND",
+  "bankAccountCode": "VCB-001",
+  "counterpartyCode": "KH-TEST",
+  "counterpartyName": "Khach Hang Test",
+  "referenceInvoiceNo": "INV-002",
+  "content": "Bao co test M2",
+  "amount": 2200000,
+  "status": "approved",
+  "createdBy": "DEMO.TGD",
+  "lines": [
+    {
+      "debitAccount": "1121",
+      "creditAccount": "131",
+      "amount": 2200000,
+      "description": "Thu tien qua ngan hang"
+    }
+  ]
+}

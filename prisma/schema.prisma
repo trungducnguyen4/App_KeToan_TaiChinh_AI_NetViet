@@ -1,0 +1,1291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentChannel {
+  cash
+  bank
+}
+
+enum CounterpartyType {
+  customer
+  supplier
+  employee
+  internal
+  other
+}
+
+enum MatchingStatus {
+  unmatched
+  partial
+  matched
+}
+
+model Organization {
+  id                      String                    @id @default(uuid()) @db.Char(36)
+  code                    String                    @unique(map: "uq_organizations_code") @db.VarChar(64)
+  name                    String                    @db.VarChar(255)
+  taxCode                 String?                   @map("tax_code") @db.VarChar(32)
+  baseCurrency            String                    @default("VND") @map("base_currency") @db.VarChar(8)
+  timezone                String                    @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  status                  String                    @db.VarChar(20)
+  createdAt               DateTime                  @map("created_at")
+  updatedAt               DateTime                  @updatedAt @map("updated_at")
+  accounts                Account[]
+  aiJobs                  AiJob[]
+  approval_flows          approval_flows[]
+  approval_instances      ApprovalInstance[]
+  attachment_files        AttachmentFile[]
+  auditEvents             AuditEvent[]
+  bank_accounts           bank_accounts[]
+  bankStatements          BankStatement[]
+  cashBooks               CashBook[]
+  contracts               contracts[]
+  cost_items              cost_items[]
+  customers               Customer[]
+  depreciation_runs       depreciation_runs[]
+  employees               employees[]
+  fixed_assets            fixed_assets[]
+  inventory_balances      inventory_balances[]
+  inventory_documents     inventory_documents[]
+  item_categories         item_categories[]
+  items                   items[]
+  journal_entries         journal_entries[]
+  ledger_balances         ledger_balances[]
+  materialized_metrics    materialized_metrics[]
+  opening_balance_batches opening_balance_batches[]
+  prepaid_expenses        prepaid_expenses[]
+  report_snapshots        report_snapshots[]
+  roles                   Role[]
+  sources                 SourceSystem[]
+  suppliers               Supplier[]
+  syncMappings            SyncMapping[]
+  syncRuns                SyncRun[]
+  units_of_measure        units_of_measure[]
+  users                   User[]
+  vouchers                Voucher[]
+  warehouses              warehouses[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                                  String                    @id @default(uuid()) @db.Char(36)
+  organizationId                      String                    @map("organization_id") @db.Char(36)
+  email                               String?                   @db.VarChar(255)
+  username                            String                    @db.VarChar(120)
+  fullName                            String                    @map("full_name") @db.VarChar(255)
+  passwordHash                        String?                   @map("password_hash") @db.VarChar(255)
+  status                              String                    @db.VarChar(20)
+  lastLoginAt                         DateTime?                 @map("last_login_at")
+  createdAt                           DateTime                  @map("created_at")
+  updatedAt                           DateTime                  @updatedAt @map("updated_at")
+  ai_jobs                             AiJob[]
+  approval_actions                    ApprovalAction[]
+  approval_flow_steps                 approval_flow_steps[]
+  attachment_files                    AttachmentFile[]
+  audit_events                        AuditEvent[]
+  bank_reconciliation_matches         BankReconciliationMatch[]
+  depreciation_runs                   depreciation_runs[]
+  journal_entries                     journal_entries[]
+  report_snapshots                    report_snapshots[]
+  roles                               UserRole[]
+  organization                        Organization              @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_users_org")
+  vouchers_vouchers_created_byTousers Voucher[]                 @relation("vouchers_created_byTousers")
+  vouchers_vouchers_updated_byTousers Voucher[]                 @relation("vouchers_updated_byTousers")
+
+  @@unique([organizationId, email], map: "uq_users_org_email")
+  @@unique([organizationId, username], map: "uq_users_org_username")
+  @@index([organizationId], map: "idx_users_org")
+  @@map("users")
+}
+
+model Role {
+  id                  String                @id @default(uuid()) @db.Char(36)
+  organizationId      String                @map("organization_id") @db.Char(36)
+  code                String                @db.VarChar(64)
+  name                String                @db.VarChar(255)
+  isSystem            Boolean               @default(false) @map("is_system")
+  createdAt           DateTime              @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  approval_flow_steps approval_flow_steps[]
+  organization        Organization          @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_roles_org")
+  users               UserRole[]
+
+  @@unique([organizationId, code], map: "uq_roles_org_code")
+  @@index([organizationId], map: "idx_roles_org")
+  @@map("roles")
+}
+
+model UserRole {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @map("user_id") @db.Char(36)
+  roleId    String   @map("role_id") @db.Char(36)
+  createdAt DateTime @map("created_at")
+  role      Role     @relation(fields: [roleId], references: [id], onUpdate: Restrict, map: "fk_user_roles_role")
+  user      User     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "fk_user_roles_user")
+
+  @@unique([userId, roleId], map: "uq_user_roles_user_role")
+  @@index([roleId], map: "idx_user_roles_role")
+  @@index([userId], map: "idx_user_roles_user")
+  @@map("user_roles")
+}
+
+model SourceSystem {
+  id                      String                    @id @default(uuid()) @db.Char(36)
+  organizationId          String                    @map("organization_id") @db.Char(36)
+  code                    String                    @db.VarChar(64)
+  name                    String                    @db.VarChar(255)
+  sourceType              String                    @map("source_type") @db.VarChar(40)
+  baseUrl                 String?                   @map("base_url") @db.VarChar(512)
+  authType                String?                   @map("auth_type") @db.VarChar(40)
+  status                  String                    @db.VarChar(20)
+  lastSyncedAt            DateTime?                 @map("last_synced_at")
+  createdAt               DateTime                  @map("created_at")
+  updatedAt               DateTime                  @updatedAt @map("updated_at")
+  accounts                Account[]
+  bank_accounts           bank_accounts[]
+  contracts               contracts[]
+  cost_items              cost_items[]
+  customers               Customer[]
+  employees               employees[]
+  fixed_assets            fixed_assets[]
+  items                   items[]
+  opening_balance_batches opening_balance_batches[]
+  organization            Organization              @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_source_systems_org")
+  suppliers               Supplier[]
+  syncMappings            SyncMapping[]
+  syncRuns                SyncRun[]
+  vouchers                Voucher[]
+  warehouses              warehouses[]
+
+  @@unique([organizationId, code], map: "uq_source_systems_org_code")
+  @@index([organizationId], map: "idx_source_systems_org")
+  @@map("source_systems")
+}
+
+model SyncRun {
+  id              String           @id @default(uuid()) @db.Char(36)
+  organizationId  String           @map("organization_id") @db.Char(36)
+  sourceSystemId  String           @map("source_system_id") @db.Char(36)
+  entityName      String           @map("entity_name") @db.VarChar(120)
+  mode            String           @db.VarChar(20)
+  status          String           @db.VarChar(20)
+  startedAt       DateTime         @map("started_at")
+  endedAt         DateTime?        @map("ended_at")
+  recordsRead     Int              @default(0) @map("records_read")
+  recordsInserted Int              @default(0) @map("records_inserted")
+  recordsUpdated  Int              @default(0) @map("records_updated")
+  recordsSkipped  Int              @default(0) @map("records_skipped")
+  recordsFailed   Int              @default(0) @map("records_failed")
+  errorMessage    String?          @map("error_message") @db.Text
+  createdAt       DateTime         @map("created_at")
+  mappings        SyncMapping[]
+  rawPayloads     SyncRawPayload[]
+  organization    Organization     @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_sync_runs_org")
+  sourceSystem    SourceSystem     @relation(fields: [sourceSystemId], references: [id], onUpdate: Restrict, map: "fk_sync_runs_source")
+
+  @@index([organizationId, sourceSystemId, entityName, startedAt], map: "idx_sync_runs_org_source_entity_started")
+  @@index([sourceSystemId], map: "idx_sync_runs_source")
+  @@map("sync_runs")
+}
+
+model SyncMapping {
+  id              String       @id @default(uuid()) @db.Char(36)
+  organizationId  String       @map("organization_id") @db.Char(36)
+  sourceSystemId  String       @map("source_system_id") @db.Char(36)
+  entityName      String       @map("entity_name") @db.VarChar(120)
+  sourceRecordId  String       @map("source_record_id") @db.VarChar(128)
+  localTableName  String       @map("local_table_name") @db.VarChar(128)
+  localRecordId   String       @map("local_record_id") @db.Char(36)
+  sourceUpdatedAt DateTime?    @map("source_updated_at")
+  sourceChecksum  String?      @map("source_checksum") @db.VarChar(128)
+  syncStatus      String       @map("sync_status") @db.VarChar(20)
+  lastSyncRunId   String?      @map("last_sync_run_id") @db.Char(36)
+  createdAt       DateTime     @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  lastSyncRun     SyncRun?     @relation(fields: [lastSyncRunId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_sync_mappings_last_run")
+  organization    Organization @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_sync_mappings_org")
+  sourceSystem    SourceSystem @relation(fields: [sourceSystemId], references: [id], onUpdate: Restrict, map: "fk_sync_mappings_source")
+
+  @@unique([sourceSystemId, entityName, sourceRecordId], map: "uq_sync_mappings_source")
+  @@index([lastSyncRunId], map: "fk_sync_mappings_last_run")
+  @@index([localTableName, localRecordId], map: "idx_sync_mappings_local")
+  @@index([organizationId], map: "idx_sync_mappings_org")
+  @@map("sync_mappings")
+}
+
+model SyncRawPayload {
+  id             String   @id @default(uuid()) @db.Char(36)
+  syncRunId      String   @map("sync_run_id") @db.Char(36)
+  entityName     String   @map("entity_name") @db.VarChar(120)
+  sourceRecordId String   @map("source_record_id") @db.VarChar(128)
+  payload        String   @db.LongText
+  payloadHash    String   @map("payload_hash") @db.VarChar(128)
+  createdAt      DateTime @map("created_at")
+  syncRun        SyncRun  @relation(fields: [syncRunId], references: [id], onUpdate: Restrict, map: "fk_sync_raw_payloads_run")
+
+  @@index([payloadHash], map: "idx_sync_raw_payloads_hash")
+  @@index([syncRunId, entityName], map: "idx_sync_raw_payloads_run_entity")
+  @@map("sync_raw_payloads")
+}
+
+model Account {
+  id                               String                             @id @default(uuid()) @db.Char(36)
+  organizationId                   String                             @map("organization_id") @db.Char(36)
+  code                             String                             @db.VarChar(64)
+  name                             String                             @db.VarChar(255)
+  parentId                         String?                            @map("parent_id") @db.Char(36)
+  accountGroup                     String                             @map("account_group") @db.VarChar(30)
+  normalBalance                    String                             @map("normal_balance") @db.VarChar(10)
+  level                            Int
+  isPostable                       Boolean                            @default(true) @map("is_postable")
+  isActive                         Boolean                            @default(true) @map("is_active")
+  allowsCounterparty               Boolean                            @default(false) @map("allows_counterparty")
+  allowsContract                   Boolean                            @default(false) @map("allows_contract")
+  allowsItem                       Boolean                            @default(false) @map("allows_item")
+  allowsWarehouse                  Boolean                            @default(false) @map("allows_warehouse")
+  allowsEmployee                   Boolean                            @default(false) @map("allows_employee")
+  effective_from                   DateTime?                          @db.Date
+  effective_to                     DateTime?                          @db.Date
+  source_system_id                 String?                            @db.Char(36)
+  source_record_id                 String?                            @db.VarChar(128)
+  source_updated_at                DateTime?
+  source_checksum                  String?                            @db.VarChar(128)
+  createdAt                        DateTime                           @map("created_at")
+  updatedAt                        DateTime                           @updatedAt @map("updated_at")
+  organization                     Organization                       @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_accounts_org")
+  parent                           Account?                           @relation("AccountHierarchy", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_accounts_parent")
+  children                         Account[]                          @relation("AccountHierarchy")
+  source_systems                   SourceSystem?                      @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_accounts_source")
+  journal_entry_lines              journal_entry_lines[]
+  ledger_balances                  ledger_balances[]
+  opening_balance_account_lines    opening_balance_account_lines[]
+  opening_balance_payable_lines    opening_balance_payable_lines[]
+  opening_balance_receivable_lines opening_balance_receivable_lines[]
+  voucher_lines                    VoucherLine[]
+
+  @@unique([organizationId, code], map: "uq_accounts_org_code")
+  @@index([parentId], map: "fk_accounts_parent")
+  @@index([organizationId, isActive], map: "idx_accounts_active")
+  @@index([organizationId, accountGroup], map: "idx_accounts_group")
+  @@index([organizationId, parentId], map: "idx_accounts_org_parent")
+  @@index([source_system_id, source_record_id], map: "idx_accounts_source")
+  @@map("accounts")
+}
+
+model Customer {
+  id                               String                             @id @default(uuid()) @db.Char(36)
+  organizationId                   String                             @map("organization_id") @db.Char(36)
+  code                             String                             @db.VarChar(64)
+  name                             String                             @db.VarChar(255)
+  taxCode                          String?                            @map("tax_code") @db.VarChar(32)
+  short_name                       String?                            @db.VarChar(255)
+  phone                            String?                            @db.VarChar(40)
+  email                            String?                            @db.VarChar(255)
+  address                          String?                            @db.VarChar(512)
+  status                           String                             @db.VarChar(20)
+  source_system_id                 String?                            @db.Char(36)
+  source_record_id                 String?                            @db.VarChar(128)
+  source_updated_at                DateTime?
+  source_checksum                  String?                            @db.VarChar(128)
+  createdAt                        DateTime                           @map("created_at")
+  updatedAt                        DateTime                           @updatedAt @map("updated_at")
+  contracts                        contracts[]
+  organization                     Organization                       @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_customers_org")
+  source_systems                   SourceSystem?                      @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_customers_source")
+  journal_entry_lines              journal_entry_lines[]
+  ledger_balances                  ledger_balances[]
+  opening_balance_account_lines    opening_balance_account_lines[]
+  opening_balance_receivable_lines opening_balance_receivable_lines[]
+  voucher_lines                    VoucherLine[]
+
+  @@unique([organizationId, code], map: "uq_customers_org_code")
+  @@index([source_system_id, source_record_id], map: "idx_customers_source")
+  @@map("customers")
+}
+
+model Supplier {
+  id                            String                          @id @default(uuid()) @db.Char(36)
+  organizationId                String                          @map("organization_id") @db.Char(36)
+  code                          String                          @db.VarChar(64)
+  name                          String                          @db.VarChar(255)
+  taxCode                       String?                         @map("tax_code") @db.VarChar(32)
+  short_name                    String?                         @db.VarChar(255)
+  phone                         String?                         @db.VarChar(40)
+  email                         String?                         @db.VarChar(255)
+  address                       String?                         @db.VarChar(512)
+  status                        String                          @db.VarChar(20)
+  source_system_id              String?                         @db.Char(36)
+  source_record_id              String?                         @db.VarChar(128)
+  source_updated_at             DateTime?
+  source_checksum               String?                         @db.VarChar(128)
+  createdAt                     DateTime                        @map("created_at")
+  updatedAt                     DateTime                        @updatedAt @map("updated_at")
+  contracts                     contracts[]
+  journal_entry_lines           journal_entry_lines[]
+  ledger_balances               ledger_balances[]
+  opening_balance_account_lines opening_balance_account_lines[]
+  opening_balance_payable_lines opening_balance_payable_lines[]
+  prepaid_expenses              prepaid_expenses[]
+  organization                  Organization                    @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_suppliers_org")
+  source_systems                SourceSystem?                   @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_suppliers_source")
+  voucher_lines                 VoucherLine[]
+
+  @@unique([organizationId, code], map: "uq_suppliers_org_code")
+  @@index([source_system_id, source_record_id], map: "idx_suppliers_source")
+  @@map("suppliers")
+}
+
+model CashBook {
+  id             String       @id @default(uuid()) @db.Char(36)
+  organizationId String       @map("organization_id") @db.Char(36)
+  code           String       @db.VarChar(64)
+  name           String       @db.VarChar(255)
+  currency_code  String       @default("VND") @db.VarChar(8)
+  status         String       @db.VarChar(20)
+  organization   Organization @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_cash_books_org")
+  vouchers       Voucher[]
+
+  @@unique([organizationId, code], map: "uq_cash_books_org_code")
+  @@map("cash_books")
+}
+
+model Voucher {
+  id                               String                    @id @default(uuid()) @db.Char(36)
+  organizationId                   String                    @map("organization_id") @db.Char(36)
+  voucherType                      String                    @map("voucher_type") @db.VarChar(40)
+  voucherNo                        String                    @map("voucher_no") @db.VarChar(64)
+  voucherDate                      DateTime                  @map("voucher_date") @db.Date
+  posting_date                     DateTime?                 @db.Date
+  currencyCode                     String                    @default("VND") @map("currency_code") @db.VarChar(8)
+  exchange_rate                    Decimal                   @default(1.000000) @db.Decimal(18, 6)
+  status                           String                    @db.VarChar(20)
+  approval_status                  String                    @db.VarChar(20)
+  source_system_id                 String?                   @db.Char(36)
+  source_record_id                 String?                   @db.VarChar(128)
+  source_updated_at                DateTime?
+  source_checksum                  String?                   @db.VarChar(128)
+  description                      String?                   @db.VarChar(1000)
+  payment_channel                  PaymentChannel?
+  cash_book_id                     String?                   @db.Char(36)
+  bank_account_id                  String?                   @db.Char(36)
+  counterparty_type                CounterpartyType?
+  reference_invoice_no             String?                   @db.VarChar(128)
+  matched_amount                   Decimal                   @default(0.00) @db.Decimal(18, 2)
+  reconciliation_status            MatchingStatus            @default(unmatched)
+  total_debit                      Decimal                   @default(0.00) @db.Decimal(18, 2)
+  total_credit                     Decimal                   @default(0.00) @db.Decimal(18, 2)
+  createdBy                        String?                   @map("created_by") @db.Char(36)
+  updated_by                       String?                   @db.Char(36)
+  createdAt                        DateTime                  @map("created_at")
+  updatedAt                        DateTime                  @updatedAt @map("updated_at")
+  cashBook                         CashBook?                 @relation(fields: [cash_book_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_cash_book")
+  bank_accounts                    bank_accounts?            @relation(fields: [bank_account_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_bank_account")
+  reconciliationMatches            BankReconciliationMatch[]
+  inventory_documents              inventory_documents[]
+  lines                            VoucherLine[]
+  users_vouchers_created_byTousers User?                     @relation("vouchers_created_byTousers", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_created_by")
+  organization                     Organization              @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_vouchers_org")
+  source_systems                   SourceSystem?             @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_source")
+  users_vouchers_updated_byTousers User?                     @relation("vouchers_updated_byTousers", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_updated_by")
+
+  @@unique([organizationId, voucherType, voucherNo], map: "uq_vouchers_org_type_no")
+  @@index([createdBy], map: "fk_vouchers_created_by")
+  @@index([updated_by], map: "fk_vouchers_updated_by")
+  @@index([organizationId, status, voucherDate], map: "idx_vouchers_org_status_date")
+  @@index([organizationId, voucherType, voucherDate], map: "idx_vouchers_org_type_date")
+  @@index([organizationId, bank_account_id, voucherDate], map: "idx_vouchers_org_bank_date")
+  @@index([organizationId, cash_book_id, voucherDate], map: "idx_vouchers_org_cash_book_date")
+  @@index([bank_account_id], map: "fk_vouchers_bank_account")
+  @@index([cash_book_id], map: "fk_vouchers_cash_book")
+  @@index([source_system_id, source_record_id], map: "idx_vouchers_source")
+  @@map("vouchers")
+}
+
+model VoucherLine {
+  id              String         @id @default(uuid()) @db.Char(36)
+  voucherId       String         @map("voucher_id") @db.Char(36)
+  lineNo          Int            @map("line_no")
+  account_id      String         @db.Char(36)
+  customer_id     String?        @db.Char(36)
+  supplier_id     String?        @db.Char(36)
+  employee_id     String?        @db.Char(36)
+  contract_id     String?        @db.Char(36)
+  cost_item_id    String?        @db.Char(36)
+  warehouse_id    String?        @db.Char(36)
+  bank_account_id String?        @db.Char(36)
+  item_id         String?        @db.Char(36)
+  debit_amount    Decimal        @default(0.00) @db.Decimal(18, 2)
+  credit_amount   Decimal        @default(0.00) @db.Decimal(18, 2)
+  quantity        Decimal?       @db.Decimal(18, 4)
+  unit_price      Decimal?       @db.Decimal(18, 4)
+  tax_rate        Decimal?       @db.Decimal(5, 2)
+  memo            String?        @db.VarChar(500)
+  created_at      DateTime
+  accounts        Account        @relation(fields: [account_id], references: [id], onUpdate: Restrict, map: "fk_voucher_lines_account")
+  bank_accounts   bank_accounts? @relation(fields: [bank_account_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_bank_account")
+  contracts       contracts?     @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_contract")
+  cost_items      cost_items?    @relation(fields: [cost_item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_cost_item")
+  customers       Customer?      @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_customer")
+  employees       employees?     @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_employee")
+  items           items?         @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_item")
+  suppliers       Supplier?      @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_supplier")
+  voucher         Voucher        @relation(fields: [voucherId], references: [id], onUpdate: Restrict, map: "fk_voucher_lines_voucher")
+  warehouses      warehouses?    @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_warehouse")
+
+  @@unique([voucherId, lineNo], map: "uq_voucher_lines_voucher_line")
+  @@index([contract_id], map: "fk_voucher_lines_contract")
+  @@index([cost_item_id], map: "fk_voucher_lines_cost_item")
+  @@index([employee_id], map: "fk_voucher_lines_employee")
+  @@index([item_id], map: "fk_voucher_lines_item")
+  @@index([account_id], map: "idx_voucher_lines_account")
+  @@index([bank_account_id], map: "idx_voucher_lines_bank_account")
+  @@index([customer_id], map: "idx_voucher_lines_customer")
+  @@index([supplier_id], map: "idx_voucher_lines_supplier")
+  @@index([warehouse_id], map: "idx_voucher_lines_warehouse")
+  @@map("voucher_lines")
+}
+
+model ApprovalInstance {
+  id              String           @id @default(uuid()) @db.Char(36)
+  organization_id String           @db.Char(36)
+  flow_id         String           @db.Char(36)
+  document_type   String           @db.VarChar(40)
+  document_id     String           @db.Char(36)
+  status          String           @db.VarChar(20)
+  current_step_no Int              @default(1)
+  started_at      DateTime
+  completed_at    DateTime?
+  createdAt       DateTime         @map("created_at")
+  actions         ApprovalAction[]
+  approval_flows  approval_flows   @relation(fields: [flow_id], references: [id], onUpdate: Restrict, map: "fk_approval_instances_flow")
+  organizations   Organization     @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_approval_instances_org")
+
+  @@unique([organization_id, document_type, document_id], map: "uq_approval_instances_doc")
+  @@index([flow_id], map: "fk_approval_instances_flow")
+  @@map("approval_instances")
+}
+
+model ApprovalAction {
+  id                 String           @id @default(uuid()) @db.Char(36)
+  approvalInstanceId String           @map("approval_instance_id") @db.Char(36)
+  step_no            Int
+  action             String           @db.VarChar(20)
+  acted_by           String           @db.Char(36)
+  acted_at           DateTime
+  comment            String?          @db.VarChar(1000)
+  approvalInstance   ApprovalInstance @relation(fields: [approvalInstanceId], references: [id], onUpdate: Restrict, map: "fk_approval_actions_instance")
+  users              User             @relation(fields: [acted_by], references: [id], onUpdate: Restrict, map: "fk_approval_actions_user")
+
+  @@index([acted_by], map: "fk_approval_actions_user")
+  @@index([approvalInstanceId], map: "idx_approval_actions_instance")
+  @@map("approval_actions")
+}
+
+model AttachmentFile {
+  id              String       @id @default(uuid()) @db.Char(36)
+  organization_id String       @db.Char(36)
+  entity_name     String       @db.VarChar(120)
+  entity_id       String       @db.Char(36)
+  fileName        String       @map("file_name") @db.VarChar(255)
+  mimeType        String       @map("mime_type") @db.VarChar(120)
+  file_size       BigInt
+  storageKey      String       @map("storage_key") @db.VarChar(500)
+  file_hash       String       @db.VarChar(128)
+  created_by      String?      @db.Char(36)
+  createdAt       DateTime     @map("created_at")
+  users           User?        @relation(fields: [created_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_attachment_files_created_by")
+  organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_attachment_files_org")
+
+  @@unique([organization_id, file_hash, storageKey], map: "uq_attachment_files_hash_key")
+  @@index([created_by], map: "fk_attachment_files_created_by")
+  @@map("attachment_files")
+}
+
+model BankStatement {
+  id                   String              @id @default(uuid()) @db.Char(36)
+  organizationId       String              @map("organization_id") @db.Char(36)
+  bank_account_id      String              @db.Char(36)
+  statementNo          String?             @map("statement_no") @db.VarChar(64)
+  statementDate        DateTime            @map("statement_date") @db.Date
+  openingBalance       Decimal             @default(0.00) @map("opening_balance") @db.Decimal(18, 2)
+  closingBalance       Decimal             @default(0.00) @map("closing_balance") @db.Decimal(18, 2)
+  source_file_name     String?             @db.VarChar(255)
+  source_file_hash     String?             @db.VarChar(128)
+  status               String              @db.VarChar(20)
+  importedAt           DateTime            @map("imported_at")
+  bank_statement_lines BankStatementLine[]
+  bank_accounts        bank_accounts       @relation(fields: [bank_account_id], references: [id], onUpdate: Restrict, map: "fk_bank_statements_bank_account")
+  organization         Organization        @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_bank_statements_org")
+
+  @@index([organizationId], map: "fk_bank_statements_org")
+  @@index([bank_account_id], map: "idx_bank_statements_bank_account")
+  @@map("bank_statements")
+}
+
+model BankStatementLine {
+  id                          String                    @id @default(uuid()) @db.Char(36)
+  statement_id                String                    @db.Char(36)
+  lineNo                      Int                       @map("line_no")
+  value_date                  DateTime?                 @db.Date
+  transactionDate             DateTime?                 @map("transaction_date") @db.Date
+  description                 String                    @db.VarChar(1000)
+  referenceNo                 String?                   @map("reference_no") @db.VarChar(128)
+  debitAmount                 Decimal                   @default(0.00) @map("debit_amount") @db.Decimal(18, 2)
+  creditAmount                Decimal                   @default(0.00) @map("credit_amount") @db.Decimal(18, 2)
+  balance_after               Decimal?                  @db.Decimal(18, 2)
+  matched_status              MatchingStatus            @default(unmatched)
+  bank_reconciliation_matches BankReconciliationMatch[]
+  bank_statements             BankStatement             @relation(fields: [statement_id], references: [id], onUpdate: Restrict, map: "fk_bank_statement_lines_statement")
+
+  @@unique([statement_id, lineNo], map: "uq_bank_statement_lines_statement_line")
+  @@index([statement_id, matched_status], map: "idx_bank_statement_lines_statement_status")
+  @@map("bank_statement_lines")
+}
+
+model BankReconciliationMatch {
+  id                   String            @id @default(uuid()) @db.Char(36)
+  statement_line_id    String            @db.Char(36)
+  voucherId            String            @map("voucher_id") @db.Char(36)
+  matchedAmount        Decimal           @map("matched_amount") @db.Decimal(18, 2)
+  matchedBy            String?           @map("matched_by") @db.Char(36)
+  matchedAt            DateTime          @map("matched_at")
+  note                 String?           @db.VarChar(255)
+  bank_statement_lines BankStatementLine @relation(fields: [statement_line_id], references: [id], onUpdate: Restrict, map: "fk_bank_reconciliation_matches_line")
+  users                User?             @relation(fields: [matchedBy], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_bank_reconciliation_matches_user")
+  voucher              Voucher           @relation(fields: [voucherId], references: [id], onUpdate: Restrict, map: "fk_bank_reconciliation_matches_voucher")
+
+  @@unique([statement_line_id, voucherId], map: "uq_bank_reconciliation_matches_line_voucher")
+  @@index([matchedBy], map: "fk_bank_reconciliation_matches_user")
+  @@index([voucherId], map: "fk_bank_reconciliation_matches_voucher")
+  @@map("bank_reconciliation_matches")
+}
+
+model AuditEvent {
+  id             String       @id @default(uuid()) @db.Char(36)
+  organizationId String       @map("organization_id") @db.Char(36)
+  actorUserId    String?      @map("actor_user_id") @db.Char(36)
+  action         String       @db.VarChar(120)
+  entityName     String       @map("entity_name") @db.VarChar(120)
+  entityId       String       @map("entity_id") @db.Char(36)
+  before_data    String?      @db.LongText
+  after_data     String?      @db.LongText
+  ipAddress      String?      @map("ip_address") @db.VarChar(45)
+  user_agent     String?      @db.VarChar(500)
+  request_id     String?      @db.VarChar(128)
+  createdAt      DateTime     @map("created_at")
+  users          User?        @relation(fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_audit_events_actor_user")
+  organization   Organization @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_audit_events_org")
+
+  @@index([actorUserId], map: "fk_audit_events_actor_user")
+  @@index([organizationId, action, createdAt], map: "idx_audit_events_action_created")
+  @@index([organizationId, entityName, entityId], map: "idx_audit_events_entity")
+  @@map("audit_events")
+}
+
+model AiJob {
+  id             String           @id @default(uuid()) @db.Char(36)
+  organizationId String           @map("organization_id") @db.Char(36)
+  jobType        String           @map("job_type") @db.VarChar(80)
+  input_ref      String?          @db.VarChar(255)
+  status         String           @db.VarChar(20)
+  started_at     DateTime?
+  ended_at       DateTime?
+  error_message  String?          @db.Text
+  created_by     String?          @db.Char(36)
+  createdAt      DateTime         @map("created_at")
+  ai_job_outputs ai_job_outputs[]
+  users          User?            @relation(fields: [created_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ai_jobs_created_by")
+  organization   Organization     @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_ai_jobs_org")
+
+  @@index([created_by], map: "fk_ai_jobs_created_by")
+  @@index([organizationId, status], map: "idx_ai_jobs_org_status")
+  @@map("ai_jobs")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ai_job_outputs {
+  id          String   @id @db.Char(36)
+  ai_job_id   String   @db.Char(36)
+  output_type String   @db.VarChar(80)
+  payload     String   @db.LongText
+  confidence  Decimal? @db.Decimal(5, 4)
+  created_at  DateTime
+  ai_jobs     AiJob    @relation(fields: [ai_job_id], references: [id], onUpdate: Restrict, map: "fk_ai_job_outputs_job")
+
+  @@index([ai_job_id], map: "fk_ai_job_outputs_job")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model approval_flow_steps {
+  id               String         @id @db.Char(36)
+  flow_id          String         @db.Char(36)
+  step_no          Int
+  approver_role_id String?        @db.Char(36)
+  approver_user_id String?        @db.Char(36)
+  deadline_hours   Int?
+  required         Boolean        @default(true)
+  approval_flows   approval_flows @relation(fields: [flow_id], references: [id], onUpdate: Restrict, map: "fk_approval_flow_steps_flow")
+  roles            Role?          @relation(fields: [approver_role_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_approval_flow_steps_role")
+  users            User?          @relation(fields: [approver_user_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_approval_flow_steps_user")
+
+  @@unique([flow_id, step_no], map: "uq_approval_flow_steps_flow_step")
+  @@index([approver_role_id], map: "fk_approval_flow_steps_role")
+  @@index([approver_user_id], map: "fk_approval_flow_steps_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model approval_flows {
+  id                  String                @id @db.Char(36)
+  organization_id     String                @db.Char(36)
+  document_type       String                @db.VarChar(40)
+  name                String                @db.VarChar(255)
+  is_active           Boolean               @default(true)
+  created_at          DateTime
+  updated_at          DateTime
+  approval_flow_steps approval_flow_steps[]
+  organizations       Organization          @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_approval_flows_org")
+  approval_instances  ApprovalInstance[]
+
+  @@unique([organization_id, document_type, name], map: "uq_approval_flows_org_doc_name")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset_movements {
+  id               String           @id @db.Char(36)
+  asset_id         String           @db.Char(36)
+  movement_type    String           @db.VarChar(40)
+  movement_date    DateTime         @db.Date
+  amount           Decimal          @db.Decimal(18, 2)
+  journal_entry_id String?          @db.Char(36)
+  memo             String?          @db.VarChar(500)
+  fixed_assets     fixed_assets     @relation(fields: [asset_id], references: [id], onUpdate: Restrict, map: "fk_asset_movements_asset")
+  journal_entries  journal_entries? @relation(fields: [journal_entry_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_asset_movements_journal_entry")
+
+  @@index([journal_entry_id], map: "fk_asset_movements_journal_entry")
+  @@index([asset_id], map: "idx_asset_movements_asset")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model bank_accounts {
+  id                  String                @id @db.Char(36)
+  organization_id     String                @db.Char(36)
+  bank_name           String                @db.VarChar(255)
+  account_no          String                @db.VarChar(128)
+  account_holder      String                @db.VarChar(255)
+  currency_code       String                @default("VND") @db.VarChar(8)
+  branch_name         String?               @db.VarChar(255)
+  status              String                @db.VarChar(20)
+  source_system_id    String?               @db.Char(36)
+  source_record_id    String?               @db.VarChar(128)
+  source_updated_at   DateTime?
+  source_checksum     String?               @db.VarChar(128)
+  created_at          DateTime
+  updated_at          DateTime
+  organizations       Organization          @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_bank_accounts_org")
+  source_systems      SourceSystem?         @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_bank_accounts_source")
+  bank_statements     BankStatement[]
+  journal_entry_lines journal_entry_lines[]
+  vouchers            Voucher[]
+  voucher_lines       VoucherLine[]
+
+  @@unique([organization_id, account_no], map: "uq_bank_accounts_org_account_no")
+  @@index([source_system_id, source_record_id], map: "idx_bank_accounts_source")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model contracts {
+  id                               String                             @id @db.Char(36)
+  organization_id                  String                             @db.Char(36)
+  contract_no                      String                             @db.VarChar(64)
+  contract_name                    String                             @db.VarChar(255)
+  counterparty_type                String                             @db.VarChar(20)
+  customer_id                      String?                            @db.Char(36)
+  supplier_id                      String?                            @db.Char(36)
+  signed_date                      DateTime?                          @db.Date
+  start_date                       DateTime?                          @db.Date
+  end_date                         DateTime?                          @db.Date
+  status                           String                             @db.VarChar(20)
+  source_system_id                 String?                            @db.Char(36)
+  source_record_id                 String?                            @db.VarChar(128)
+  source_updated_at                DateTime?
+  source_checksum                  String?                            @db.VarChar(128)
+  created_at                       DateTime
+  updated_at                       DateTime
+  customers                        Customer?                          @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_contracts_customer")
+  organizations                    Organization                       @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_contracts_org")
+  source_systems                   SourceSystem?                      @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_contracts_source")
+  suppliers                        Supplier?                          @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_contracts_supplier")
+  journal_entry_lines              journal_entry_lines[]
+  ledger_balances                  ledger_balances[]
+  opening_balance_account_lines    opening_balance_account_lines[]
+  opening_balance_payable_lines    opening_balance_payable_lines[]
+  opening_balance_receivable_lines opening_balance_receivable_lines[]
+  voucher_lines                    VoucherLine[]
+
+  @@unique([organization_id, contract_no], map: "uq_contracts_org_contract_no")
+  @@index([source_system_id], map: "fk_contracts_source")
+  @@index([customer_id], map: "idx_contracts_customer")
+  @@index([supplier_id], map: "idx_contracts_supplier")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cost_items {
+  id                  String                @id @db.Char(36)
+  organization_id     String                @db.Char(36)
+  code                String                @db.VarChar(64)
+  name                String                @db.VarChar(255)
+  parent_id           String?               @db.Char(36)
+  cost_group          String                @db.VarChar(20)
+  status              String                @db.VarChar(20)
+  source_system_id    String?               @db.Char(36)
+  source_record_id    String?               @db.VarChar(128)
+  source_updated_at   DateTime?
+  source_checksum     String?               @db.VarChar(128)
+  created_at          DateTime
+  updated_at          DateTime
+  organizations       Organization          @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_cost_items_org")
+  cost_items          cost_items?           @relation("cost_itemsTocost_items", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_cost_items_parent")
+  other_cost_items    cost_items[]          @relation("cost_itemsTocost_items")
+  source_systems      SourceSystem?         @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_cost_items_source")
+  journal_entry_lines journal_entry_lines[]
+  voucher_lines       VoucherLine[]
+
+  @@unique([organization_id, code], map: "uq_cost_items_org_code")
+  @@index([source_system_id], map: "fk_cost_items_source")
+  @@index([parent_id], map: "idx_cost_items_parent")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model depreciation_lines {
+  id                  String            @id @db.Char(36)
+  depreciation_run_id String            @db.Char(36)
+  asset_id            String            @db.Char(36)
+  amount              Decimal           @db.Decimal(18, 2)
+  journal_entry_id    String?           @db.Char(36)
+  fixed_assets        fixed_assets      @relation(fields: [asset_id], references: [id], onUpdate: Restrict, map: "fk_depreciation_lines_asset")
+  journal_entries     journal_entries?  @relation(fields: [journal_entry_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_depreciation_lines_journal_entry")
+  depreciation_runs   depreciation_runs @relation(fields: [depreciation_run_id], references: [id], onUpdate: Restrict, map: "fk_depreciation_lines_run")
+
+  @@index([asset_id], map: "fk_depreciation_lines_asset")
+  @@index([journal_entry_id], map: "fk_depreciation_lines_journal_entry")
+  @@index([depreciation_run_id], map: "fk_depreciation_lines_run")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model depreciation_runs {
+  id                 String               @id @db.Char(36)
+  organization_id    String               @db.Char(36)
+  period_year        Int
+  period_month       Int
+  status             String               @db.VarChar(20)
+  run_at             DateTime
+  created_by         String?              @db.Char(36)
+  depreciation_lines depreciation_lines[]
+  users              User?                @relation(fields: [created_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_depreciation_runs_created_by")
+  organizations      Organization         @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_depreciation_runs_org")
+
+  @@unique([organization_id, period_year, period_month], map: "uq_depreciation_runs_period")
+  @@index([created_by], map: "fk_depreciation_runs_created_by")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model employees {
+  id                            String                          @id @db.Char(36)
+  organization_id               String                          @db.Char(36)
+  code                          String                          @db.VarChar(64)
+  full_name                     String                          @db.VarChar(255)
+  department_name               String?                         @db.VarChar(255)
+  position_name                 String?                         @db.VarChar(255)
+  status                        String                          @db.VarChar(20)
+  source_system_id              String?                         @db.Char(36)
+  source_record_id              String?                         @db.VarChar(128)
+  source_updated_at             DateTime?
+  source_checksum               String?                         @db.VarChar(128)
+  created_at                    DateTime
+  updated_at                    DateTime
+  organizations                 Organization                    @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_employees_org")
+  source_systems                SourceSystem?                   @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_employees_source")
+  journal_entry_lines           journal_entry_lines[]
+  opening_balance_account_lines opening_balance_account_lines[]
+  voucher_lines                 VoucherLine[]
+
+  @@unique([organization_id, code], map: "uq_employees_org_code")
+  @@index([source_system_id, source_record_id], map: "idx_employees_source")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model fixed_assets {
+  id                  String               @id @db.Char(36)
+  organization_id     String               @db.Char(36)
+  asset_code          String               @db.VarChar(64)
+  asset_name          String               @db.VarChar(255)
+  asset_category      String               @db.VarChar(255)
+  acquisition_date    DateTime             @db.Date
+  original_cost       Decimal              @db.Decimal(18, 2)
+  residual_value      Decimal              @default(0.00) @db.Decimal(18, 2)
+  useful_life_months  Int
+  depreciation_method String               @db.VarChar(40)
+  status              String               @db.VarChar(20)
+  source_system_id    String?              @db.Char(36)
+  source_record_id    String?              @db.VarChar(128)
+  created_at          DateTime
+  updated_at          DateTime
+  asset_movements     asset_movements[]
+  depreciation_lines  depreciation_lines[]
+  organizations       Organization         @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_fixed_assets_org")
+  source_systems      SourceSystem?        @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_fixed_assets_source")
+
+  @@unique([organization_id, asset_code], map: "uq_fixed_assets_org_code")
+  @@index([source_system_id, source_record_id], map: "idx_fixed_assets_source")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model inventory_balances {
+  id              String       @id @db.Char(36)
+  organization_id String       @db.Char(36)
+  snapshot_date   DateTime     @db.Date
+  item_id         String       @db.Char(36)
+  warehouse_id    String       @db.Char(36)
+  lot_no          String?      @db.VarChar(128)
+  opening_qty     Decimal      @default(0.0000) @db.Decimal(18, 4)
+  in_qty          Decimal      @default(0.0000) @db.Decimal(18, 4)
+  out_qty         Decimal      @default(0.0000) @db.Decimal(18, 4)
+  closing_qty     Decimal      @default(0.0000) @db.Decimal(18, 4)
+  closing_cost    Decimal      @default(0.00) @db.Decimal(18, 2)
+  items           items        @relation(fields: [item_id], references: [id], onUpdate: Restrict, map: "fk_inventory_balances_item")
+  organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_inventory_balances_org")
+  warehouses      warehouses   @relation(fields: [warehouse_id], references: [id], onUpdate: Restrict, map: "fk_inventory_balances_warehouse")
+
+  @@unique([organization_id, snapshot_date, item_id, warehouse_id, lot_no], map: "uq_inventory_balances_snapshot")
+  @@index([item_id], map: "fk_inventory_balances_item")
+  @@index([warehouse_id], map: "fk_inventory_balances_warehouse")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model inventory_document_lines {
+  id                    String              @id @db.Char(36)
+  inventory_document_id String              @db.Char(36)
+  line_no               Int
+  item_id               String              @db.Char(36)
+  warehouse_id          String              @db.Char(36)
+  qty_in                Decimal             @default(0.0000) @db.Decimal(18, 4)
+  qty_out               Decimal             @default(0.0000) @db.Decimal(18, 4)
+  unit_cost             Decimal?            @db.Decimal(18, 4)
+  lot_no                String?             @db.VarChar(128)
+  memo                  String?             @db.VarChar(500)
+  inventory_documents   inventory_documents @relation(fields: [inventory_document_id], references: [id], onUpdate: Restrict, map: "fk_inventory_document_lines_doc")
+  items                 items               @relation(fields: [item_id], references: [id], onUpdate: Restrict, map: "fk_inventory_document_lines_item")
+  warehouses            warehouses          @relation(fields: [warehouse_id], references: [id], onUpdate: Restrict, map: "fk_inventory_document_lines_warehouse")
+
+  @@unique([inventory_document_id, line_no], map: "uq_inventory_document_lines_doc_line")
+  @@index([item_id], map: "fk_inventory_document_lines_item")
+  @@index([warehouse_id], map: "fk_inventory_document_lines_warehouse")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model inventory_documents {
+  id                       String                     @id @db.Char(36)
+  organization_id          String                     @db.Char(36)
+  document_type            String                     @db.VarChar(40)
+  document_no              String                     @db.VarChar(64)
+  document_date            DateTime                   @db.Date
+  status                   String                     @db.VarChar(20)
+  source_voucher_id        String?                    @db.Char(36)
+  created_at               DateTime
+  updated_at               DateTime
+  inventory_document_lines inventory_document_lines[]
+  organizations            Organization               @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_inventory_documents_org")
+  vouchers                 Voucher?                   @relation(fields: [source_voucher_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_inventory_documents_source_voucher")
+
+  @@unique([organization_id, document_type, document_no], map: "uq_inventory_documents_org_type_no")
+  @@index([source_voucher_id], map: "fk_inventory_documents_source_voucher")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model item_categories {
+  id                    String            @id @db.Char(36)
+  organization_id       String            @db.Char(36)
+  code                  String            @db.VarChar(64)
+  name                  String            @db.VarChar(255)
+  parent_id             String?           @db.Char(36)
+  status                String            @db.VarChar(20)
+  created_at            DateTime
+  updated_at            DateTime
+  organizations         Organization      @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_item_categories_org")
+  item_categories       item_categories?  @relation("item_categoriesToitem_categories", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_item_categories_parent")
+  other_item_categories item_categories[] @relation("item_categoriesToitem_categories")
+  items                 items[]
+
+  @@unique([organization_id, code], map: "uq_item_categories_org_code")
+  @@index([parent_id], map: "idx_item_categories_parent")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model items {
+  id                              String                            @id @db.Char(36)
+  organization_id                 String                            @db.Char(36)
+  code                            String                            @db.VarChar(64)
+  name                            String                            @db.VarChar(255)
+  item_type                       String                            @db.VarChar(30)
+  category_id                     String?                           @db.Char(36)
+  uom_id                          String?                           @db.Char(36)
+  barcode                         String?                           @db.VarChar(128)
+  is_inventory_item               Boolean                           @default(true)
+  is_service_item                 Boolean                           @default(false)
+  status                          String                            @db.VarChar(20)
+  source_system_id                String?                           @db.Char(36)
+  source_record_id                String?                           @db.VarChar(128)
+  source_updated_at               DateTime?
+  source_checksum                 String?                           @db.VarChar(128)
+  created_at                      DateTime
+  updated_at                      DateTime
+  inventory_balances              inventory_balances[]
+  inventory_document_lines        inventory_document_lines[]
+  item_categories                 item_categories?                  @relation(fields: [category_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_items_category")
+  organizations                   Organization                      @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_items_org")
+  source_systems                  SourceSystem?                     @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_items_source")
+  units_of_measure                units_of_measure?                 @relation(fields: [uom_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_items_uom")
+  journal_entry_lines             journal_entry_lines[]
+  opening_balance_account_lines   opening_balance_account_lines[]
+  opening_balance_inventory_lines opening_balance_inventory_lines[]
+  voucher_lines                   VoucherLine[]
+
+  @@unique([organization_id, code], map: "uq_items_org_code")
+  @@index([category_id], map: "idx_items_category")
+  @@index([source_system_id, source_record_id], map: "idx_items_source")
+  @@index([uom_id], map: "idx_items_uom")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model journal_entries {
+  id                  String                @id @db.Char(36)
+  organization_id     String                @db.Char(36)
+  entry_no            String                @db.VarChar(64)
+  entry_date          DateTime              @db.Date
+  source_type         String                @db.VarChar(40)
+  source_id           String?               @db.Char(36)
+  status              String                @db.VarChar(20)
+  description         String?               @db.VarChar(1000)
+  posted_at           DateTime?
+  created_by          String?               @db.Char(36)
+  created_at          DateTime
+  updated_at          DateTime
+  asset_movements     asset_movements[]
+  depreciation_lines  depreciation_lines[]
+  users               User?                 @relation(fields: [created_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entries_created_by")
+  organizations       Organization          @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_journal_entries_org")
+  journal_entry_lines journal_entry_lines[]
+  prepaid_allocations prepaid_allocations[]
+
+  @@unique([organization_id, entry_no], map: "uq_journal_entries_org_entry_no")
+  @@index([created_by], map: "fk_journal_entries_created_by")
+  @@index([organization_id, entry_date], map: "idx_journal_entries_org_date")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model journal_entry_lines {
+  id               String          @id @db.Char(36)
+  journal_entry_id String          @db.Char(36)
+  line_no          Int
+  account_id       String          @db.Char(36)
+  customer_id      String?         @db.Char(36)
+  supplier_id      String?         @db.Char(36)
+  employee_id      String?         @db.Char(36)
+  contract_id      String?         @db.Char(36)
+  cost_item_id     String?         @db.Char(36)
+  warehouse_id     String?         @db.Char(36)
+  bank_account_id  String?         @db.Char(36)
+  item_id          String?         @db.Char(36)
+  debit_amount     Decimal         @default(0.00) @db.Decimal(18, 2)
+  credit_amount    Decimal         @default(0.00) @db.Decimal(18, 2)
+  memo             String?         @db.VarChar(500)
+  accounts         Account         @relation(fields: [account_id], references: [id], onUpdate: Restrict, map: "fk_journal_entry_lines_account")
+  bank_accounts    bank_accounts?  @relation(fields: [bank_account_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_bank_account")
+  contracts        contracts?      @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_contract")
+  cost_items       cost_items?     @relation(fields: [cost_item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_cost_item")
+  customers        Customer?       @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_customer")
+  employees        employees?      @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_employee")
+  journal_entries  journal_entries @relation(fields: [journal_entry_id], references: [id], onUpdate: Restrict, map: "fk_journal_entry_lines_entry")
+  items            items?          @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_item")
+  suppliers        Supplier?       @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_supplier")
+  warehouses       warehouses?     @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_warehouse")
+
+  @@unique([journal_entry_id, line_no], map: "uq_journal_entry_lines_entry_line")
+  @@index([bank_account_id], map: "fk_journal_entry_lines_bank_account")
+  @@index([contract_id], map: "fk_journal_entry_lines_contract")
+  @@index([cost_item_id], map: "fk_journal_entry_lines_cost_item")
+  @@index([customer_id], map: "fk_journal_entry_lines_customer")
+  @@index([employee_id], map: "fk_journal_entry_lines_employee")
+  @@index([item_id], map: "fk_journal_entry_lines_item")
+  @@index([supplier_id], map: "fk_journal_entry_lines_supplier")
+  @@index([warehouse_id], map: "fk_journal_entry_lines_warehouse")
+  @@index([account_id], map: "idx_journal_entry_lines_account")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ledger_balances {
+  id              String       @id @db.Char(36)
+  organization_id String       @db.Char(36)
+  period_year     Int
+  period_month    Int
+  account_id      String       @db.Char(36)
+  customer_id     String?      @db.Char(36)
+  supplier_id     String?      @db.Char(36)
+  warehouse_id    String?      @db.Char(36)
+  contract_id     String?      @db.Char(36)
+  opening_debit   Decimal      @default(0.00) @db.Decimal(18, 2)
+  opening_credit  Decimal      @default(0.00) @db.Decimal(18, 2)
+  period_debit    Decimal      @default(0.00) @db.Decimal(18, 2)
+  period_credit   Decimal      @default(0.00) @db.Decimal(18, 2)
+  closing_debit   Decimal      @default(0.00) @db.Decimal(18, 2)
+  closing_credit  Decimal      @default(0.00) @db.Decimal(18, 2)
+  calculated_at   DateTime
+  accounts        Account      @relation(fields: [account_id], references: [id], onUpdate: Restrict, map: "fk_ledger_balances_account")
+  contracts       contracts?   @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ledger_balances_contract")
+  customers       Customer?    @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ledger_balances_customer")
+  organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_ledger_balances_org")
+  suppliers       Supplier?    @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ledger_balances_supplier")
+  warehouses      warehouses?  @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ledger_balances_warehouse")
+
+  @@index([account_id], map: "fk_ledger_balances_account")
+  @@index([contract_id], map: "fk_ledger_balances_contract")
+  @@index([customer_id], map: "fk_ledger_balances_customer")
+  @@index([supplier_id], map: "fk_ledger_balances_supplier")
+  @@index([warehouse_id], map: "fk_ledger_balances_warehouse")
+  @@index([organization_id, period_year, period_month, account_id], map: "idx_ledger_balances_org_period_account")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model materialized_metrics {
+  id              String       @id @db.Char(36)
+  organization_id String       @db.Char(36)
+  metric_code     String       @db.VarChar(64)
+  metric_date     DateTime     @db.Date
+  dimension_key   String?      @db.VarChar(255)
+  metric_value    Decimal      @db.Decimal(18, 4)
+  created_at      DateTime
+  organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_materialized_metrics_org")
+
+  @@unique([organization_id, metric_code, metric_date, dimension_key], map: "uq_materialized_metrics_org_metric_date_dim")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model opening_balance_account_lines {
+  id                      String                  @id @db.Char(36)
+  batch_id                String                  @db.Char(36)
+  account_id              String                  @db.Char(36)
+  customer_id             String?                 @db.Char(36)
+  supplier_id             String?                 @db.Char(36)
+  employee_id             String?                 @db.Char(36)
+  contract_id             String?                 @db.Char(36)
+  warehouse_id            String?                 @db.Char(36)
+  item_id                 String?                 @db.Char(36)
+  debit_amount            Decimal                 @default(0.00) @db.Decimal(18, 2)
+  credit_amount           Decimal                 @default(0.00) @db.Decimal(18, 2)
+  memo                    String?                 @db.VarChar(500)
+  line_no                 Int
+  accounts                Account                 @relation(fields: [account_id], references: [id], onUpdate: Restrict, map: "fk_ob_account_lines_account")
+  opening_balance_batches opening_balance_batches @relation(fields: [batch_id], references: [id], onUpdate: Restrict, map: "fk_ob_account_lines_batch")
+  contracts               contracts?              @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_account_lines_contract")
+  customers               Customer?               @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_account_lines_customer")
+  employees               employees?              @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_account_lines_employee")
+  items                   items?                  @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_account_lines_item")
+  suppliers               Supplier?               @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_account_lines_supplier")
+  warehouses              warehouses?             @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_account_lines_warehouse")
+
+  @@unique([batch_id, line_no], map: "uq_opening_balance_account_lines_batch_line")
+  @@index([contract_id], map: "fk_ob_account_lines_contract")
+  @@index([customer_id], map: "fk_ob_account_lines_customer")
+  @@index([employee_id], map: "fk_ob_account_lines_employee")
+  @@index([item_id], map: "fk_ob_account_lines_item")
+  @@index([supplier_id], map: "fk_ob_account_lines_supplier")
+  @@index([warehouse_id], map: "fk_ob_account_lines_warehouse")
+  @@index([account_id], map: "idx_opening_balance_account_lines_account")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model opening_balance_batches {
+  id                               String                             @id @db.Char(36)
+  organization_id                  String                             @db.Char(36)
+  period_year                      Int
+  period_month                     Int?
+  status                           String                             @db.VarChar(20)
+  source_system_id                 String?                            @db.Char(36)
+  source_record_id                 String?                            @db.VarChar(128)
+  created_at                       DateTime
+  updated_at                       DateTime
+  opening_balance_account_lines    opening_balance_account_lines[]
+  organizations                    Organization                       @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_opening_balance_batches_org")
+  source_systems                   SourceSystem?                      @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_opening_balance_batches_source")
+  opening_balance_inventory_lines  opening_balance_inventory_lines[]
+  opening_balance_payable_lines    opening_balance_payable_lines[]
+  opening_balance_receivable_lines opening_balance_receivable_lines[]
+
+  @@unique([organization_id, period_year, period_month], map: "uq_opening_balance_batches_period")
+  @@index([source_system_id], map: "fk_opening_balance_batches_source")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model opening_balance_inventory_lines {
+  id                      String                  @id @db.Char(36)
+  batch_id                String                  @db.Char(36)
+  item_id                 String                  @db.Char(36)
+  warehouse_id            String                  @db.Char(36)
+  lot_no                  String?                 @db.VarChar(128)
+  quantity                Decimal                 @db.Decimal(18, 4)
+  unit_cost               Decimal                 @db.Decimal(18, 4)
+  amount                  Decimal                 @db.Decimal(18, 2)
+  opening_balance_batches opening_balance_batches @relation(fields: [batch_id], references: [id], onUpdate: Restrict, map: "fk_ob_inventory_batch")
+  items                   items                   @relation(fields: [item_id], references: [id], onUpdate: Restrict, map: "fk_ob_inventory_item")
+  warehouses              warehouses              @relation(fields: [warehouse_id], references: [id], onUpdate: Restrict, map: "fk_ob_inventory_warehouse")
+
+  @@index([batch_id], map: "fk_ob_inventory_batch")
+  @@index([warehouse_id], map: "fk_ob_inventory_warehouse")
+  @@index([item_id, warehouse_id], map: "idx_ob_inventory_lines_item_warehouse")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model opening_balance_payable_lines {
+  id                      String                  @id @db.Char(36)
+  batch_id                String                  @db.Char(36)
+  supplier_id             String                  @db.Char(36)
+  contract_id             String?                 @db.Char(36)
+  account_id              String                  @db.Char(36)
+  invoice_no              String?                 @db.VarChar(64)
+  due_date                DateTime?               @db.Date
+  amount                  Decimal                 @db.Decimal(18, 2)
+  memo                    String?                 @db.VarChar(500)
+  accounts                Account                 @relation(fields: [account_id], references: [id], onUpdate: Restrict, map: "fk_ob_payable_account")
+  opening_balance_batches opening_balance_batches @relation(fields: [batch_id], references: [id], onUpdate: Restrict, map: "fk_ob_payable_batch")
+  contracts               contracts?              @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_payable_contract")
+  suppliers               Supplier                @relation(fields: [supplier_id], references: [id], onUpdate: Restrict, map: "fk_ob_payable_supplier")
+
+  @@index([account_id], map: "fk_ob_payable_account")
+  @@index([batch_id], map: "fk_ob_payable_batch")
+  @@index([contract_id], map: "fk_ob_payable_contract")
+  @@index([supplier_id], map: "idx_ob_payable_lines_supplier")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model opening_balance_receivable_lines {
+  id                      String                  @id @db.Char(36)
+  batch_id                String                  @db.Char(36)
+  customer_id             String                  @db.Char(36)
+  contract_id             String?                 @db.Char(36)
+  account_id              String                  @db.Char(36)
+  invoice_no              String?                 @db.VarChar(64)
+  due_date                DateTime?               @db.Date
+  amount                  Decimal                 @db.Decimal(18, 2)
+  memo                    String?                 @db.VarChar(500)
+  accounts                Account                 @relation(fields: [account_id], references: [id], onUpdate: Restrict, map: "fk_ob_receivable_account")
+  opening_balance_batches opening_balance_batches @relation(fields: [batch_id], references: [id], onUpdate: Restrict, map: "fk_ob_receivable_batch")
+  contracts               contracts?              @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_receivable_contract")
+  customers               Customer                @relation(fields: [customer_id], references: [id], onUpdate: Restrict, map: "fk_ob_receivable_customer")
+
+  @@index([account_id], map: "fk_ob_receivable_account")
+  @@index([batch_id], map: "fk_ob_receivable_batch")
+  @@index([contract_id], map: "fk_ob_receivable_contract")
+  @@index([customer_id], map: "idx_ob_receivable_lines_customer")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model prepaid_allocations {
+  id                 String           @id @db.Char(36)
+  prepaid_expense_id String           @db.Char(36)
+  allocation_date    DateTime         @db.Date
+  amount             Decimal          @db.Decimal(18, 2)
+  journal_entry_id   String?          @db.Char(36)
+  journal_entries    journal_entries? @relation(fields: [journal_entry_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_prepaid_allocations_journal_entry")
+  prepaid_expenses   prepaid_expenses @relation(fields: [prepaid_expense_id], references: [id], onUpdate: Restrict, map: "fk_prepaid_allocations_prepaid")
+
+  @@index([journal_entry_id], map: "fk_prepaid_allocations_journal_entry")
+  @@index([prepaid_expense_id], map: "fk_prepaid_allocations_prepaid")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model prepaid_expenses {
+  id                  String                @id @db.Char(36)
+  organization_id     String                @db.Char(36)
+  prepaid_code        String                @db.VarChar(64)
+  prepaid_name        String                @db.VarChar(255)
+  supplier_id         String?               @db.Char(36)
+  start_date          DateTime              @db.Date
+  end_date            DateTime              @db.Date
+  original_amount     Decimal               @db.Decimal(18, 2)
+  allocated_amount    Decimal               @default(0.00) @db.Decimal(18, 2)
+  status              String                @db.VarChar(20)
+  prepaid_allocations prepaid_allocations[]
+  organizations       Organization          @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_prepaid_expenses_org")
+  suppliers           Supplier?             @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_prepaid_expenses_supplier")
+
+  @@unique([organization_id, prepaid_code], map: "uq_prepaid_expenses_org_code")
+  @@index([supplier_id], map: "fk_prepaid_expenses_supplier")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model report_snapshots {
+  id              String       @id @db.Char(36)
+  organization_id String       @db.Char(36)
+  report_code     String       @db.VarChar(64)
+  period_year     Int
+  period_month    Int?
+  snapshot_key    String       @db.VarChar(255)
+  payload         String       @db.LongText
+  generated_at    DateTime
+  generated_by    String?      @db.Char(36)
+  users           User?        @relation(fields: [generated_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_report_snapshots_generated_by")
+  organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_report_snapshots_org")
+
+  @@unique([organization_id, report_code, snapshot_key], map: "uq_report_snapshots_org_report_key")
+  @@index([generated_by], map: "fk_report_snapshots_generated_by")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model units_of_measure {
+  id              String       @id @db.Char(36)
+  organization_id String       @db.Char(36)
+  code            String       @db.VarChar(64)
+  name            String       @db.VarChar(255)
+  status          String       @db.VarChar(20)
+  created_at      DateTime
+  updated_at      DateTime
+  items           items[]
+  organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_uom_org")
+
+  @@unique([organization_id, code], map: "uq_uom_org_code")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model warehouses {
+  id                              String                            @id @db.Char(36)
+  organization_id                 String                            @db.Char(36)
+  code                            String                            @db.VarChar(64)
+  name                            String                            @db.VarChar(255)
+  location                        String?                           @db.VarChar(255)
+  status                          String                            @db.VarChar(20)
+  source_system_id                String?                           @db.Char(36)
+  source_record_id                String?                           @db.VarChar(128)
+  source_updated_at               DateTime?
+  source_checksum                 String?                           @db.VarChar(128)
+  created_at                      DateTime
+  updated_at                      DateTime
+  inventory_balances              inventory_balances[]
+  inventory_document_lines        inventory_document_lines[]
+  journal_entry_lines             journal_entry_lines[]
+  ledger_balances                 ledger_balances[]
+  opening_balance_account_lines   opening_balance_account_lines[]
+  opening_balance_inventory_lines opening_balance_inventory_lines[]
+  voucher_lines                   VoucherLine[]
+  organizations                   Organization                      @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_warehouses_org")
+  source_systems                  SourceSystem?                     @relation(fields: [source_system_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_warehouses_source")
+
+  @@unique([organization_id, code], map: "uq_warehouses_org_code")
+  @@index([source_system_id, source_record_id], map: "idx_warehouses_source")
+}

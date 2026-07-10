@@ -1,0 +1,23 @@
+{
+  "voucherType": "PT",
+  "paymentChannel": "cash",
+  "voucherNo": "PT-TEST-001",
+  "voucherDate": "2026-07-09",
+  "currency": "VND",
+  "cashBookCode": "TM-01",
+  "counterpartyCode": "KH-TEST",
+  "counterpartyName": "Khach Hang Test",
+  "referenceInvoiceNo": "INV-001",
+  "content": "Thu tien test M2",
+  "amount": 1500000,
+  "status": "draft",
+  "createdBy": "DEMO.TGD",
+  "lines": [
+    {
+      "debitAccount": "1111",
+      "creditAccount": "131",
+      "amount": 1500000,
+      "description": "Thu tien cong no"
+    }
+  ]
+}

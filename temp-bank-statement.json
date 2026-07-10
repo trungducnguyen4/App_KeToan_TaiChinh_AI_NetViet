@@ -1,0 +1,18 @@
+{
+  "statementNo": "VCB-TEST-001",
+  "bankAccountCode": "VCB-001",
+  "statementDate": "2026-07-09",
+  "openingBalance": 10000000,
+  "closingBalance": 12200000,
+  "sourceName": "Manual test import",
+  "lines": [
+    {
+      "transactionDate": "2026-07-09",
+      "referenceNo": "BC-TEST-001",
+      "description": "Thu tien KH-TEST",
+      "debitAmount": 0,
+      "creditAmount": 2200000,
+      "amount": 2200000
+    }
+  ]
+}
