@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeft,
   Bot,
   Calculator,
   Database,
@@ -15,6 +16,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   PieChart,
+  Printer,
   TrendingUp,
   Upload,
   WalletCards,
@@ -22,6 +24,7 @@ import {
 } from "lucide-react";
 
 const icons = {
+  ArrowLeft,
   BookOpen,
   Bot,
   Calculator,
@@ -31,6 +34,7 @@ const icons = {
   LayoutGrid,
   List,
   PieChart,
+  Printer,
   ReceiptText,
   Save,
   Search,

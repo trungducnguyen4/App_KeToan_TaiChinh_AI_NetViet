@@ -202,7 +202,10 @@ textarea {
   border-radius: 6px;
   padding: 2px 6px;
   margin: -2px -6px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  text-transform: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .breadcrumb-link:hover {
@@ -321,7 +324,11 @@ textarea {
   flex-direction: column;
   gap: 6px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 249, 247, 0.98)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.92),
+      rgba(245, 249, 247, 0.98)
+    ),
     var(--surface);
 }
 
@@ -391,21 +398,37 @@ textarea {
   height: 100%;
   width: 64%;
   border-radius: inherit;
-  background: linear-gradient(90deg, rgba(21, 147, 107, 0.7), rgba(15, 123, 191, 0.88));
+  background: linear-gradient(
+    90deg,
+    rgba(21, 147, 107, 0.7),
+    rgba(15, 123, 191, 0.88)
+  );
 }
 
 .kpi-card:nth-child(2) .kpi-track span,
 .kpi-card:nth-child(6) .kpi-track span {
-  background: linear-gradient(90deg, rgba(15, 123, 191, 0.72), rgba(103, 117, 111, 0.8));
+  background: linear-gradient(
+    90deg,
+    rgba(15, 123, 191, 0.72),
+    rgba(103, 117, 111, 0.8)
+  );
 }
 
 .kpi-card:nth-child(4) .kpi-track span,
 .kpi-card:nth-child(8) .kpi-track span {
-  background: linear-gradient(90deg, rgba(199, 125, 20, 0.72), rgba(21, 147, 107, 0.72));
+  background: linear-gradient(
+    90deg,
+    rgba(199, 125, 20, 0.72),
+    rgba(21, 147, 107, 0.72)
+  );
 }
 
 .kpi-card:nth-child(5) .kpi-track span {
-  background: linear-gradient(90deg, rgba(217, 75, 53, 0.72), rgba(199, 125, 20, 0.72));
+  background: linear-gradient(
+    90deg,
+    rgba(217, 75, 53, 0.72),
+    rgba(199, 125, 20, 0.72)
+  );
 }
 
 .kpi-delta {
@@ -462,6 +485,365 @@ textarea {
   cursor: pointer;
   background: #eefaf7;
   color: var(--ink);
+}
+
+.ledger-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.ledger-hero {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.ledger-actions {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
+.ledger-panel {
+  padding: 10px;
+}
+
+.ledger-toolbar {
+  display: grid;
+  grid-template-columns:
+    130px 130px 120px 120px minmax(160px, 1fr) minmax(160px, 1fr)
+    110px;
+  gap: 8px;
+  align-items: center;
+}
+
+.ledger-filter-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) minmax(180px, 280px);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ledger-table-wrap {
+  width: 100%;
+  overflow: auto;
+  margin-top: 10px;
+  border: 1px solid #9bc5e6;
+  border-radius: 6px;
+}
+
+.ledger-table {
+  min-width: 1120px;
+}
+
+.ledger-table th {
+  background: #cfe6f7;
+  border-right: 1px solid #9bc5e6;
+  color: #425466;
+  font-weight: 700;
+}
+
+.ledger-table th.opening-col {
+  background: #98f1a4;
+  color: #087f5b;
+}
+
+.ledger-table th.closing-col {
+  background: #fff59a;
+}
+
+.ledger-table td {
+  border-right: 1px solid #b9d7ef;
+}
+
+.ledger-table tbody tr:nth-child(even) td {
+  background: #d4e8f7;
+}
+
+.ledger-table tbody tr:hover td {
+  background: #e9f5fd;
+}
+
+.ledger-table .ledger-group-row td {
+  font-weight: 800;
+}
+
+.ledger-table .ledger-selected-row td {
+  background: #278ec8;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.ledger-table .ledger-total-row td {
+  background: #edf6ff;
+  color: #064cff;
+  font-weight: 800;
+}
+
+.check-col {
+  width: 42px;
+  text-align: center;
+}
+
+.amount-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ledger-detail-panel {
+  margin-top: 0;
+}
+
+.ledger-detail-title {
+  margin: 0 0 8px;
+}
+
+.ledger-view-link {
+  color: #3656a3;
+  font-weight: 700;
+}
+
+.ledger-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ledger-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ledger-pagination .field {
+  width: 72px;
+  padding-block: 7px;
+}
+
+.toolbar.ledger-report-toolbar {
+  grid-template-columns:
+    130px 130px 112px 112px minmax(150px, 1fr) minmax(150px, 1fr)
+    110px 88px 86px;
+  gap: 6px;
+}
+
+.ledger-report-panel {
+  padding: 10px;
+}
+
+.ledger-search-button {
+  width: 88px;
+  min-width: 88px;
+  justify-content: center;
+}
+
+.ledger-year-button {
+  justify-content: center;
+  min-width: 112px;
+}
+
+.ledger-year-button.is-active {
+  border-color: #1a73e8;
+  background: #1a73e8;
+  color: #fff;
+}
+
+.ledger-report-table {
+  min-width: 1040px;
+  border: 1px solid #b9d7ef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ledger-report-table th {
+  background: #d8ecfa;
+  color: #425466;
+  border-right: 1px solid #a8cfe9;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 9px 10px;
+}
+
+.ledger-report-table th.ledger-opening-col {
+  background: #98f1a4;
+  color: #087f5b;
+}
+
+.ledger-report-table th.ledger-closing-col {
+  background: #fff59a;
+}
+
+.ledger-report-table td {
+  border-right: 1px solid #d3e5f3;
+  padding: 9px 10px;
+  white-space: nowrap;
+}
+
+/* Ép màu chữ mặc định đồng nhất cho mọi ô/nội dung trong bảng
+   (kể cả bị bọc thẻ con lạ đang set màu riêng từ nguồn khác) */
+.ledger-report-table td,
+.ledger-report-table td * {
+  color: var(--ink) !important;
+}
+
+.ledger-report-table tbody tr:hover td {
+  background: #e3f1ec;
+}
+
+.ledger-summary-table tbody tr {
+  cursor: pointer;
+}
+
+.ledger-currency-block {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ledger-currency-block + .ledger-currency-block {
+  margin-top: 18px;
+}
+
+.ledger-currency-title {
+  color: var(--brand-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ledger-table-scroll {
+  border: 1px solid #9bc5e6;
+  border-radius: 8px;
+}
+
+.ledger-message {
+  margin-top: 10px;
+}
+
+.ledger-summary-table th:nth-child(n + 3),
+.ledger-summary-table td:nth-child(n + 3),
+.ledger-detail-table th:nth-child(4),
+.ledger-detail-table th:nth-child(5),
+.ledger-detail-table td:nth-child(4),
+.ledger-detail-table td:nth-child(5) {
+  text-align: right;
+}
+
+/* Hàng cha / không hạch toán trực tiếp: chỉ khác ở độ đậm chữ */
+/* .ledger-parent-row td {
+  font-weight: 800;
+} */
+
+/* Hàng đang chọn: màu brand, có !important để thắng rule ép màu ink ở trên */
+.ledger-active-row td,
+.ledger-active-row td *,
+.ledger-active-row:hover td {
+  background: rgba(21, 147, 107, 0.14);
+  color: var(--brand-strong) !important;
+  font-weight: 800;
+}
+
+/* Hàng Tổng cộng: phân biệt bằng viền trên */
+.ledger-total-row td {
+  background: var(--surface);
+  font-weight: 800;
+  border-top: 2px solid var(--brand);
+}
+
+.ledger-total-row:hover td {
+  background: var(--surface);
+}
+
+.ledger-detail-table {
+  min-width: 1280px;
+}
+
+.trial-balance-panel {
+  padding: 10px;
+}
+
+.toolbar.trial-balance-toolbar {
+  grid-template-columns:
+    126px 126px 112px 112px 170px 170px 100px 88px 88px 86px;
+  gap: 6px;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 0;
+  background: #c6e2f6;
+  border: 1px solid #9bc5e6;
+  border-radius: 8px 8px 0 0;
+}
+
+.trial-balance-toolbar .ledger-year-button {
+  width: 112px;
+  min-width: 112px;
+  max-width: 112px;
+}
+
+.trial-balance-search-button {
+  width: 88px;
+  min-width: 88px;
+  justify-content: center;
+}
+
+.trial-factor-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(220px, 280px);
+  gap: 8px;
+  padding: 8px;
+  background: #c6e2f6;
+  border-left: 1px solid #9bc5e6;
+  border-right: 1px solid #9bc5e6;
+}
+
+.trial-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  color: #425466;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.trial-balance-table {
+  min-width: 1180px;
+  border-radius: 0 0 8px 8px;
+}
+
+.trial-balance-table-scroll {
+  margin-top: 0;
+  border: 1px solid #9bc5e6;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.trial-balance-table th {
+  background: #cfe6f7;
+}
+
+.trial-balance-table th.trial-opening-col {
+  background: #98f1a4;
+  color: #087f5b;
+}
+
+.trial-balance-table th.trial-closing-col {
+  background: #fff59a;
+}
+
+.trial-balance-table th:nth-child(n + 3),
+.trial-balance-table td:nth-child(n + 3) {
+  text-align: right;
+}
+
+.trial-balance-table tbody tr {
+  cursor: pointer;
+}
+
+.trial-balance-total-row td {
+  color: #ff0000;
+  font-weight: 800;
+  background: #f7fbff;
 }
 
 .report-card:hover {
@@ -566,6 +948,12 @@ textarea {
 .tax-toolbar .field {
   width: 165px;
   flex: 0 0 auto;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .toolbar-actions-right {
@@ -674,7 +1062,6 @@ textarea {
 
 .panel {
   padding: 16px;
-  overflow: hidden;
 }
 
 .toolbar {
@@ -795,7 +1182,12 @@ textarea {
   .module-grid,
   .report-grid,
   .split-grid,
-  .hero-panel {
+  .hero-panel,
+  .ledger-hero,
+  .ledger-toolbar,
+  .ledger-filter-row,
+  .toolbar.trial-balance-toolbar,
+  .trial-factor-row {
     grid-template-columns: 1fr;
   }
 
@@ -827,10 +1219,6 @@ textarea {
 
   .data-table {
     min-width: 760px;
-  }
-
-  .table-scroll {
-    overflow-x: auto;
   }
 
   .toolbar {

@@ -17,7 +17,7 @@ export class RbacGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<{ user?: { roles?: string[] } }>();
-    const roles = request.user?.roles ?? ["admin"];
+    const roles = request.user?.roles ?? [];
     return requiredRoles.some((role) => roles.includes(role));
   }
 }
