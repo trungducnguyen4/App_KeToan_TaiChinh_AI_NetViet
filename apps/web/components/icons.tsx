@@ -37,7 +37,6 @@ const icons = {
   ArrowLeft,
   BookOpen,
   Bot,
-  ArrowLeft,
   ArrowLeftRight,
   BadgeDollarSign,
   Calculator,

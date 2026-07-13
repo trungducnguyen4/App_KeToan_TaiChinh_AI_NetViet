@@ -94,6 +94,17 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
               </a>
             ))}
 
+            <a className="enterprise-feature-link" href="/modules/accounting/journal-vouchers">
+              <span className="enterprise-feature-copy">
+                <span className="enterprise-feature-head">
+                  <strong>Phiếu hạch toán</strong>
+                  <span className="enterprise-feature-badge">NEW</span>
+                </span>
+                <span className="enterprise-feature-meta">Tạo mới, theo dõi bút toán và kết chuyển trong khối Sổ cái &amp; hạch toán.</span>
+              </span>
+              <AppIcon name="FileText" />
+            </a>
+
             <div className="enterprise-copilot" aria-label="AiCopilot">
               <span className="enterprise-copilot-badge">
                 <AppIcon name="Bot" size={16} />

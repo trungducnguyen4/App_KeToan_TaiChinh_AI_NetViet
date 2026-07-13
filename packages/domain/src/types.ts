@@ -73,16 +73,23 @@ export interface VoucherRecord {
   currency: string;
   paymentChannel?: PaymentChannel;
   bankAccountCode?: string;
+  bankAccountName?: string;
   cashBookCode?: string;
   matchedAmount?: number;
   reconciliationStatus?: MatchingStatus;
   referenceInvoiceNo?: string;
+  sourceVoucherNo?: string;
+  referenceNo?: string;
   counterpartyCode?: string;
   counterpartyName?: string;
+  counterpartyAddress?: string;
+  projectName?: string;
   content: string;
   amount: number;
   status: VoucherStatus;
   createdBy: string;
+  createdAt?: string;
+  updatedBy?: string;
   updatedAt: string;
   lines: JournalLine[];
 }
