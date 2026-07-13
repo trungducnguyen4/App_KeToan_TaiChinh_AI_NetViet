@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { IsArray, IsDateString, IsIn, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 import { Roles } from "../auth/roles.decorator";
+import { AppRole } from "../auth/roles.constant";
 import { WorkitService } from "./workit.service";
 
 class JournalLineDto {
@@ -80,7 +81,7 @@ export class VouchersController {
   }
 
   @Post()
-  @Roles("admin", "accountant")
+  @Roles(AppRole.ChiefAccountant, AppRole.Accountant)
   create(@Body() input: CreateVoucherDto) {
     return this.workit.createVoucher(input);
   }

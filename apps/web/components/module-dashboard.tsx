@@ -18,9 +18,9 @@ import { AppIcon } from "./icons";
 import { StatusPill } from "./status-pill";
 
 const accountingReportItems = [
-  { title: "Sổ cái tài khoản", icon: "BookOpen", tone: "green" },
-  { title: "Bảng cân đối tài khoản", icon: "Calculator", tone: "blue" },
-  { title: "Nhật ký chung", icon: "FileText", tone: "blue" },
+  { title: "Sổ cái tài khoản", icon: "BookOpen", tone: "green", route: "/modules/accounting/report/account-ledger" },
+  { title: "Bảng cân đối tài khoản", icon: "Calculator", tone: "blue", route: "/modules/accounting/report/account-trial-balance" },
+  { title: "Nhật ký chung", icon: "FileText", tone: "blue", route: "/modules/accounting/report/general-journal" },
   { title: "Bảng kê chứng từ", icon: "ReceiptText", tone: "green" },
   { title: "Báo cáo thuế", icon: "ShieldCheck", tone: "amber" },
   { title: "Bảng cân đối kế toán", icon: "LayoutGrid", tone: "blue" },
@@ -241,7 +241,7 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
           </div>
           <div className="report-grid">
             {accountingReportItems.map((item) => (
-              <button className={`report-card tone-${item.tone}`} key={item.title} type="button">
+              <a className={`report-card tone-${item.tone}`} href={"route" in item ? item.route : "#"} key={item.title}>
                 <span className="report-icon">
                   <AppIcon name={item.icon} />
                 </span>
@@ -249,7 +249,7 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
                   <strong>{item.title}</strong>
                   <span>Mở mẫu xem nhanh, map dữ liệu và xuất báo cáo.</span>
                 </span>
-              </button>
+              </a>
             ))}
           </div>
         </>

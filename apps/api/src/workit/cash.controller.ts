@@ -11,6 +11,7 @@ import {
   ValidateNested
 } from "class-validator";
 import { Roles } from "../auth/roles.decorator";
+import { AppRole } from "../auth/roles.constant";
 import { WorkitService } from "./workit.service";
 
 class CashVoucherLineDto {
@@ -207,13 +208,13 @@ export class CashController {
   }
 
   @Post("vouchers")
-  @Roles("admin", "accountant", "cashier")
+  @Roles(AppRole.ChiefAccountant, AppRole.Accountant)
   createVoucher(@Body() input: CreateCashVoucherDto) {
     return this.workit.createCashVoucher(input);
   }
 
   @Patch("vouchers/:id")
-  @Roles("admin", "accountant", "cashier")
+  @Roles(AppRole.ChiefAccountant, AppRole.Accountant)
   updateVoucher(@Param("id") id: string, @Body() input: UpdateCashVoucherDto) {
     return this.workit.updateCashVoucher(id, input);
   }
@@ -224,7 +225,7 @@ export class CashController {
   }
 
   @Post("bank-statements/import")
-  @Roles("admin", "accountant", "cashier")
+  @Roles(AppRole.ChiefAccountant, AppRole.Accountant)
   importStatement(@Body() input: ImportBankStatementDto) {
     return this.workit.importBankStatement(input);
   }
@@ -235,13 +236,13 @@ export class CashController {
   }
 
   @Post("reconciliation/match")
-  @Roles("admin", "accountant")
+  @Roles(AppRole.ChiefAccountant, AppRole.Accountant)
   match(@Body() input: MatchDto) {
     return this.workit.matchReconciliation(input);
   }
 
   @Post("reconciliation/unmatch")
-  @Roles("admin", "accountant")
+  @Roles(AppRole.ChiefAccountant, AppRole.Accountant)
   unmatch(@Body() input: UnmatchDto) {
     return this.workit.unmatchReconciliation(input);
   }

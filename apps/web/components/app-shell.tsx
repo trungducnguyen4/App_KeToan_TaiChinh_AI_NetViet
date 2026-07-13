@@ -1,7 +1,16 @@
 import { workitModules } from "@domain/index";
+import { useRouter } from "next/router";
+import { clearSession } from "../lib/auth";
 import { AppIcon } from "./icons";
 
 export function AppShell({ children, activeModule = "accounting" }: { children: React.ReactNode; activeModule?: string }) {
+  const router = useRouter();
+
+  function logout() {
+    clearSession();
+    void router.replace("/login");
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -58,6 +67,10 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
           <div className="topbar-actions">
             <span>Đồng bộ Workit chỉ đọc</span>
             <span className="avatar">TG</span>
+            <button className="topbar-logout" type="button" onClick={logout} title="Đăng xuất">
+              <AppIcon name="LogOut" size={16} />
+              <span>Đăng xuất</span>
+            </button>
           </div>
         </header>
         {children}
