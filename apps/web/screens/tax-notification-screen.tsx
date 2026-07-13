@@ -59,25 +59,30 @@ export default function TaxNotificationScreen() {
           </div>
         </section>
 
-        <section className="panel table-scroll tax-panel">
-          <div className="tax-toolbar">
+        <div className="section-title">
+          <h2>Danh sách thông báo thuế</h2>
+          <div className="topbar-actions">
+            <button className="button" type="button">Xóa</button>
+            <button className="button primary" type="button">Export Excel</button>
+            <button className="button" type="button">Import</button>
+            <button className="button" type="button">Tìm</button>
+          </div>
+        </div>
+
+        <section className="panel table-scroll">
+          <div className="toolbar">
             <input className="field" defaultValue="01/07/2026" aria-label="Từ ngày" />
             <input className="field" defaultValue="10/07/2026" aria-label="Đến ngày" />
-            <div className="toolbar-actions-right">
-              <button className="button button-sm" type="button">Xóa</button>
-              <button className="button primary button-sm" type="button">Export Excel</button>
-              <button className="button button-sm" type="button">Import</button>
-              <button className="button button-sm" type="button">Tìm</button>
-            </div>
+            <span className="module-meta">1 thông báo mẫu</span>
+            <input className="search" placeholder="Tìm mã CQT, người nhận, số thông báo..." aria-label="Tìm kiếm" />
+            <button className="button primary" type="button">
+              <AppIcon name="Search" />
+              Tìm
+            </button>
           </div>
 
-          <table className="data-table tax-table">
+          <table className="data-table">
             <thead>
-              <tr>
-                <th colSpan={5}>Thông tin cơ quan thuế</th>
-                <th colSpan={3}>Thông tin người nhận</th>
-                <th colSpan={7}>Thông tin thông báo</th>
-              </tr>
               <tr>
                 {taxNotificationScreen.listColumns.map((column) => (
                   <th key={column}>{column}</th>

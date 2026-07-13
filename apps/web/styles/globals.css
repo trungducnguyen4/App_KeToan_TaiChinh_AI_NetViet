@@ -294,6 +294,128 @@ textarea {
   line-height: 1.5;
 }
 
+.pending-topbar {
+  height: 44px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+
+.pending-back {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d6dfe0;
+  border-radius: 6px;
+  background: #f7f8f7;
+  color: #8a8f90;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.pending-chip {
+  background: #45c676;
+  color: white;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pending-board {
+  border: 1px solid #cadde9;
+  border-radius: 8px;
+  background: #f6fbff;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.pending-board-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #d8e8f6;
+  color: #f36d21;
+  font-size: 13px;
+  font-weight: 800;
+  border-bottom: 1px solid #b7cfe2;
+}
+
+.pending-board-title strong {
+  display: inline-block;
+}
+
+.pending-table-shell {
+  overflow: auto;
+  background: white;
+  border-bottom: 1px solid #b7cfe2;
+  min-height: 320px;
+}
+
+.pending-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  background: #eef5f2;
+  border-bottom: 1px solid var(--line);
+  color: #4b5c55;
+  font-size: 12px;
+}
+
+.pending-pager {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pending-pager button,
+.pending-pager select {
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: white;
+  color: #4b5c55;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.pending-pager button {
+  min-width: 24px;
+  padding: 0 6px;
+}
+
+.pending-page-current {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: white;
+  font-weight: 800;
+  display: inline-grid;
+  place-items: center;
+}
+
+.pending-empty {
+  color: var(--muted);
+}
+
+.pending-detail-shell {
+  overflow: auto;
+  background: white;
+  min-height: 190px;
+}
+
 .kpi-grid,
 .module-grid,
 .report-grid {
@@ -325,9 +447,95 @@ textarea {
     var(--surface);
 }
 
+.module-card-shell {
+  position: relative;
+}
+
+.module-card--popover {
+  width: 100%;
+  appearance: none;
+  cursor: pointer;
+  text-align: left;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.module-card-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+.module-card-caret {
+  color: var(--muted);
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+
+.module-popover {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: min(280px, calc(100vw - 48px));
+  border-radius: 10px;
+  padding: 8px 0;
+  background: #2f3748;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px rgba(13, 22, 32, 0.24);
+  z-index: 20;
+}
+
+.module-popover-item {
+  display: block;
+  padding: 11px 14px;
+  color: #e6ebf5;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.module-popover-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.kpi-grid--compact {
+  gap: 10px;
+}
+
+.kpi-card--compact {
+  min-height: 92px;
+  padding: 10px 12px;
+  gap: 4px;
+}
+
+.kpi-card--compact .kpi-accent {
+  height: 3px;
+}
+
+.kpi-card--compact .kpi-header {
+  gap: 8px;
+}
+
+.kpi-card--compact .kpi-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+}
+
+.kpi-card--compact .kpi-index {
+  font-size: 10px;
+}
+
 .kpi-label {
   color: var(--muted);
   font-size: 13px;
+}
+
+.kpi-card--compact .kpi-label {
+  font-size: 11px;
 }
 
 .kpi-header {
@@ -378,12 +586,22 @@ textarea {
   margin-top: 2px;
 }
 
+.kpi-card--compact .kpi-value {
+  font-size: 18px;
+  margin-top: 0;
+}
+
 .kpi-track {
   height: 5px;
   border-radius: 999px;
   overflow: hidden;
   background: rgba(103, 117, 111, 0.12);
   margin-top: 2px;
+}
+
+.kpi-card--compact .kpi-track {
+  height: 3px;
+  margin-top: 0;
 }
 
 .kpi-track span {
@@ -412,6 +630,11 @@ textarea {
   color: var(--muted);
   font-size: 12px;
   margin-top: auto;
+}
+
+.kpi-card--compact .kpi-delta {
+  font-size: 10px;
+  line-height: 1.25;
 }
 
 .section-title {
@@ -551,68 +774,8 @@ textarea {
   font-size: 13px;
 }
 
-.tax-panel {
-  padding: 12px;
-}
-
-.tax-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.tax-toolbar .field {
-  width: 165px;
-  flex: 0 0 auto;
-}
-
-.toolbar-actions-right {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  flex-wrap: nowrap;
-  margin-left: auto;
-}
-
-.tax-toolbar .field,
-.tax-toolbar .button-sm {
-  align-items: center;
-}
-
 .invoice-filter-grid {
   grid-template-columns: 180px 180px minmax(0, 1fr);
-}
-
-.tax-table thead tr:first-child th {
-  background: #d9ecf9;
-  color: #5b7287;
-  font-size: 12px;
-  text-align: center;
-  padding: 7px 10px;
-}
-
-.tax-table thead tr:nth-child(2) th {
-  background: #c2dcf3;
-  color: #3c5f7d;
-  font-weight: 700;
-  font-size: 12px;
-  padding: 7px 10px;
-}
-
-.tax-table td {
-  white-space: nowrap;
-  padding: 9px 10px;
-  font-size: 12px;
-}
-
-.tax-table th {
-  font-size: 12px;
-}
-
-.tax-table tbody tr:hover {
-  background: #f4f9fd;
 }
 
 .section-title h2,
@@ -635,6 +798,51 @@ textarea {
 .topbar-actions,
 .attachment-box {
   letter-spacing: 0;
+}
+
+/* Canonical accounting table vibe.
+ * Future table screens should prefer `.data-table` inside `section.panel.table-scroll`
+ * so they inherit the same look automatically.
+ */
+.panel.table-scroll > .data-table,
+.pending-table-shell > .data-table,
+.pending-detail-shell > .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.panel.table-scroll > .data-table thead th,
+.pending-table-shell > .data-table thead th,
+.pending-detail-shell > .data-table thead th {
+  text-align: left;
+  color: #4b5c55;
+  background: #edf5f2;
+  border-bottom: 1px solid var(--line);
+  padding: 11px;
+  white-space: nowrap;
+}
+
+.panel.table-scroll > .data-table td,
+.pending-table-shell > .data-table td,
+.pending-detail-shell > .data-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 11px;
+  vertical-align: top;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.panel.table-scroll > .data-table tbody tr:nth-child(even),
+.pending-table-shell > .data-table tbody tr:nth-child(even),
+.pending-detail-shell > .data-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+
+.panel.table-scroll > .data-table tbody tr:hover,
+.pending-table-shell > .data-table tbody tr:hover,
+.pending-detail-shell > .data-table tbody tr:hover {
+  background: rgba(21, 147, 107, 0.04);
 }
 
 .status-pill,
@@ -693,27 +901,6 @@ textarea {
   padding: 10px 11px;
   color: var(--ink);
   min-width: 0;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.data-table th {
-  text-align: left;
-  color: #4b5c55;
-  background: #edf5f2;
-  border-bottom: 1px solid var(--line);
-  padding: 11px;
-  white-space: nowrap;
-}
-
-.data-table td {
-  border-bottom: 1px solid var(--line);
-  padding: 11px;
-  vertical-align: top;
 }
 
 .split-grid {
@@ -797,6 +984,17 @@ textarea {
   .split-grid,
   .hero-panel {
     grid-template-columns: 1fr;
+  }
+
+  .module-popover {
+    left: 0;
+    transform: none;
+    width: 100%;
+  }
+
+  .pending-table-shell > .data-table,
+  .pending-detail-shell > .data-table {
+    min-width: 1240px;
   }
 
   .toolbar {
