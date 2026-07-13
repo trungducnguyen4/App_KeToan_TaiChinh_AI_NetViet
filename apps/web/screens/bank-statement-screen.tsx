@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { bankStatementScreen, bankStatements } from "@domain/index";
 import type { BankStatementRecord } from "@domain/types";
 import { AppShell } from "../components/app-shell";
@@ -27,22 +29,22 @@ type StatementFormState = {
 
 export default function BankStatementScreen() {
   const [statements, setStatements] = useState<BankStatementRecord[]>(bankStatements);
+  const [selectedStatementId, setSelectedStatementId] = useState(bankStatements[0]?.id ?? "");
   const [form, setForm] = useState<StatementFormState>({
     bankAccountCode: "VCB-001",
     statementNo: `ST-${Date.now()}`,
     statementDate: "2026-07-09",
     openingBalance: "10000000",
     closingBalance: "12000000",
-    sourceName: "Manual import",
+    sourceName: "Import thủ công",
     transactionDate: "2026-07-09",
     referenceNo: "",
-    description: "Dong sao ke moi",
+    description: "Dòng sao kê mới",
     debitAmount: "0",
     creditAmount: "1000000"
   });
   const [feedback, setFeedback] = useState("");
   const [isImporting, setIsImporting] = useState(false);
-  const statement = statements[0];
 
   useEffect(() => {
     let active = true;
@@ -50,6 +52,7 @@ export default function BankStatementScreen() {
       .then((data) => {
         if (active) {
           setStatements(data);
+          setSelectedStatementId((current) => current || data[0]?.id || "");
         }
       })
       .catch(() => undefined);
@@ -58,6 +61,11 @@ export default function BankStatementScreen() {
       active = false;
     };
   }, []);
+
+  const selectedStatement = useMemo(
+    () => statements.find((statement) => statement.id === selectedStatementId) ?? statements[0],
+    [selectedStatementId, statements]
+  );
 
   async function handleImportStatement() {
     setIsImporting(true);
@@ -84,15 +92,16 @@ export default function BankStatementScreen() {
       });
 
       setStatements((current) => [created, ...current]);
-      setFeedback(`Da import ${created.statementNo}`);
+      setSelectedStatementId(created.id);
+      setFeedback(`Đã import ${created.statementNo}`);
       setForm((current) => ({
         ...current,
         statementNo: `ST-${Date.now()}`,
         referenceNo: "",
-        description: "Dong sao ke moi"
+        description: "Dòng sao kê mới"
       }));
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Import sao ke that bai");
+      setFeedback(error instanceof Error ? error.message : "Import sao kê thất bại");
     } finally {
       setIsImporting(false);
     }
@@ -102,9 +111,9 @@ export default function BankStatementScreen() {
     <AppShell activeModule="cash">
       <div className="workspace">
         <div className="breadcrumb">
-          <span>Trang chu</span>
+          <span>Trang chủ</span>
           <span>/</span>
-          <span>So quy &amp; Ngan hang</span>
+          <span>Sổ quỹ &amp; Ngân hàng</span>
           <span>/</span>
           <span>{bankStatementScreen.title}</span>
         </div>
@@ -116,19 +125,21 @@ export default function BankStatementScreen() {
             <p className="hero-copy">{bankStatementScreen.description}</p>
           </div>
           <div className="sync-panel">
-            <strong>{statements.length} dot import</strong>
-            <span>Import file, luu header va tung line de phuc vu matching, raw payload va audit.</span>
+            <strong>{statements.length} đợt import</strong>
+            <span>Import file, lưu header và từng dòng để phục vụ matching, raw payload và audit.</span>
           </div>
         </section>
 
         <div className="section-title">
-          <h2>Import preview</h2>
+          <h2>Nhập sao kê</h2>
           <div className="topbar-actions">
             <button className="button primary" type="button" onClick={handleImportStatement} disabled={isImporting}>
               <AppIcon name="Upload" />
-              {isImporting ? "Dang import..." : "Import sao ke"}
+              {isImporting ? "Đang import..." : "Import sao kê"}
             </button>
-            <button className="button" type="button">Tai mau CSV</button>
+            <button className="button" type="button">
+              Tải mẫu CSV
+            </button>
           </div>
         </div>
 
@@ -136,7 +147,10 @@ export default function BankStatementScreen() {
           <form className="form-grid">
             {bankStatementScreen.fields.map((field) => (
               <label className={`form-field ${field.width ?? "md"}`} key={field.key}>
-                <span>{field.label}{field.required ? " *" : ""}</span>
+                <span>
+                  {field.label}
+                  {field.required ? " *" : ""}
+                </span>
                 <input
                   className="field"
                   type={field.type === "date" ? "date" : "text"}
@@ -146,34 +160,34 @@ export default function BankStatementScreen() {
               </label>
             ))}
             <label className="form-field md">
-              <span>So sao ke *</span>
+              <span>Số sao kê *</span>
               <input className="field" value={form.statementNo} onChange={(event) => setForm((current) => ({ ...current, statementNo: event.target.value }))} />
             </label>
             <label className="form-field md">
-              <span>So du dau *</span>
+              <span>Số dư đầu *</span>
               <input className="field" value={form.openingBalance} onChange={(event) => setForm((current) => ({ ...current, openingBalance: event.target.value }))} />
             </label>
             <label className="form-field md">
-              <span>So du cuoi *</span>
+              <span>Số dư cuối *</span>
               <input className="field" value={form.closingBalance} onChange={(event) => setForm((current) => ({ ...current, closingBalance: event.target.value }))} />
             </label>
           </form>
 
           <div className="section-title" style={{ marginTop: 20 }}>
-            <h2>Dong sao ke se import</h2>
-            <span className="module-meta">1 dong / 1 lan import nhanh</span>
+            <h2>Dòng giao dịch trong sao kê</h2>
+            <span className="module-meta">1 dòng = 1 giao dịch trong file sao kê</span>
           </div>
           <form className="form-grid">
             <label className="form-field md">
-              <span>Ngay giao dich *</span>
+              <span>Ngày giao dịch *</span>
               <input className="field" type="date" value={form.transactionDate} onChange={(event) => setForm((current) => ({ ...current, transactionDate: event.target.value }))} />
             </label>
             <label className="form-field md">
-              <span>Reference</span>
+              <span>Tham chiếu</span>
               <input className="field" value={form.referenceNo} onChange={(event) => setForm((current) => ({ ...current, referenceNo: event.target.value }))} />
             </label>
             <label className="form-field xl">
-              <span>Dien giai *</span>
+              <span>Diễn giải *</span>
               <input className="field" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
             </label>
             <label className="form-field md">
@@ -188,15 +202,15 @@ export default function BankStatementScreen() {
 
           {feedback ? (
             <div className="attachment-box" style={{ marginTop: 16 }}>
-              <strong>Trang thai</strong>
+              <strong>Trạng thái</strong>
               <p>{feedback}</p>
             </div>
           ) : null}
         </section>
 
         <div className="section-title">
-          <h2>Danh sach sao ke</h2>
-          <span className="module-meta">Bank statements + lines</span>
+          <h2>Danh sách sao kê</h2>
+          <span className="module-meta">Mỗi dòng là một file/đợt import sao kê riêng</span>
         </div>
         <section className="panel table-scroll">
           <table className="data-table">
@@ -209,7 +223,7 @@ export default function BankStatementScreen() {
             </thead>
             <tbody>
               {statements.map((item) => (
-                <tr key={item.id}>
+                <tr key={item.id} onClick={() => setSelectedStatementId(item.id)} style={{ cursor: "pointer" }}>
                   <td>{item.statementNo}</td>
                   <td>{item.bankAccountCode}</td>
                   <td>{item.statementDate}</td>
@@ -223,20 +237,22 @@ export default function BankStatementScreen() {
           </table>
         </section>
 
-        {statement ? (
+        {selectedStatement ? (
           <>
             <div className="section-title">
-              <h2>Statement lines</h2>
-              <span className="module-meta">{statement.lineCount} dong</span>
+              <h2>Dòng giao dịch của sao kê đã chọn</h2>
+              <span className="module-meta">
+                {selectedStatement.statementNo} · {selectedStatement.lineCount} dòng
+              </span>
             </div>
             <section className="panel table-scroll">
               <table className="data-table">
                 <thead>
                   <tr>
                     <th>Line</th>
-                    <th>Ngay GD</th>
-                    <th>Dien giai</th>
-                    <th>Ref</th>
+                    <th>Ngày GD</th>
+                    <th>Diễn giải</th>
+                    <th>Tham chiếu</th>
                     <th>Debit</th>
                     <th>Credit</th>
                     <th>Running</th>
@@ -244,7 +260,7 @@ export default function BankStatementScreen() {
                   </tr>
                 </thead>
                 <tbody>
-                  {statement.lines.map((line) => (
+                  {selectedStatement.lines.map((line) => (
                     <tr key={line.id}>
                       <td>{line.lineNo}</td>
                       <td>{line.transactionDate}</td>
@@ -263,7 +279,7 @@ export default function BankStatementScreen() {
         ) : (
           <section className="panel">
             <div className="attachment-box">
-              Chua co sao ke trong database. Su dung form import ben tren de nap du lieu vao M2.
+              Chưa có sao kê trong database. Sử dụng form import bên trên để nạp dữ liệu vào M2.
             </div>
           </section>
         )}

@@ -3,6 +3,44 @@ import { useRouter } from "next/router";
 import { clearSession } from "../lib/auth";
 import { AppIcon } from "./icons";
 
+const enterpriseWorkspaces = [
+  {
+    title: "Danh mục & đồng bộ",
+    description: "Master data, mapping, quy tắc đồng bộ và chuẩn hóa danh mục.",
+    href: "/modules/master-data",
+    icon: "Database",
+    tone: "green"
+  },
+  {
+    title: "Sổ quỹ & ngân hàng",
+    description: "Thu chi, sao kê, bút toán ngân hàng và đối chiếu dòng tiền.",
+    href: "/modules/cash",
+    icon: "WalletCards",
+    tone: "blue"
+  },
+  {
+    title: "Công nợ",
+    description: "Phải thu, phải trả, tuổi nợ và hạn mức theo dõi rủi ro.",
+    href: "/modules/receivables",
+    icon: "ReceiptText",
+    tone: "amber"
+  },
+  {
+    title: "Sổ cái & hạch toán",
+    description: "Phiếu hạch toán, bút toán, kết chuyển và khung sổ cái.",
+    href: "/modules/accounting",
+    icon: "BookOpen",
+    tone: "green"
+  },
+  {
+    title: "Báo cáo và Dashboard",
+    description: "Tổng quan vận hành, báo cáo quản trị và phân tích số liệu.",
+    href: "/modules/accounting?view=reports",
+    icon: "PieChart",
+    tone: "blue"
+  }
+] as const;
+
 export function AppShell({ children, activeModule = "accounting" }: { children: React.ReactNode; activeModule?: string }) {
   const router = useRouter();
 
@@ -39,6 +77,32 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
               </span>
             </a>
           ))}
+        </nav>
+
+        <nav className="nav-section nav-section--enterprise" aria-label="Quản trị doanh nghiệp mở rộng">
+          <p className="nav-section-title">Quản trị doanh nghiệp (New)</p>
+          <div className="enterprise-stack">
+            {enterpriseWorkspaces.map((item) => (
+              <a className="enterprise-link" href={item.href} key={item.title}>
+                <span className={`enterprise-icon tone-${item.tone}`}>
+                  <AppIcon name={item.icon} />
+                </span>
+                <span className="enterprise-copy">
+                  <span className="enterprise-name">{item.title}</span>
+                  <span className="enterprise-meta">{item.description}</span>
+                </span>
+              </a>
+            ))}
+
+            <div className="enterprise-copilot" aria-label="AiCopilot">
+              <span className="enterprise-copilot-badge">
+                <AppIcon name="Bot" size={16} />
+                AiCopilot
+              </span>
+              <strong>Lớp phủ thông minh</strong>
+              <p>Gợi ý, đối chiếu và điều hướng trên toàn bộ các khối nghiệp vụ bên dưới.</p>
+            </div>
+          </div>
         </nav>
 
         <nav className="nav-section" aria-label="Hệ thống và danh mục">
