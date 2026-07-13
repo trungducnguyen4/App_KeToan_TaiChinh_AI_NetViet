@@ -1,5 +1,5 @@
-import CashVoucherScreen from "../../../screens/cash-voucher-screen";
+import { CashPaymentListScreen } from "../../../screens/cash-payment-screen";
 
 export default function CashPaymentsPage() {
-  return <CashVoucherScreen voucherType="PC" />;
+  return <CashPaymentListScreen />;
 }
