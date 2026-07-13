@@ -35,7 +35,7 @@ const enterpriseWorkspaces = [
   {
     title: "Báo cáo và Dashboard",
     description: "Tổng quan vận hành, báo cáo quản trị và phân tích số liệu.",
-    href: "/modules/accounting?view=reports",
+    href: "/modules/reports",
     icon: "PieChart",
     tone: "blue"
   }
