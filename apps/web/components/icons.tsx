@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowRight,
   ArrowLeft,
   Bot,
   Calculator,
@@ -10,6 +11,8 @@ import {
   FileText,
   LayoutGrid,
   List,
+  LockKeyhole,
+  LogOut,
   ReceiptText,
   Save,
   Search,
@@ -17,13 +20,16 @@ import {
   ShoppingCart,
   PieChart,
   Printer,
+  RefreshCw,
   TrendingUp,
   Upload,
+  User,
   WalletCards,
   Warehouse
 } from "lucide-react";
 
 const icons = {
+  ArrowRight,
   ArrowLeft,
   BookOpen,
   Bot,
@@ -33,8 +39,11 @@ const icons = {
   FileText,
   LayoutGrid,
   List,
+  LockKeyhole,
+  LogOut,
   PieChart,
   Printer,
+  RefreshCw,
   ReceiptText,
   Save,
   Search,
@@ -42,6 +51,7 @@ const icons = {
   ShoppingCart,
   TrendingUp,
   Upload,
+  User,
   WalletCards,
   Warehouse
 };

@@ -17,7 +17,7 @@ import { StatusPill } from "./status-pill";
 const accountingReportItems = [
   { title: "Sổ cái tài khoản", icon: "BookOpen", tone: "green", route: "/modules/accounting/report/account-ledger" },
   { title: "Bảng cân đối tài khoản", icon: "Calculator", tone: "blue", route: "/modules/accounting/report/account-trial-balance" },
-  { title: "Nhật ký chung", icon: "FileText", tone: "blue" },
+  { title: "Nhật ký chung", icon: "FileText", tone: "blue", route: "/modules/accounting/report/general-journal" },
   { title: "Bảng kê chứng từ", icon: "ReceiptText", tone: "green" },
   { title: "Báo cáo thuế", icon: "ShieldCheck", tone: "amber" },
   { title: "Bảng cân đối kế toán", icon: "LayoutGrid", tone: "blue" },
