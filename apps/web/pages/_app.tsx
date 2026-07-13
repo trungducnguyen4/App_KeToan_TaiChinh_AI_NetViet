@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { AppProps } from "next/app";
 import { useRouter } from "next/router";
+import { AiChatWidget } from "../components/ai-chat-widget";
 import { getAccessToken } from "../lib/auth";
 import "../styles/globals.css";
 
@@ -30,5 +31,10 @@ export default function App({ Component, pageProps }: AppProps) {
     return <div className="auth-loading"><span className="auth-loading-mark">W</span></div>;
   }
 
-  return <Component {...pageProps} />;
+  return (
+    <>
+      <Component {...pageProps} />
+      {router.pathname !== "/login" ? <AiChatWidget /> : null}
+    </>
+  );
 }
