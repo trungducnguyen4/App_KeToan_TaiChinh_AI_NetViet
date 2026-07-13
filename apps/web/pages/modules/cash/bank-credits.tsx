@@ -1,5 +1,1 @@
-import CashVoucherScreen from "../../../screens/cash-voucher-screen";
-
-export default function BankCreditsPage() {
-  return <CashVoucherScreen voucherType="BC" />;
-}
+export { default } from "../../../screens/bank-credit-list-screen";

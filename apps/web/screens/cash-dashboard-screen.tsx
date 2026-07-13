@@ -107,21 +107,24 @@ const cashOperationCards: Array<{
     description: "Thu tiền mặt, gắn đối tượng và ghi nhận vào sổ quỹ.",
     href: cashVoucherScreens[0].route,
     icon: "WalletCards",
-    tone: "green"
+    tone: "green",
+    featured: true
   },
   {
     title: "Phiếu chi tiền mặt",
     description: "Chi tiền mặt theo đề nghị, tạm ứng và nghiệp vụ nội bộ.",
     href: cashVoucherScreens[1].route,
     icon: "WalletCards",
-    tone: "green"
+    tone: "green",
+    featured: true
   },
   {
     title: "Báo nợ ngân hàng",
     description: "Ghi nhận chi tiền qua tài khoản ngân hàng.",
     href: cashVoucherScreens[2].route,
     icon: "Landmark",
-    tone: "green"
+    tone: "green",
+    featured: true
   },
   {
     title: "Báo có ngân hàng",
@@ -237,6 +240,7 @@ export default function CashDashboardScreen() {
                 <AppIcon name={card.icon} />
               </span>
               <div className="cash-operation-copy">
+                {card.featured ? <span className="cash-operation-badge">Hoàn thiện</span> : null}
                 <h3>{card.title}</h3>
                 <p>{card.description}</p>
               </div>

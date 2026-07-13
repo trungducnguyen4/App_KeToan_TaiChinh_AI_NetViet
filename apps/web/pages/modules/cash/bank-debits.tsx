@@ -1,5 +1,1 @@
-import CashVoucherScreen from "../../../screens/cash-voucher-screen";
-
-export default function BankDebitsPage() {
-  return <CashVoucherScreen voucherType="BN" />;
-}
+export { default } from "../../../screens/bank-debit-list-screen";
