@@ -2,11 +2,11 @@
 
 import {
   ArrowRight,
-  ArrowLeft,
   Bot,
   Calculator,
   Database,
   BookOpen,
+  ArrowLeft,
   ChevronDown,
   FileText,
   LayoutGrid,
@@ -25,7 +25,7 @@ import {
   Upload,
   User,
   WalletCards,
-  Warehouse
+  Warehouse,
 } from "lucide-react";
 
 const icons = {
@@ -53,7 +53,7 @@ const icons = {
   Upload,
   User,
   WalletCards,
-  Warehouse
+  Warehouse,
 };
 
 export type IconName = keyof typeof icons;

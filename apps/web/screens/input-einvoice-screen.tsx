@@ -1,7 +1,7 @@
 import { inputEInvoiceScreen } from "@domain/index";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
-import { StatusPill } from "../components/status-pill";
+import { useRouter } from "next/router";
 
 const invoiceRows = [
   {
@@ -17,7 +17,173 @@ const invoiceRows = [
   }
 ];
 
+const pendingInvoiceRows = [
+  {
+    id: "PEN-001",
+    invoiceNo: "HD-2607001",
+    invoiceDate: "2026-07-10",
+    series: "AA/26E",
+    templateNo: "01GTKT0",
+    supplierName: "Công ty AAA",
+    amount: "5.475.277",
+    vatRate: "10%",
+    totalAmount: "6.022.805",
+    vatAmount: "547.528",
+    taxCode: "0101234567",
+    address: "123 Lê Lợi, Q1",
+    content: "Hóa đơn mua dịch vụ tháng 07/2026",
+    link: "Mở"
+  }
+];
+
+const pendingLineRows = [
+  {
+    id: "LINE-001",
+    itemCode: "MH01",
+    itemName: "Dịch vụ phần mềm",
+    unit: "Gói",
+    quantity: "1",
+    exchangeRate: "1",
+    unitPriceForeign: "5.475.277",
+    unitPrice: "5.475.277",
+    foreignAmount: "5.475.277",
+    amount: "5.475.277",
+    vatRate: "10%",
+    vatAmount: "547.528",
+    totalAmount: "6.022.805",
+    description: "Dịch vụ phần mềm tháng 07/2026"
+  }
+];
+
 export default function InputEInvoiceScreen() {
+  const router = useRouter();
+  const isPendingView = router.query.status === "pending";
+
+  if (isPendingView) {
+    return (
+      <AppShell activeModule="accounting">
+        <div className="workspace">
+          <div className="pending-topbar">
+            <button className="pending-back" type="button" onClick={() => router.push("/modules/accounting/input-einvoices")}>
+              <AppIcon name="ArrowLeft" size={18} />
+            </button>
+            <span className="pending-chip">HĐĐT đầu vào chờ duyệt</span>
+          </div>
+
+          <section className="pending-board">
+            <div className="pending-board-title">
+              <div>
+                <strong>HĐĐT đầu vào chờ duyệt</strong>
+              </div>
+            </div>
+
+            <section className="pending-table-shell">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th aria-hidden="true" />
+                    <th aria-hidden="true" />
+                    <th>Số hóa đơn</th>
+                    <th>Ngày hóa đơn</th>
+                    <th>Ký hiệu/Seri</th>
+                    <th>Mẫu số</th>
+                    <th>Tên đơn vị</th>
+                    <th>Tiền hàng</th>
+                    <th>% VAT</th>
+                    <th>Tổng cộng</th>
+                    <th>Tiền VAT</th>
+                    <th>Mã số thuế</th>
+                    <th>Địa chỉ</th>
+                    <th>Nội dung</th>
+                    <th>Link</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingInvoiceRows.map((row) => (
+                    <tr key={row.id}>
+                      <td />
+                      <td />
+                      <td>{row.invoiceNo}</td>
+                      <td>{row.invoiceDate}</td>
+                      <td>{row.series}</td>
+                      <td>{row.templateNo}</td>
+                      <td>{row.supplierName}</td>
+                      <td>{row.amount}</td>
+                      <td>{row.vatRate}</td>
+                      <td>{row.totalAmount}</td>
+                      <td>{row.vatAmount}</td>
+                      <td>{row.taxCode}</td>
+                      <td>{row.address}</td>
+                      <td>{row.content}</td>
+                      <td>{row.link}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            <div className="pending-footer-bar">
+              <div className="pending-pager">
+                <button type="button" aria-label="Trang đầu">|&lt;</button>
+                <button type="button" aria-label="Trang trước">&lt;</button>
+                <span className="pending-page-current">0</span>
+                <button type="button" aria-label="Trang sau">&gt;</button>
+                <button type="button" aria-label="Trang cuối">&gt;|</button>
+                <select defaultValue="15" aria-label="Số dòng mỗi trang">
+                  <option value="15">15</option>
+                  <option value="25">25</option>
+                </select>
+                <span>dòng / trang</span>
+              </div>
+              <span className="pending-empty">Dữ liệu rỗng</span>
+            </div>
+
+            <section className="pending-detail-shell">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã hàng</th>
+                    <th>Tên hàng</th>
+                    <th>Đvt</th>
+                    <th>SL</th>
+                    <th>Tỷ giá</th>
+                    <th>ĐG NTệ</th>
+                    <th>ĐG</th>
+                    <th>Tiền NTệ</th>
+                    <th>Tiền</th>
+                    <th>% VAT</th>
+                    <th>Tiền VAT</th>
+                    <th>Tổng tiền</th>
+                    <th>Diễn giải</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingLineRows.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.itemCode}</td>
+                      <td>{row.itemName}</td>
+                      <td>{row.unit}</td>
+                      <td>{row.quantity}</td>
+                      <td>{row.exchangeRate}</td>
+                      <td>{row.unitPriceForeign}</td>
+                      <td>{row.unitPrice}</td>
+                      <td>{row.foreignAmount}</td>
+                      <td>{row.amount}</td>
+                      <td>{row.vatRate}</td>
+                      <td>{row.vatAmount}</td>
+                      <td>{row.totalAmount}</td>
+                      <td>{row.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          </section>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell activeModule="accounting">
       <div className="workspace">
@@ -53,43 +219,26 @@ export default function InputEInvoiceScreen() {
           </div>
         </section>
 
-        <div className="split-grid">
-          <section className="panel">
-            <div className="subsection">
-              <h3>Hành động</h3>
-              <StatusPill status="ready" />
-            </div>
-            <div className="attachments compact-actions">
-              <button className="button" type="button">Nhập HĐĐT đầu vào</button>
-              <button className="button" type="button">HĐĐT đầu vào chờ duyệt</button>
-              <button className="button" type="button">Thống kê HĐĐT đầu vào</button>
-              <button className="button" type="button">Danh mục Nhóm hóa đơn</button>
-              <button className="button" type="button">Danh mục Loại hóa đơn</button>
-              <button className="button" type="button">Quy trình: HĐĐT đầu vào</button>
-            </div>
-          </section>
-
-          <section className="panel">
-            <div className="subsection">
-              <h3>Bộ lọc nhanh</h3>
-              <span className="module-meta">Gọn để thao tác nhanh</span>
-            </div>
-            <div className="form-grid invoice-filter-grid">
-              <label className="form-field sm">
-                <span>Từ ngày</span>
-                <input className="field" defaultValue="01/07/2026" />
-              </label>
-              <label className="form-field sm">
-                <span>Đến ngày</span>
-                <input className="field" defaultValue="10/07/2026" />
-              </label>
-              <label className="form-field lg">
-                <span>Tìm nhanh</span>
-                <input className="field" defaultValue="Công ty AAA" />
-              </label>
-            </div>
-          </section>
-        </div>
+        <section className="panel">
+          <div className="subsection">
+            <h3>Bộ lọc nhanh</h3>
+            <span className="module-meta">Gọn để thao tác nhanh</span>
+          </div>
+          <div className="form-grid invoice-filter-grid">
+            <label className="form-field sm">
+              <span>Từ ngày</span>
+              <input className="field" defaultValue="01/07/2026" />
+            </label>
+            <label className="form-field sm">
+              <span>Đến ngày</span>
+              <input className="field" defaultValue="10/07/2026" />
+            </label>
+            <label className="form-field lg">
+              <span>Tìm nhanh</span>
+              <input className="field" defaultValue="Công ty AAA" />
+            </label>
+          </div>
+        </section>
 
         <div className="section-title">
           <h2>Danh sách HĐĐT đầu vào</h2>

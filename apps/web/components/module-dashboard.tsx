@@ -1,3 +1,5 @@
+"use client";
+
 import {
   accountingKpis,
   bankStatementScreen,
@@ -11,6 +13,7 @@ import {
   workitModules
 } from "@domain/index";
 import type { ModuleKey } from "@domain/types";
+import { useEffect, useRef, useState } from "react";
 import { AppIcon } from "./icons";
 import { StatusPill } from "./status-pill";
 
@@ -35,7 +38,18 @@ const kpiIcons = {
   gray: "Database"
 } as const;
 
+const inputEInvoiceMenuItems = [
+  { label: "Nhập HĐĐT đầu vào", href: `${inputEInvoiceScreen.route}?action=create` },
+  { label: "HĐĐT đầu vào chờ duyệt", href: `${inputEInvoiceScreen.route}?status=pending` },
+  { label: "Thống kê HĐĐT đầu vào", href: `${inputEInvoiceScreen.route}?view=stats` },
+  { label: "Danh mục Nhóm hóa đơn", href: `${inputEInvoiceScreen.route}?catalog=invoice-groups` },
+  { label: "Danh mục Loại hóa đơn", href: `${inputEInvoiceScreen.route}?catalog=invoice-types` },
+  { label: "Quy trình: HĐĐT đầu vào", href: `${inputEInvoiceScreen.route}?view=workflow` }
+] as const;
+
 export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const current = workitModules.find((module) => module.key === moduleKey) ?? workitModules[0];
   const isAccounting = current.key === "accounting";
   const isCash = current.key === "cash";
@@ -56,6 +70,34 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
         inputEInvoiceScreen.route
       ];
   const kpiCaption = (item: (typeof kpis)[number]) => ("hint" in item ? item.hint : item.delta ?? "");
+
+  useEffect(() => {
+    if (!openMenu) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openMenu]);
 
   return (
     <div className="workspace">
@@ -99,13 +141,13 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
         </div>
       </section>
 
-      <div className="kpi-grid">
+      <div className={`kpi-grid${isAccounting ? " kpi-grid--compact" : ""}`}>
         {kpis.map((kpi, index) => (
-          <article className="kpi-card" key={kpi.label}>
+          <article className={`kpi-card${isAccounting ? " kpi-card--compact" : ""}`} key={kpi.label}>
             <div className={`kpi-accent tone-${kpi.tone}`} aria-hidden="true" />
             <div className="kpi-header">
               <span className="kpi-badge">
-                <AppIcon name={kpiIcons[kpi.tone]} size={14} />
+                <AppIcon name={kpiIcons[kpi.tone]} size={isAccounting ? 12 : 14} />
               </span>
               <span className="kpi-index">{String(index + 1).padStart(2, "0")}</span>
             </div>
@@ -125,31 +167,69 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
       </div>
       <div className="module-grid">
         {current.primaryScreens.map((screen, index) => (
-          <a
-            className="module-card"
-              href={
-              isAccounting
-                ? moduleRoutes[index] ?? current.route
-                : isCash
-                  ? moduleRoutes[index] ?? current.route
-                  : current.route
-            }
-            key={`${current.key}-${screen}`}
-          >
-            <span className="module-icon" style={{ color: current.accent }}>
-              <AppIcon name={current.icon} />
-            </span>
-            <div>
-              <h3>{screen}</h3>
-              <p>
-                {isCash
-                  ? "Da gan route va pattern nghiep vu M2: dashboard, voucher, sao ke va doi chieu."
-                  : index === 0
-                    ? "Man hinh uu tien cho v1, san sang noi API."
-                    : "Da scaffold theo metadata module."}
-              </p>
+          screen === inputEInvoiceScreen.title ? (
+            <div className="module-card-shell" key={`${current.key}-${screen}`} ref={popoverRef}>
+              <button
+                className="module-card module-card--popover"
+                type="button"
+                aria-expanded={openMenu === screen}
+                aria-haspopup="menu"
+                onClick={() => setOpenMenu((prev) => (prev === screen ? null : screen))}
+              >
+                <span className="module-icon" style={{ color: current.accent }}>
+                  <AppIcon name={current.icon} />
+                </span>
+                <div className="module-card-copy">
+                  <h3>{screen}</h3>
+                  <p>
+                    {isCash
+                      ? "Da gan route va pattern nghiep vu M2: dashboard, voucher, sao ke va doi chieu."
+                      : index === 0
+                        ? "Man hinh uu tien cho v1, san sang noi API."
+                        : "Da scaffold theo metadata module."}
+                  </p>
+                </div>
+                <span className="module-card-caret">
+                  <AppIcon name="ChevronDown" size={16} />
+                </span>
+              </button>
+              {openMenu === screen ? (
+                <div className="module-popover" role="menu" aria-label={screen}>
+                  {inputEInvoiceMenuItems.map((item) => (
+                    <a className="module-popover-item" href={item.href} key={item.label} role="menuitem">
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          </a>
+          ) : (
+            <a
+              className="module-card"
+              href={
+                isAccounting
+                  ? moduleRoutes[index] ?? current.route
+                  : isCash
+                    ? moduleRoutes[index] ?? current.route
+                    : current.route
+              }
+              key={`${current.key}-${screen}`}
+            >
+              <span className="module-icon" style={{ color: current.accent }}>
+                <AppIcon name={current.icon} />
+              </span>
+              <div>
+                <h3>{screen}</h3>
+                <p>
+                  {isCash
+                    ? "Da gan route va pattern nghiep vu M2: dashboard, voucher, sao ke va doi chieu."
+                    : index === 0
+                      ? "Man hinh uu tien cho v1, san sang noi API."
+                      : "Da scaffold theo metadata module."}
+                </p>
+              </div>
+            </a>
+          )
         ))}
       </div>
 
