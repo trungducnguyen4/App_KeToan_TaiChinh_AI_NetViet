@@ -5,6 +5,7 @@ import {
   Calculator,
   Database,
   BookOpen,
+  ArrowLeft,
   ChevronDown,
   FileText,
   LayoutGrid,
@@ -24,6 +25,7 @@ import {
 const icons = {
   BookOpen,
   Bot,
+  ArrowLeft,
   Calculator,
   Database,
   ChevronDown,
