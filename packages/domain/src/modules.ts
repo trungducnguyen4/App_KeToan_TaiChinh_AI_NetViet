@@ -113,10 +113,10 @@ export const accountingKpis: KpiCard[] = [
 ];
 
 export const cashDashboardMetrics: CashDashboardMetric[] = [
-  { label: "So du quy tien mat", value: "2.48B", hint: "Tong hop PT/PC trong ky", tone: "green" },
-  { label: "So du tien gui", value: "8.14B", hint: "Tong hop BN/BC va sao ke", tone: "blue" },
-  { label: "Dong can doi cho doi chieu", value: "12", hint: "Statement line chua khop", tone: "amber" },
-  { label: "Chung tu cho duyet", value: "9", hint: "M2 can xu ly trong ngay", tone: "red" }
+  { label: "Số dư quỹ tiền mặt", value: "2.48B", hint: "Tổng hợp PT/PC trong kỳ", tone: "green" },
+  { label: "Số dư tiền gửi", value: "8.14B", hint: "Tổng hợp BN/BC và sao kê", tone: "blue" },
+  { label: "Dòng cần đối chiếu", value: "12", hint: "Statement line chưa khớp", tone: "amber" },
+  { label: "Chứng từ chờ duyệt", value: "9", hint: "M2 cần xử lý trong ngày", tone: "red" }
 ];
 
 export const journalVoucherScreen: ScreenSpec = {
@@ -236,16 +236,7 @@ export const inputEInvoiceScreen: ScreenSpec = {
   moduleKey: "accounting",
   route: "/modules/accounting/input-einvoices",
   description: "Nhập HĐĐT đầu vào, theo dõi chờ duyệt và thống kê danh mục hóa đơn.",
-  listColumns: [
-    "Số HĐ",
-    "Ngày HĐ",
-    "Nhà cung cấp",
-    "Giá trị",
-    "Thuế GTGT",
-    "Mẫu số",
-    "Ký hiệu",
-    "Trạng thái"
-  ],
+  listColumns: ["Số HĐ", "Ngày HĐ", "Nhà cung cấp", "Giá trị", "Thuế GTGT", "Mẫu số", "Ký hiệu", "Trạng thái"],
   fields: [
     { key: "invoiceNo", label: "Số HĐ", type: "text", required: true, width: "sm" },
     { key: "invoiceDate", label: "Ngày HĐ", type: "date", required: true, width: "sm" },
@@ -259,81 +250,81 @@ export const inputEInvoiceScreen: ScreenSpec = {
 };
 
 const cashCommonFields = [
-  { key: "voucherDate", label: "Ngay CT", type: "date", required: true, width: "sm" },
-  { key: "voucherNo", label: "So CT", type: "text", required: true, width: "md" },
-  { key: "currency", label: "Loai tien", type: "currency", required: true, width: "sm" },
-  { key: "counterpartyCode", label: "Ma doi tuong", type: "lookup", width: "sm" },
-  { key: "counterpartyName", label: "Ten doi tuong", type: "text", width: "lg" },
-  { key: "referenceInvoiceNo", label: "Hoa don tham chieu", type: "text", width: "md" },
-  { key: "content", label: "Noi dung", type: "textarea", required: true, width: "xl" }
+  { key: "voucherDate", label: "Ngày CT", type: "date", required: true, width: "sm" },
+  { key: "voucherNo", label: "Số CT", type: "text", required: true, width: "md" },
+  { key: "currency", label: "Loại tiền", type: "currency", required: true, width: "sm" },
+  { key: "counterpartyCode", label: "Mã đối tượng", type: "lookup", width: "sm" },
+  { key: "counterpartyName", label: "Tên đối tượng", type: "text", width: "lg" },
+  { key: "referenceInvoiceNo", label: "Hóa đơn tham chiếu", type: "text", width: "md" },
+  { key: "content", label: "Nội dung", type: "textarea", required: true, width: "xl" }
 ] as const;
 
 export const cashVoucherScreens: CashVoucherScreenSpec[] = [
   {
     key: "cash-receipts",
-    title: "Phieu thu tien mat",
+    title: "Phiếu thu tiền mặt",
     moduleKey: "cash",
     route: "/modules/cash/receipts",
-    description: "Quan ly PT, thu tien mat, doi tuong cong no va thu tien theo hoa don.",
+    description: "Quản lý PT, thu tiền mặt, đối tượng công nợ và thu tiền theo hóa đơn.",
     voucherType: "PT",
     paymentChannel: "cash",
-    counterpartyLabel: "Nguoi nop / khach hang",
-    amountLabel: "So tien thu",
-    listColumns: ["Ma CT", "So", "Ngay", "Quy", "Doi tuong", "Noi dung", "So tien", "Trang thai"],
+    counterpartyLabel: "Người nộp / khách hàng",
+    amountLabel: "Số tiền thu",
+    listColumns: ["Mã CT", "Số", "Ngày", "Quỹ", "Đối tượng", "Nội dung", "Số tiền", "Trạng thái"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "cashBookCode", label: "So quy", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "cashBookCode", label: "Sổ quỹ", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   },
   {
     key: "cash-payments",
-    title: "Phieu chi tien mat",
+    title: "Phiếu chi tiền mặt",
     moduleKey: "cash",
     route: "/modules/cash/payments",
-    description: "Quan ly PC, chi tien mat cho NCC, tam ung va hoan ung.",
+    description: "Quản lý PC, chi tiền mặt cho NCC, tạm ứng và hoàn ứng.",
     voucherType: "PC",
     paymentChannel: "cash",
-    counterpartyLabel: "Nguoi nhan / nha cung cap",
-    amountLabel: "So tien chi",
-    listColumns: ["Ma CT", "So", "Ngay", "Quy", "Doi tuong", "Noi dung", "So tien", "Trang thai"],
+    counterpartyLabel: "Người nhận / nhà cung cấp",
+    amountLabel: "Số tiền chi",
+    listColumns: ["Mã CT", "Số", "Ngày", "Quỹ", "Đối tượng", "Nội dung", "Số tiền", "Trạng thái"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "cashBookCode", label: "So quy", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "cashBookCode", label: "Sổ quỹ", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   },
   {
     key: "bank-debits",
-    title: "Bao no ngan hang",
+    title: "Báo nợ ngân hàng",
     moduleKey: "cash",
     route: "/modules/cash/bank-debits",
-    description: "Quan ly BN, chi tien qua ngan hang va doi chieu voi sao ke.",
+    description: "Quản lý BN, chi tiền qua ngân hàng và đối chiếu với sao kê.",
     voucherType: "BN",
     paymentChannel: "bank",
-    counterpartyLabel: "Nha cung cap / doi tuong chi",
-    amountLabel: "So tien chi",
-    listColumns: ["Ma CT", "So", "Ngay", "Tai khoan NH", "Doi tuong", "Noi dung", "So tien", "Doi chieu"],
+    counterpartyLabel: "Nhà cung cấp / đối tượng chi",
+    amountLabel: "Số tiền chi",
+    listColumns: ["Mã CT", "Số", "Ngày", "Tài khoản NH", "Đối tượng", "Nội dung", "Số tiền", "Đối chiếu"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   },
   {
     key: "bank-credits",
-    title: "Bao co ngan hang",
+    title: "Báo có ngân hàng",
     moduleKey: "cash",
     route: "/modules/cash/bank-credits",
-    description: "Quan ly BC, thu tien qua ngan hang va doi chieu voi sao ke.",
+    description: "Quản lý BC, thu tiền qua ngân hàng và đối chiếu với sao kê.",
     voucherType: "BC",
     paymentChannel: "bank",
-    counterpartyLabel: "Khach hang / doi tuong thu",
-    amountLabel: "So tien thu",
-    listColumns: ["Ma CT", "So", "Ngay", "Tai khoan NH", "Doi tuong", "Noi dung", "So tien", "Doi chieu"],
+    counterpartyLabel: "Khách hàng / đối tượng thu",
+    amountLabel: "Số tiền thu",
+    listColumns: ["Mã CT", "Số", "Ngày", "Tài khoản NH", "Đối tượng", "Nội dung", "Số tiền", "Đối chiếu"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   }
@@ -341,28 +332,28 @@ export const cashVoucherScreens: CashVoucherScreenSpec[] = [
 
 export const bankStatementScreen: ScreenSpec = {
   key: "bank-statements",
-  title: "Sao ke ngan hang",
+  title: "Sao kê ngân hàng",
   moduleKey: "cash",
   route: "/modules/cash/bank-statements",
-  description: "Import sao ke, xem line giao dich va danh dau trang thai doi chieu.",
-  listColumns: ["So sao ke", "Tai khoan NH", "Ngay sao ke", "So dong", "So du dau", "So du cuoi", "Nguon"],
+  description: "Import sao kê, xem dòng giao dịch và đánh dấu trạng thái đối chiếu.",
+  listColumns: ["Số sao kê", "Tài khoản NH", "Ngày sao kê", "Số dòng", "Số dư đầu", "Số dư cuối", "Nguồn"],
   fields: [
-    { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
-    { key: "statementDate", label: "Ngay sao ke", type: "date", required: true, width: "sm" },
-    { key: "sourceName", label: "Nguon import", type: "text", width: "md" }
+    { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
+    { key: "statementDate", label: "Ngày sao kê", type: "date", required: true, width: "sm" },
+    { key: "sourceName", label: "Nguồn import", type: "text", width: "md" }
   ]
 };
 
 export const reconciliationScreen: ScreenSpec = {
   key: "bank-reconciliation",
-  title: "Doi chieu ngan hang",
+  title: "Đối chiếu ngân hàng",
   moduleKey: "cash",
   route: "/modules/cash/reconciliation",
-  description: "Doi chieu BN/BC voi sao ke ngan hang theo so tien, ngay va tham chieu.",
-  listColumns: ["Loai", "So chung tu", "Ngay", "Doi tuong", "Noi dung", "So tien", "Trang thai"],
+  description: "Đối chiếu BN/BC với sao kê ngân hàng theo số tiền, ngày và tham chiếu.",
+  listColumns: ["Loại", "Số chứng từ", "Ngày", "Đối tượng", "Nội dung", "Số tiền", "Trạng thái"],
   fields: [
-    { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
-    { key: "statementDate", label: "Ngay sao ke", type: "date", width: "sm" },
-    { key: "matchingStatus", label: "Trang thai doi chieu", type: "text", width: "sm" }
+    { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
+    { key: "statementDate", label: "Ngày sao kê", type: "date", width: "sm" },
+    { key: "matchingStatus", label: "Trạng thái đối chiếu", type: "text", width: "sm" }
   ]
 };
