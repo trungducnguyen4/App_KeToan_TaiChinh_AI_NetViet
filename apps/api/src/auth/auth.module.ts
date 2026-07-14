@@ -8,6 +8,7 @@ import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { JwtStrategy } from "./jwt.strategy";
 import { RbacGuard } from "./rbac.guard";
+import { parseDurationSeconds } from "./token-duration";
 
 @Module({
   imports: [
@@ -24,7 +25,10 @@ import { RbacGuard } from "./rbac.guard";
         return {
           secret,
           signOptions: {
-            expiresIn: "15m",
+            expiresIn: parseDurationSeconds(
+              configService.get<string>("JWT_ACCESS_EXPIRES_IN"),
+              15 * 60,
+            ),
           },
         };
       },
