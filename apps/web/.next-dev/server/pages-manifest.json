@@ -2,7 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/modules/cash/payments": "pages/modules/cash/payments.js",
+  "/modules/[moduleKey]": "pages/modules/[moduleKey].js",
   "/modules/cash": "pages/modules/cash.js",
-  "/modules/cash/reconciliation": "pages/modules/cash/reconciliation.js"
+  "/modules/reports": "pages/modules/reports.js",
+  "/modules/accounting/journal-vouchers/new": "pages/modules/accounting/journal-vouchers/new.js"
 }

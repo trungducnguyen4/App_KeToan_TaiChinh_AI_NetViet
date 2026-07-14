@@ -20,15 +20,20 @@ globalThis.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
+    "/modules/[moduleKey]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/modules/[moduleKey].js"
+    ],
     "/modules/cash": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/modules/cash.js"
     ],
-    "/modules/cash/reconciliation": [
+    "/modules/reports": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/modules/cash/reconciliation.js"
+      "static/chunks/pages/modules/reports.js"
     ]
   },
   "ampFirstPages": []

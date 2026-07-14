@@ -5,14 +5,21 @@ import {
   debtDashboardMocks,
   debtOpeningBalanceMocks,
   ledgerBalanceMocks,
+  monitoringAlertMocks,
   profitabilityMocks,
   reportMetricMocks,
   reportSnapshotMock,
   voucherMocks,
 } from "../lib/report-sql-mock-data";
+import type {
+  MonitoringAlertCategory,
+  MonitoringAlertSeverity,
+  MonitoringAlertStatus,
+} from "../lib/report-sql-mock-data";
 
 type ReportKey = "cash-flow" | "receivables" | "profit" | "management";
 type PeriodType = "day" | "week" | "month";
+type MonitoringFilter = "all" | MonitoringAlertCategory;
 
 const metricValue = (code: string) =>
   reportMetricMocks.find((item) => item.metric_code === code)?.metric_value ??
@@ -173,6 +180,38 @@ const summaryMetrics = [
     tone: "red",
   },
 ] as const;
+
+const monitoringFilters: Array<{
+  key: MonitoringFilter;
+  label: string;
+  icon: string;
+}> = [
+  { key: "all", label: "Tất cả", icon: "LayoutGrid" },
+  { key: "debt_overdue", label: "Nợ quá hạn", icon: "ReceiptText" },
+  { key: "expense_limit", label: "Chi vượt định mức", icon: "Calculator" },
+  { key: "cashflow_negative", label: "Dòng tiền âm", icon: "WalletCards" },
+  { key: "journal_anomaly", label: "Bút toán lệch", icon: "FileText" },
+];
+
+const monitoringCategoryLabels: Record<MonitoringAlertCategory, string> = {
+  debt_overdue: "Nợ quá hạn",
+  expense_limit: "Chi vượt định mức",
+  cashflow_negative: "Dòng tiền âm dự báo",
+  journal_anomaly: "Bút toán lệch/bất thường",
+};
+
+const monitoringSeverityLabels: Record<MonitoringAlertSeverity, string> = {
+  critical: "Nghiêm trọng",
+  high: "Cao",
+  medium: "TB",
+  low: "Thấp",
+};
+
+const monitoringStatusLabels: Record<MonitoringAlertStatus, string> = {
+  new: "Mới phát hiện",
+  reviewing: "Đang rà soát",
+  resolved: "Đã xử lý",
+};
 
 const dashboardData: Record<
   ReportKey,
@@ -534,6 +573,11 @@ function datesBetween(from: string, to: string) {
 
 export default function ReportsDashboardScreen() {
   const [selectedKey, setSelectedKey] = useState<ReportKey>("cash-flow");
+  const [monitoringFilter, setMonitoringFilter] =
+    useState<MonitoringFilter>("all");
+  const [selectedAlertId, setSelectedAlertId] = useState(
+    monitoringAlertMocks[0]?.id ?? "",
+  );
   const [periodType, setPeriodType] = useState<PeriodType>("month");
   const [periodValues, setPeriodValues] = useState<Record<PeriodType, string>>({
     day: "2026-07-13",
@@ -548,6 +592,26 @@ export default function ReportsDashboardScreen() {
   const selected =
     reportGroups.find((item) => item.key === selectedKey) ?? reportGroups[0];
   const dashboard = dashboardData[selectedKey];
+  const filteredAlerts = useMemo(
+    () =>
+      monitoringFilter === "all"
+        ? monitoringAlertMocks
+        : monitoringAlertMocks.filter((alert) => alert.category === monitoringFilter),
+    [monitoringFilter],
+  );
+  const selectedAlert =
+    filteredAlerts.find((alert) => alert.id === selectedAlertId) ??
+    filteredAlerts[0] ??
+    monitoringAlertMocks[0];
+  const monitoringSummary = useMemo(
+    () => ({
+      total: monitoringAlertMocks.length,
+      critical: monitoringAlertMocks.filter((alert) => alert.severity === "critical").length,
+      reviewing: monitoringAlertMocks.filter((alert) => alert.status === "reviewing").length,
+      sourceModules: new Set(monitoringAlertMocks.map((alert) => alert.sourceModule)).size,
+    }),
+    [],
+  );
 
   function formatPeriod(type: PeriodType, value: string) {
     if (type === "day") {
@@ -765,6 +829,221 @@ export default function ReportsDashboardScreen() {
             </article>
           ))}
         </div>
+
+        {selectedAlert ? (
+          <section className="monitoring-panel">
+            <header className="monitoring-header">
+              <div>
+                <span className="eyebrow">Giám sát vận hành</span>
+                <h2>Giám sát & Cảnh báo bất thường</h2>
+                <p>
+                  Hệ thống phân tích dữ liệu WORKIT đã đồng bộ để phát hiện nợ
+                  quá hạn, chi vượt định mức, dòng tiền âm dự báo và bút toán
+                  lệch cần kế toán rà soát.
+                </p>
+              </div>
+              <div className="monitoring-health-card">
+                <AppIcon name="ShieldCheck" size={22} />
+                <span>
+                  <small>Cảnh báo cần xem</small>
+                  <strong>
+                    {String(monitoringSummary.total).padStart(2, "0")}
+                  </strong>
+                </span>
+              </div>
+            </header>
+
+            <div className="monitoring-kpi-grid">
+              <article>
+                <span>Tổng cảnh báo</span>
+                <strong>{monitoringSummary.total}</strong>
+                <small>Mock data demo</small>
+              </article>
+              <article className="tone-red">
+                <span>Nghiêm trọng</span>
+                <strong>{monitoringSummary.critical}</strong>
+                <small>Cần xử lý trước</small>
+              </article>
+              <article className="tone-amber">
+                <span>Đang rà soát</span>
+                <strong>{monitoringSummary.reviewing}</strong>
+                <small>Kế toán đang kiểm tra</small>
+              </article>
+              <article className="tone-blue">
+                <span>Nguồn phân hệ</span>
+                <strong>{monitoringSummary.sourceModules}</strong>
+                <small>Công nợ · Tiền · Sổ cái</small>
+              </article>
+            </div>
+
+            <div className="monitoring-filter-row" aria-label="Lọc cảnh báo">
+              {monitoringFilters.map((filter) => (
+                <button
+                  className={monitoringFilter === filter.key ? "is-active" : ""}
+                  type="button"
+                  key={filter.key}
+                  onClick={() => setMonitoringFilter(filter.key)}
+                >
+                  <AppIcon name={filter.icon} size={15} />
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="monitoring-content-grid">
+              <div className="monitoring-alert-list">
+                {filteredAlerts.map((alert) => (
+                  <button
+                    className={`monitoring-alert-card severity-${alert.severity} ${selectedAlert.id === alert.id ? "is-selected" : ""}`}
+                    type="button"
+                    key={alert.id}
+                    onClick={() => setSelectedAlertId(alert.id)}
+                  >
+                    <span className="monitoring-alert-icon">
+                      <AppIcon
+                        name={
+                          alert.category === "debt_overdue"
+                            ? "ReceiptText"
+                            : alert.category === "expense_limit"
+                              ? "Calculator"
+                              : alert.category === "cashflow_negative"
+                                ? "WalletCards"
+                                : "FileText"
+                        }
+                        size={18}
+                      />
+                    </span>
+                    <span className="monitoring-alert-copy">
+                      <strong>{alert.title}</strong>
+                      <small>
+                        {monitoringCategoryLabels[alert.category]} ·{" "}
+                        {alert.entityRef}
+                      </small>
+                    </span>
+                    <span
+                      className={`monitoring-severity severity-${alert.severity}`}
+                    >
+                      {monitoringSeverityLabels[alert.severity]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <article
+                className={`monitoring-detail-card severity-${selectedAlert.severity}`}
+              >
+                <div className="monitoring-detail-title">
+                  <div>
+                    <span className="eyebrow">
+                      {monitoringCategoryLabels[selectedAlert.category]}
+                    </span>
+                    <h3>{selectedAlert.title}</h3>
+                    <p>{selectedAlert.recommendation}</p>
+                  </div>
+                  <span
+                    className={`monitoring-status status-${selectedAlert.status}`}
+                  >
+                    {monitoringStatusLabels[selectedAlert.status]}
+                  </span>
+                </div>
+
+                <div className="monitoring-rule-grid">
+                  <div>
+                    <span>Ngưỡng cảnh báo</span>
+                    <strong>{selectedAlert.threshold}</strong>
+                  </div>
+                  <div>
+                    <span>Giá trị thực tế</span>
+                    <strong>{selectedAlert.actual}</strong>
+                  </div>
+                  <div>
+                    <span>Chênh lệch</span>
+                    <strong>{selectedAlert.variance}</strong>
+                  </div>
+                  <div>
+                    <span>Thời điểm phát hiện</span>
+                    <strong>{selectedAlert.detectedAt}</strong>
+                  </div>
+                </div>
+
+                <div className="monitoring-analysis-box">
+                  <header>
+                    <h4>Thuộc tính đã phân tích</h4>
+                    <span>{selectedAlert.period}</span>
+                  </header>
+                  <div>
+                    {selectedAlert.analysisFields.map((field) => (
+                      <span key={`${selectedAlert.id}-${field.label}`}>
+                        <small>{field.label}</small>
+                        <strong>{field.value}</strong>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="monitoring-detail-footer">
+                  <span>
+                    <small>Phân hệ nguồn</small>
+                    <strong>{selectedAlert.sourceModule}</strong>
+                  </span>
+                  <span>
+                    <small>Người phụ trách</small>
+                    <strong>{selectedAlert.owner}</strong>
+                  </span>
+                  <a className="button primary" href={selectedAlert.drilldownHref}>
+                    Mở chi tiết
+                    <AppIcon name="ArrowRight" size={15} />
+                  </a>
+                </div>
+              </article>
+            </div>
+
+            <div className="monitoring-table-wrap">
+              <div className="dashboard-table-heading">
+                <div>
+                  <h3>Danh sách cảnh báo</h3>
+                  <span>
+                    Frontend mock · Ngưỡng cảnh báo có thể cấu hình ở GĐ sau
+                  </span>
+                </div>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table monitoring-table">
+                  <thead>
+                    <tr>
+                      <th>Loại cảnh báo</th>
+                      <th>Đối tượng</th>
+                      <th>Số tiền</th>
+                      <th>Ngưỡng</th>
+                      <th>Mức độ</th>
+                      <th>Trạng thái</th>
+                      <th>Khuyến nghị</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAlerts.map((alert) => (
+                      <tr key={`row-${alert.id}`}>
+                        <td>{monitoringCategoryLabels[alert.category]}</td>
+                        <td>{alert.entityRef}</td>
+                        <td>{money(alert.amount)}</td>
+                        <td>{alert.threshold}</td>
+                        <td>
+                          <span
+                            className={`monitoring-severity severity-${alert.severity}`}
+                          >
+                            {monitoringSeverityLabels[alert.severity]}
+                          </span>
+                        </td>
+                        <td>{monitoringStatusLabels[alert.status]}</td>
+                        <td>{alert.recommendation}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <div className="section-title reports-section-heading">
           <div>

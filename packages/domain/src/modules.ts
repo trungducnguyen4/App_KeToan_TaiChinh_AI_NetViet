@@ -126,15 +126,24 @@ export const journalVoucherScreen: ScreenSpec = {
   route: "/modules/accounting/journal-vouchers",
   description: "Ghi nhận chứng từ HT, bút toán Nợ/Có, thanh toán hóa đơn và tệp đính kèm.",
   listColumns: [
-    "Mã CT",
+    "Mã ctừ",
     "Số",
     "Ngày",
-    "Tổng tiền",
-    "Nội dung",
     "Mã đơn vị",
     "Tên đơn vị",
+    "Tổng tiền",
+    "Tổng tiền NTệ",
+    "Nội dung",
+    "Liên hệ",
+    "Địa chỉ",
+    "Dự án",
+    "Số ctừ gốc",
+    "Ctừ tham chiếu",
     "Loại tiền",
-    "Trạng thái"
+    "Người tạo",
+    "Ngày tạo",
+    "Người sửa gần nhất",
+    "Ngày sửa gần nhất"
   ],
   fields: [
     { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },

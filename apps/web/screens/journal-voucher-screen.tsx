@@ -1,7 +1,6 @@
 import { journalVoucherScreen, journalVouchers } from "@domain/index";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
-import { StatusPill } from "../components/status-pill";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -72,14 +71,21 @@ export default function JournalVoucherPage() {
                   <td>{voucher.voucherType}</td>
                   <td>{voucher.voucherNo}</td>
                   <td>{voucher.voucherDate}</td>
+                  <td>{voucher.counterpartyCode ?? "-"}</td>
+                  <td>{voucher.counterpartyName ?? "-"}</td>
                   <td>{currency.format(voucher.amount)}</td>
+                  <td>{formatForeignAmount(voucher)}</td>
                   <td>{voucher.content}</td>
-                  <td>{voucher.counterpartyCode}</td>
-                  <td>{voucher.counterpartyName}</td>
+                  <td>{voucher.counterpartyCode ?? "-"}</td>
+                  <td>{voucher.counterpartyAddress ?? "-"}</td>
+                  <td>{voucher.projectName ?? "-"}</td>
+                  <td>{voucher.sourceVoucherNo ?? voucher.referenceInvoiceNo ?? "-"}</td>
+                  <td>{voucher.referenceNo ?? voucher.referenceInvoiceNo ?? "-"}</td>
                   <td>{voucher.currency}</td>
-                  <td>
-                    <StatusPill status={voucher.status} />
-                  </td>
+                  <td>{voucher.createdBy}</td>
+                  <td>{formatDateTime(voucher.createdAt)}</td>
+                  <td>{voucher.updatedBy ?? voucher.createdBy}</td>
+                  <td>{formatDateTime(voucher.updatedAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -189,4 +195,14 @@ export default function JournalVoucherPage() {
       </div>
     </AppShell>
   );
+}
+
+function formatForeignAmount(voucher: (typeof journalVouchers)[number]) {
+  const total = voucher.lines.reduce((sum, line) => sum + (line.foreignAmount ?? 0), 0);
+  return total > 0 ? currency.format(total) : "-";
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return "-";
+  return value.slice(0, 16).replace("T", " ");
 }
