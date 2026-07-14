@@ -98,7 +98,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "D:\\NetVietTv\\CtyGiay",
+    "outputFileTracingRoot": "D:\\Khoadilam\\NetViet\\App_KeToan_TaiChinh_AI_NetViet",
     "experimental": {
       "useSkewCookie": false,
       "cacheLife": {
@@ -157,7 +157,7 @@
       "middlewarePrefetch": "flexible",
       "optimisticClientCache": true,
       "manualClientBasePath": false,
-      "cpus": 15,
+      "cpus": 19,
       "memoryBasedWorkersCount": false,
       "imgOptConcurrency": null,
       "imgOptTimeoutInSeconds": 7,
@@ -288,10 +288,10 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.js",
     "turbopack": {
-      "root": "D:\\NetVietTv\\CtyGiay"
+      "root": "D:\\Khoadilam\\NetViet\\App_KeToan_TaiChinh_AI_NetViet"
     }
   },
-  "appDir": "D:\\NetVietTv\\CtyGiay\\apps\\web",
+  "appDir": "D:\\Khoadilam\\NetViet\\App_KeToan_TaiChinh_AI_NetViet\\apps\\web",
   "relativeAppDir": "apps\\web",
   "files": [
     ".next-build\\routes-manifest.json",
