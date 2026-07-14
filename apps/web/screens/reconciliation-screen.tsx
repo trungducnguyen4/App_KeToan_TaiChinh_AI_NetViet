@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { reconciliationItems, reconciliationScreen } from "@domain/index";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
+import { MarkdownText } from "../components/markdown-text";
+import { readAiWorkflowOutput, readAiWorkflowOutputValue, type AiWorkflowResponse } from "../lib/ai-workflows";
 import { fetchApi, postApi } from "../lib/api";
 
 const currency = new Intl.NumberFormat("vi-VN", {
@@ -59,6 +61,15 @@ type DemoScenario = {
   suggestedActionLabel?: string;
   suggestedActionDescription?: string;
   suggestedActionResult?: string;
+};
+
+type SemanticMatch = {
+  invoice_id?: unknown;
+  document_id?: unknown;
+  match_score?: unknown;
+  reason?: unknown;
+  matched_signals?: unknown;
+  risk_flags?: unknown;
 };
 
 const demoScenarios: DemoScenario[] = [
@@ -397,16 +408,123 @@ const demoRows: DemoScenario[] = [...matchedDemoRows, ...partialDemoRows, ...spl
 
 const processSteps = ["Nhập sao kê", "Chọn case demo", "Gợi ý match", "Kế toán duyệt", "Ghi nhận audit"] as const;
 
+function stripJsonFence(content: string) {
+  const fencedJson = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  return (fencedJson?.[1] ?? content).trim();
+}
+
+function parseJsonLike(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(stripJsonFence(value));
+  } catch {
+    return value;
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function asStringList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+}
+
+function formatMatchScore(value: unknown) {
+  if (typeof value === "number") {
+    return `${Math.round(value * 100)}%`;
+  }
+
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    return `${Math.round(numeric * 100)}%`;
+  }
+
+  return "Chua co";
+}
+
+function getSemanticMatches(value: unknown): SemanticMatch[] {
+  const parsed = asRecord(parseJsonLike(value));
+  if (!parsed) {
+    return [];
+  }
+
+  const result = asRecord(parsed.result);
+  const candidate = parsed.suggested_matches ?? result?.suggested_matches ?? parsed.candidate_matches;
+  if (!Array.isArray(candidate)) {
+    return [];
+  }
+
+  return candidate.filter((item): item is SemanticMatch => Boolean(asRecord(item)));
+}
+
+function SemanticReconciliationResult({ value }: { value: unknown }) {
+  const matches = getSemanticMatches(value);
+
+  if (!matches.length) {
+    const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    return <MarkdownText className="ai-card-markdown" content={text} />;
+  }
+
+  return (
+    <div className="semantic-ai-result">
+      <table className="semantic-ai-table">
+        <thead>
+          <tr>
+            <th>Chung tu</th>
+            <th>Diem khop</th>
+            <th>Tin hieu khop</th>
+            <th>Rui ro</th>
+            <th>Ly do</th>
+          </tr>
+        </thead>
+        <tbody>
+          {matches.map((match, index) => {
+            const documentId = String(match.document_id ?? match.invoice_id ?? "Chua co");
+            const signals = asStringList(match.matched_signals);
+            const risks = asStringList(match.risk_flags);
+
+            return (
+              <tr key={`${documentId}-${index}`}>
+                <td>
+                  <strong>{documentId}</strong>
+                </td>
+                <td>{formatMatchScore(match.match_score)}</td>
+                <td>{signals.length ? signals.join(", ") : "Chua co"}</td>
+                <td>{risks.length ? risks.join(", ") : "Khong co"}</td>
+                <td>{String(match.reason ?? "Chua co ly do")}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function ReconciliationScreen() {
   const [items, setItems] = useState<ReconciliationPayload>(reconciliationItems);
   const [selectedVoucherId, setSelectedVoucherId] = useState("");
   const [selectedStatementLineId, setSelectedStatementLineId] = useState("");
   const [matchedAmount, setMatchedAmount] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [aiSuggestion, setAiSuggestion] = useState<unknown>("");
   const [recentMatchId, setRecentMatchId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDemoId, setSelectedDemoId] = useState(demoScenarios[0].id);
   const [selectedDemoRowId, setSelectedDemoRowId] = useState(matchedDemoRows[0].id);
+  const [isAskingAi, setIsAskingAi] = useState(false);
 
   const visibleDemoRows = demoRows.filter((row) => row.category === selectedDemoId);
   const selectedDemo = visibleDemoRows.find((row) => row.id === selectedDemoRowId) ?? visibleDemoRows[0] ?? demoRows[0];
@@ -487,6 +605,63 @@ export default function ReconciliationScreen() {
     setFeedback("Đã gợi ý cặp giao dịch BN/BC phù hợp. Vui lòng xác nhận và Match.");
   }
 
+  async function handleAskSemanticReconciliation() {
+    const selectedStatement =
+      items.statements.find((item) => (item.statementLineId ?? item.id) === selectedStatementLineId) ??
+      items.statements[0];
+    const pendingDocuments = autoCandidates.slice(0, 8);
+
+    if (!selectedStatement || pendingDocuments.length === 0) {
+      setAiSuggestion("Chua co du lieu sao ke hoac chung tu cho AI doi chieu.");
+      return;
+    }
+
+    setIsAskingAi(true);
+    setAiSuggestion("");
+
+    try {
+      const response = await postApi<AiWorkflowResponse>("/ai/workflows/semantic-reconciliation", {
+        inputs: {
+          unmatched_transaction: JSON.stringify(
+            {
+              date: selectedStatement.transactionDate,
+              amount: selectedStatement.amount,
+              description: selectedStatement.description,
+              bank_account_code: selectedStatement.bankAccountCode,
+            },
+            null,
+            2,
+          ),
+          pending_documents: JSON.stringify(
+            pendingDocuments.map((item) => ({
+              document_id: item.voucherId ?? item.id,
+              invoice_no: item.voucherNo,
+              partner_name: item.counterpartyName,
+              amount: item.amount,
+              document_date: item.transactionDate,
+              voucher_type: item.voucherType,
+              status: item.matchingStatus,
+            })),
+            null,
+            2,
+          ),
+        },
+      });
+      const outputValue = readAiWorkflowOutputValue(response);
+      setAiSuggestion(
+        outputValue ??
+          readAiWorkflowOutput(
+            response,
+            "Workflow semantic-reconciliation chua cau hinh API key trong .env.",
+          ),
+      );
+    } catch (error) {
+      setAiSuggestion(error instanceof Error ? error.message : "Khong goi duoc workflow doi chieu AI.");
+    } finally {
+      setIsAskingAi(false);
+    }
+  }
+
   async function handleUnmatch() {
     if (!recentMatchId) {
       setFeedback("Chưa có match ID để hủy.");
@@ -550,6 +725,23 @@ export default function ReconciliationScreen() {
         <div className="section-title">
           <h2>Demo đối chiếu tự động</h2>
           <span className="module-meta">Bấm từng nút để đổi tình huống trình bày</span>
+          <div className="topbar-actions">
+            <button className="button primary" type="button" onClick={handleMatch} disabled={isSubmitting}>
+              <AppIcon name="Search" />
+              {isSubmitting ? "Đang xử lý..." : "Match BN/BC"}
+            </button>
+            <button className="button" type="button" onClick={handleAutoMatch} disabled={isSubmitting}>
+              <AppIcon name="ArrowLeftRight" />
+              Đề xuất match
+            </button>
+            <button className="button" type="button" onClick={handleAskSemanticReconciliation} disabled={isAskingAi}>
+              <AppIcon name="Bot" />
+              {isAskingAi ? "AI đang đối chiếu..." : "AI đối chiếu lệch"}
+            </button>
+            <button className="button" type="button" onClick={handleUnmatch} disabled={isSubmitting}>
+              Unmatch
+            </button>
+          </div>
         </div>
         <section className="panel">
           <div className="recon-source-grid">
@@ -691,6 +883,12 @@ export default function ReconciliationScreen() {
                   <strong>{currency.format(item.amount)}</strong>
                 </div>
               ))}
+            </div>
+          ) : null}
+          {aiSuggestion ? (
+            <div className="attachment-box" style={{ marginTop: 16 }}>
+              <strong>AI đối chiếu ngữ nghĩa</strong>
+              <SemanticReconciliationResult value={aiSuggestion} />
             </div>
           ) : null}
         </section>

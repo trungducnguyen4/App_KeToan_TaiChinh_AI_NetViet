@@ -1,22 +1,17 @@
-# XAMPP MySQL Setup
+# PostgreSQL Setup
 
-This project now targets MySQL/MariaDB through XAMPP.
+This project now targets PostgreSQL.
 
-## 1. Start XAMPP
+## 1. Start PostgreSQL
 
-Start:
-
-- Apache
-- MySQL
+Start the local PostgreSQL service or use the `postgres` service in `docker-compose.yml`.
 
 ## 2. Create Database
 
-Use phpMyAdmin or MySQL CLI:
+Use `psql`:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS app_quan_tri
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_general_ci;
+CREATE DATABASE app_ke_toan;
 ```
 
 ## 3. Environment
@@ -24,13 +19,7 @@ CREATE DATABASE IF NOT EXISTS app_quan_tri
 Create `.env` from `.env.example`:
 
 ```env
-DATABASE_URL="mysql://root:@localhost:3306/app_quan_tri"
-```
-
-If your local root user has a password:
-
-```env
-DATABASE_URL="mysql://root:your_password@localhost:3306/app_quan_tri"
+DATABASE_URL="postgresql://postgres:secret@localhost:5432/app_ke_toan?schema=public"
 ```
 
 ## 4. Prisma
@@ -41,16 +30,11 @@ Generate Prisma client:
 npm run prisma:generate
 ```
 
-For prototype sync:
+To import from the provided MySQL dump:
 
 ```bash
-npm run prisma:db:push
-```
-
-For tracked migrations:
-
-```bash
-npm run prisma:migrate:dev -- --name initial_mysql_baseline
+node scripts/convert-mysql-dump-to-postgres.js
+psql -U postgres -h localhost -d app_ke_toan -f data.postgres.sql
 ```
 
 For an existing seeded database, inspect generated SQL before applying migrations and avoid reset commands.

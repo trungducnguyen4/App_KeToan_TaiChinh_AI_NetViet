@@ -4,13 +4,19 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/a
 
 let refreshPromise: Promise<boolean> | null = null;
 
-function getAuthHeaders(): Record<string, string> {
+function buildAuthHeaders(extra?: HeadersInit, includeJsonContentType = true): Headers {
+  const headers = new Headers(extra);
   const token = getValidAccessToken();
 
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  if (includeJsonContentType && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return headers;
 }
 
 async function refreshSession(): Promise<boolean> {
@@ -67,7 +73,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
         message = body.message;
       }
     } catch {
-      // Giữ thông báo mặc định nếu response không phải JSON.
+      // Keep the default message when the response is not JSON.
     }
 
     throw new Error(message);
@@ -81,13 +87,14 @@ async function requestApi<T>(
   init: RequestInit,
   canRefresh = true,
 ): Promise<T> {
+  const isFormData =
+    typeof FormData !== "undefined" &&
+    init.body instanceof FormData;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: "include",
-    headers: {
-      ...getAuthHeaders(),
-      ...init.headers,
-    },
+    headers: buildAuthHeaders(init.headers, !isFormData),
   });
 
   if (response.status === 401 && canRefresh) {
@@ -97,7 +104,7 @@ async function requestApi<T>(
     }
 
     expireSession();
-    throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    throw new Error("Phien dang nhap da het han. Vui long dang nhap lai.");
   }
 
   return parseResponse<T>(response);
@@ -111,6 +118,13 @@ export function postApi<T>(path: string, body: unknown): Promise<T> {
   return requestApi<T>(path, {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export function postFormApi<T>(path: string, body: FormData): Promise<T> {
+  return requestApi<T>(path, {
+    method: "POST",
+    body,
   });
 }
 

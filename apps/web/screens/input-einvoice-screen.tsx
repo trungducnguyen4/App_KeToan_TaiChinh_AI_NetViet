@@ -1,6 +1,9 @@
 import { inputEInvoiceScreen } from "@domain/index";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
+import { MarkdownText } from "../components/markdown-text";
+import { readAiWorkflowOutput, type AiWorkflowResponse } from "../lib/ai-workflows";
+import { postFormApi } from "../lib/api";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { invoiceAssistantMock } from "../lib/document-assistant-mock-data";
@@ -63,10 +66,137 @@ const pendingLineRows = [
   }
 ];
 
+type OcrAccountingSuggestion = {
+  debit_account?: unknown;
+  credit_account?: unknown;
+  cost_item_code?: unknown;
+  confidence?: unknown;
+  explanation?: unknown;
+  warnings?: unknown;
+};
+
+function extractJsonBlock(content: string) {
+  const fencedJson = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  return (fencedJson?.[1] ?? content).trim();
+}
+
+function parseOcrAccountingSuggestion(content: string): OcrAccountingSuggestion | null {
+  try {
+    const parsed = JSON.parse(extractJsonBlock(content));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+
+    return parsed as OcrAccountingSuggestion;
+  } catch {
+    return null;
+  }
+}
+
+function displayValue(value: unknown, fallback = "Chua co") {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+
+  return String(value);
+}
+
+function formatConfidence(value: unknown) {
+  if (typeof value !== "number") {
+    return displayValue(value);
+  }
+
+  return `${Math.round(value * 100)}%`;
+}
+
+function OcrAccountingResult({ content }: { content: string }) {
+  const suggestion = parseOcrAccountingSuggestion(content);
+
+  if (!suggestion) {
+    return <MarkdownText className="ai-card-markdown" content={content} />;
+  }
+
+  const warnings = Array.isArray(suggestion.warnings)
+    ? suggestion.warnings.filter((warning): warning is string => typeof warning === "string" && Boolean(warning.trim()))
+    : [];
+
+  return (
+    <div className="ocr-ai-result">
+      <div className="ocr-ai-grid">
+        <div className="ocr-ai-metric">
+          <span>Tai khoan No</span>
+          <strong>{displayValue(suggestion.debit_account)}</strong>
+        </div>
+        <div className="ocr-ai-metric">
+          <span>Tai khoan Co</span>
+          <strong>{displayValue(suggestion.credit_account)}</strong>
+        </div>
+        <div className="ocr-ai-metric">
+          <span>Khoan muc chi phi</span>
+          <strong>{displayValue(suggestion.cost_item_code, "Khong ap dung")}</strong>
+        </div>
+        <div className="ocr-ai-metric">
+          <span>Do tin cay</span>
+          <strong>{formatConfidence(suggestion.confidence)}</strong>
+        </div>
+      </div>
+
+      {typeof suggestion.explanation === "string" && suggestion.explanation.trim() ? (
+        <div className="ocr-ai-section">
+          <span>Giai thich</span>
+          <p>{suggestion.explanation}</p>
+        </div>
+      ) : null}
+
+      {warnings.length ? (
+        <div className="ocr-ai-section warning">
+          <span>Can luu y</span>
+          <ul>
+            {warnings.map((warning, index) => (
+              <li key={`${warning}-${index}`}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function InputEInvoiceScreen() {
   const router = useRouter();
   const isPendingView = router.query.status === "pending";
   const [assistantFeedback, setAssistantFeedback] = useState("");
+  const [ocrFile, setOcrFile] = useState<File | null>(null);
+  const [isRunningOcr, setIsRunningOcr] = useState(false);
+  const [ocrResult, setOcrResult] = useState("");
+
+  async function handleRunOcrWorkflow() {
+    if (!ocrFile) {
+      setOcrResult("Vui long chon file hoa don PDF/anh truoc khi chay OCR.");
+      return;
+    }
+
+    setIsRunningOcr(true);
+    setOcrResult("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", ocrFile);
+      formData.append("inputs", JSON.stringify({ voucher_type: "HT1" }));
+
+      const response = await postFormApi<AiWorkflowResponse>("/ai/workflows/ocr-accounting/upload", formData);
+      setOcrResult(
+        readAiWorkflowOutput(
+          response,
+          "Workflow ocr-accounting chua cau hinh API key trong .env.",
+        ),
+      );
+    } catch (error) {
+      setOcrResult(error instanceof Error ? error.message : "Khong chay duoc workflow OCR.");
+    } finally {
+      setIsRunningOcr(false);
+    }
+  }
 
   if (isPendingView) {
     return (
@@ -320,6 +450,41 @@ export default function InputEInvoiceScreen() {
             <div className="ai-feedback-box">
               <strong>Kết quả mô phỏng</strong>
               <p>{assistantFeedback}</p>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="panel">
+          <div className="subsection">
+            <h3>OCR & Gợi ý định khoản</h3>
+            <span className="module-meta">Dify workflow: ocr-accounting</span>
+          </div>
+          <div className="form-grid">
+            <label className="form-field xl">
+              <span>File hóa đơn PDF/ảnh</span>
+              <input
+                className="field"
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                onChange={(event) => setOcrFile(event.target.files?.[0] ?? null)}
+              />
+            </label>
+            <label className="form-field sm">
+              <span>Loại chứng từ</span>
+              <input className="field" value="HT1" readOnly />
+            </label>
+            <div className="form-field sm">
+              <span>&nbsp;</span>
+              <button className="button primary" type="button" onClick={handleRunOcrWorkflow} disabled={isRunningOcr}>
+                <AppIcon name="Bot" />
+                {isRunningOcr ? "Đang OCR..." : "Chạy OCR AI"}
+              </button>
+            </div>
+          </div>
+          {ocrResult ? (
+            <div className="attachment-box" style={{ marginTop: 12 }}>
+              <strong>Kết quả AI</strong>
+              <OcrAccountingResult content={ocrResult} />
             </div>
           ) : null}
         </section>

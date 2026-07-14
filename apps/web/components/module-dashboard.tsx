@@ -15,7 +15,10 @@ import {
 import type { ModuleKey } from "@domain/types";
 import { useEffect, useRef, useState } from "react";
 import { assistantMappingSuggestions } from "../lib/document-assistant-mock-data";
+import { readAiWorkflowOutput, type AiWorkflowResponse } from "../lib/ai-workflows";
+import { postApi } from "../lib/api";
 import { AppIcon } from "./icons";
+import { MarkdownText } from "./markdown-text";
 import { StatusPill } from "./status-pill";
 
 const accountingReportItems = [
@@ -128,9 +131,59 @@ const inputEInvoiceMenuItems = [
   { label: "Quy trình: HĐĐT đầu vào", href: `${inputEInvoiceScreen.route}?view=workflow` }
 ] as const;
 
+const accountingDashboardAlerts = [
+  {
+    id: "overdue-debt",
+    title: "Cảnh báo nợ quá hạn",
+    severity: "Cao",
+    dueDate: "2026-07-14",
+    owner: "Kế toán công nợ",
+    source: "AR-AGING",
+    amount: "1.28 tỷ",
+    sentAt: "08:10",
+    description: "5 khách hàng có hóa đơn quá hạn trên 15 ngày, cần nhắc nợ và cập nhật kế hoạch thu."
+  },
+  {
+    id: "budget-overrun",
+    title: "Chi vượt định mức",
+    severity: "Trung bình",
+    dueDate: "2026-07-14",
+    owner: "Kế toán chi phí",
+    source: "BUDGET-OPS",
+    amount: "186 triệu",
+    sentAt: "08:25",
+    description: "Chi phí vận hành tháng 07/2026 vượt 12% so với định mức đã duyệt."
+  },
+  {
+    id: "negative-cashflow",
+    title: "Dòng tiền âm dự báo",
+    severity: "Cao",
+    dueDate: "2026-07-18",
+    owner: "CFO",
+    source: "CASHFLOW-FORECAST",
+    amount: "-420 triệu",
+    sentAt: "08:40",
+    description: "Dự báo dòng tiền thuần âm trong 7 ngày tới nếu lịch thu công nợ không thay đổi."
+  },
+  {
+    id: "journal-mismatch",
+    title: "Bút toán lệch",
+    severity: "Cao",
+    dueDate: "2026-07-14",
+    owner: "Kế toán tổng hợp",
+    source: "GL-CHECK",
+    amount: "3 chứng từ",
+    sentAt: "09:00",
+    description: "Có chứng từ hạch toán chưa cân Nợ/Có hoặc thiếu tài khoản đối ứng."
+  }
+] as const;
+
 export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isWritingAlert, setIsWritingAlert] = useState(false);
+  const [alertDraft, setAlertDraft] = useState("");
+  const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
   const current = workitModules.find((module) => module.key === moduleKey) ?? workitModules[0];
   const isAccounting = current.key === "accounting";
   const isCash = current.key === "cash";
@@ -155,6 +208,49 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
         inputEInvoiceScreen.route
       ];
   const kpiCaption = (item: (typeof kpis)[number]) => ("hint" in item ? item.hint : item.delta ?? "");
+  const selectedAlert =
+    accountingDashboardAlerts.find((item) => item.id === selectedAlertId) ??
+    (selectedAlertId ? accountingDashboardAlerts[0] : undefined);
+
+  async function handleWriteDashboardAlert() {
+    const alert = accountingDashboardAlerts.find((item) => item.id === selectedAlertId) ?? accountingDashboardAlerts[0];
+    setIsWritingAlert(true);
+    setAlertDraft("");
+
+    try {
+      const response = await postApi<AiWorkflowResponse>("/ai/workflows/alert-writer", {
+        inputs: {
+          alert_type: "DASHBOARD_TAX_ALERT",
+          raw_data: JSON.stringify(
+            {
+              alert_id: alert.id,
+              title: alert.title,
+              severity: alert.severity,
+              due_date: alert.dueDate,
+              owner: alert.owner,
+              source: alert.source,
+              amount: alert.amount,
+              sent_at: alert.sentAt,
+              description: alert.description,
+              requested_from: "accounting_dashboard"
+            },
+            null,
+            2
+          )
+        }
+      });
+      setAlertDraft(
+        readAiWorkflowOutput(
+          response,
+          "Workflow alert-writer chua cau hinh API key trong .env."
+        )
+      );
+    } catch (error) {
+      setAlertDraft(error instanceof Error ? error.message : "Khong soan duoc canh bao AI.");
+    } finally {
+      setIsWritingAlert(false);
+    }
+  }
 
   useEffect(() => {
     if (!openMenu) {
@@ -293,6 +389,96 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
                 </div>
               ) : null}
             </section>
+          ) : null}
+
+          {isAccounting ? (
+            <>
+              <button
+                className="dashboard-alert-card"
+                type="button"
+                onClick={() => {
+                  setSelectedAlertId((currentAlertId) =>
+                    currentAlertId ? null : accountingDashboardAlerts[0].id
+                  );
+                  setAlertDraft("");
+                }}
+              >
+                <span className="dashboard-alert-icon">
+                  <AppIcon name="BriefcaseBusiness" />
+                </span>
+                <span className="dashboard-alert-copy">
+                  <span>Cảnh báo cần xem</span>
+                  <strong>{String(accountingDashboardAlerts.length).padStart(2, "0")}</strong>
+                  <small>Tự động gửi cảnh báo</small>
+                </span>
+              </button>
+
+              {selectedAlert ? (
+                <section className="panel dashboard-alert-detail">
+                  <div className="section-title section-title--inside">
+                    <h2>Chi tiết cảnh báo</h2>
+                    <div className="topbar-actions">
+                      <a className="button" href={taxNotificationScreen.route}>
+                        <AppIcon name="ShieldCheck" />
+                        Xem thông báo thuế
+                      </a>
+                      <button className="button primary" type="button" onClick={handleWriteDashboardAlert} disabled={isWritingAlert}>
+                        <AppIcon name="Bot" />
+                        {isWritingAlert ? "AI đang soạn..." : "AI soạn văn bản"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="dashboard-alert-layout">
+                    <div className="dashboard-alert-list">
+                      {accountingDashboardAlerts.map((alert) => (
+                        <button
+                          className={`dashboard-alert-row${alert.id === selectedAlert.id ? " is-active" : ""}`}
+                          type="button"
+                          key={alert.id}
+                          onClick={() => {
+                            setSelectedAlertId(alert.id);
+                            setAlertDraft("");
+                          }}
+                        >
+                          <span>
+                            <strong>{alert.title}</strong>
+                            <small>Đã gửi tự động lúc {alert.sentAt}</small>
+                          </span>
+                          <b>{alert.severity}</b>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="dashboard-alert-content">
+                      <div className="dashboard-alert-heading">
+                        <strong>{selectedAlert.title}</strong>
+                        <span>{selectedAlert.amount}</span>
+                      </div>
+                      <p>{selectedAlert.description}</p>
+                      <dl>
+                        <div>
+                          <dt>Nguồn</dt>
+                          <dd>{selectedAlert.source}</dd>
+                        </div>
+                        <div>
+                          <dt>Phụ trách</dt>
+                          <dd>{selectedAlert.owner}</dd>
+                        </div>
+                        <div>
+                          <dt>Hạn xử lý</dt>
+                          <dd>{selectedAlert.dueDate}</dd>
+                        </div>
+                      </dl>
+                      {alertDraft ? (
+                        <div className="attachment-box" style={{ marginTop: 16 }}>
+                          <strong>Bản nháp AI</strong>
+                          <MarkdownText className="ai-card-markdown" content={alertDraft} />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+            </>
           ) : null}
 
           <div className="section-title">

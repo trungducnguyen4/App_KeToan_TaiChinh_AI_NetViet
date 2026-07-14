@@ -5,6 +5,8 @@ import { cashVouchers } from "@domain/index";
 import type { VoucherRecord } from "@domain/types";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
+import { MarkdownText } from "../components/markdown-text";
+import { postApi } from "../lib/api";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -18,6 +20,10 @@ type BankCreditColumn = {
   key: string;
   label: string;
   render: (voucher: VoucherRecord) => string;
+};
+
+type AiChatResponse = {
+  answer?: string;
 };
 
 const bankCreditColumns: BankCreditColumn[] = [
@@ -64,6 +70,8 @@ export default function BankCreditListScreen() {
   const [fromMonth, setFromMonth] = useState("07/2026");
   const [toMonth, setToMonth] = useState("07/2026");
   const [periodLabel, setPeriodLabel] = useState("Trong năm");
+  const [isAskingAi, setIsAskingAi] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
 
   const filteredVouchers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -93,6 +101,45 @@ export default function BankCreditListScreen() {
   const selectedVoucher = filteredVouchers.find((voucher) => voucher.id === selectedId) ?? filteredVouchers[0] ?? bankCreditVouchers[0];
   const selectedLine = selectedVoucher?.lines[0];
   const activeVoucher = selectedVoucher;
+
+  async function handleAskAi() {
+    if (!selectedVoucher) {
+      setAiSuggestion("Chua co chung tu BC duoc chon de AI kiem tra.");
+      return;
+    }
+
+    setIsAskingAi(true);
+    setAiSuggestion("");
+
+    try {
+      const response = await postApi<AiChatResponse>("/ai/chat", {
+        message:
+          "Kiem tra nhanh chung tu bao co ngan hang dang chon: dinh khoan No/Co, rui ro doi chieu sao ke, thong tin con thieu va viec can lam tiep. Tra loi ngan gon theo bullet.",
+        currentScreen: "/modules/cash/bank-credits",
+        selectedFilters: {
+          voucherType: "BC",
+          period: `${fromMonth} - ${toMonth}`,
+          query,
+          selectedVoucher: {
+            voucherNo: selectedVoucher.voucherNo,
+            voucherDate: selectedVoucher.voucherDate,
+            bankAccountCode: selectedVoucher.bankAccountCode,
+            counterpartyName: selectedVoucher.counterpartyName,
+            content: selectedVoucher.content,
+            amount: selectedVoucher.amount,
+            reconciliationStatus: selectedVoucher.reconciliationStatus,
+            lines: selectedVoucher.lines.slice(0, 5),
+          },
+        },
+      });
+
+      setAiSuggestion(response.answer || "AI da nhan yeu cau nhung chua tra ve noi dung.");
+    } catch (error) {
+      setAiSuggestion(error instanceof Error ? error.message : "Khong goi duoc AI Agent.");
+    } finally {
+      setIsAskingAi(false);
+    }
+  }
 
   return (
     <AppShell activeModule="cash">
@@ -132,6 +179,10 @@ export default function BankCreditListScreen() {
               <AppIcon name="FileText" />
               Thêm (F2)
             </a>
+            <button className="button" type="button" onClick={handleAskAi} disabled={isAskingAi}>
+              <AppIcon name="Bot" />
+              {isAskingAi ? "AI dang kiem tra..." : "AI kiem tra"}
+            </button>
             <button className="button" type="button">
               In
             </button>
@@ -275,6 +326,12 @@ export default function BankCreditListScreen() {
             </p>
             {selectedLine ? <p>Dòng hạch toán đầu tiên: {selectedLine.description}</p> : null}
           </div>
+          {aiSuggestion ? (
+            <div className="attachment-box" style={{ marginTop: 12 }}>
+              <strong>AI Agent</strong>
+              <MarkdownText className="ai-card-markdown" content={aiSuggestion} />
+            </div>
+          ) : null}
         </section>
       </div>
     </AppShell>

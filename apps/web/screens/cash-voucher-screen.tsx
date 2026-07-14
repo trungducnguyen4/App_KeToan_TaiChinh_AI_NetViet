@@ -3,6 +3,7 @@ import { cashVoucherScreens, cashVouchers } from "@domain/index";
 import type { CashVoucherType, VoucherRecord } from "@domain/types";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
+import { MarkdownText } from "../components/markdown-text";
 import { fetchApi, patchApi, postApi } from "../lib/api";
 import { StatusPill } from "../components/status-pill";
 
@@ -34,6 +35,10 @@ type VoucherListFilterState = {
   query: string;
 };
 
+type AiChatResponse = {
+  answer?: string;
+};
+
 export default function CashVoucherScreen({ voucherType }: { voucherType: CashVoucherType }) {
   const screen = cashVoucherScreens.find((item) => item.voucherType === voucherType) ?? cashVoucherScreens[0];
   const [vouchers, setVouchers] = useState<VoucherRecord[]>(cashVouchers.filter((item) => item.voucherType === voucherType));
@@ -42,6 +47,8 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
   const [editingVoucherId, setEditingVoucherId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isAskingAi, setIsAskingAi] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
   const [listMessage, setListMessage] = useState<string>("");
   const filteredVouchers = filterVouchers(vouchers, filters);
   const selectedVoucher = vouchers.find((voucher) => voucher.id === editingVoucherId) ?? vouchers[0];
@@ -66,6 +73,7 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
     setFilters(buildInitialFilters());
     setEditingVoucherId(null);
     setFeedback("");
+    setAiSuggestion("");
     setListMessage("");
   }, [voucherType]);
 
@@ -126,7 +134,32 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
   function handleResetForm() {
     setEditingVoucherId(null);
     setForm(buildInitialForm(voucherType));
+    setAiSuggestion("");
     setFeedback("Da chuyen sang tao moi");
+  }
+
+  async function handleAskAiForVoucher() {
+    setIsAskingAi(true);
+    setAiSuggestion("");
+
+    try {
+      const response = await postApi<AiChatResponse>("/ai/chat", {
+        message:
+          "Kiem tra nhanh chung tu nay va goi y dinh khoan, rui ro thue/kiem soat, va thong tin con thieu. Tra loi ngan gon theo bullet.",
+        currentScreen: `/modules/cash/vouchers/${voucherType}`,
+        selectedFilters: {
+          voucherType,
+          paymentChannel: screen.paymentChannel,
+          form,
+        },
+      });
+
+      setAiSuggestion(response.answer || "AI da nhan yeu cau nhung chua tra ve noi dung.");
+    } catch (error) {
+      setAiSuggestion(error instanceof Error ? error.message : "Khong goi duoc AI Agent.");
+    } finally {
+      setIsAskingAi(false);
+    }
   }
 
   function handleApplyFilters() {
@@ -266,6 +299,10 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
         <div className="section-title">
           <h2>Tao / sua chung tu</h2>
           <div className="topbar-actions">
+            <button className="button" onClick={handleAskAiForVoucher} type="button" disabled={isAskingAi}>
+              <AppIcon name="Bot" />
+              {isAskingAi ? "AI dang goi y..." : "AI goi y"}
+            </button>
             <button className="button primary" onClick={handleSaveVoucher} type="button" disabled={isSaving}>
               <AppIcon name="Save" />
               {isSaving ? "Dang luu..." : editingVoucherId ? "Luu cap nhat" : "Luu"}
@@ -350,6 +387,12 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
                 <strong>Mode</strong>
                 <p>{editingVoucherId ? `Dang sua ${form.voucherNo}` : `Dang tao moi ${voucherType}`}</p>
               </div>
+              {aiSuggestion ? (
+                <div className="attachment-box">
+                  <strong>AI Agent</strong>
+                  <MarkdownText className="ai-card-markdown" content={aiSuggestion} />
+                </div>
+              ) : null}
               {feedback ? (
                 <div className="attachment-box">
                   <strong>Trang thai</strong>

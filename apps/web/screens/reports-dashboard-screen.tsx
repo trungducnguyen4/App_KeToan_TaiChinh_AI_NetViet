@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
+import { MarkdownText } from "../components/markdown-text";
+import { postApi } from "../lib/api";
 import {
   debtDashboardMocks,
   debtOpeningBalanceMocks,
@@ -20,6 +22,13 @@ import type {
 type ReportKey = "cash-flow" | "receivables" | "profit" | "management";
 type PeriodType = "day" | "week" | "month";
 type MonitoringFilter = "all" | MonitoringAlertCategory;
+
+type AiWorkflowResponse = {
+  configured?: boolean;
+  status?: string;
+  outputs?: Record<string, unknown>;
+  error?: string;
+};
 
 const metricValue = (code: string) =>
   reportMetricMocks.find((item) => item.metric_code === code)?.metric_value ??
@@ -575,6 +584,90 @@ function datesBetween(from: string, to: string) {
   return dates;
 }
 
+function readAiNarrative(response: AiWorkflowResponse) {
+  if (response.error) {
+    return response.error;
+  }
+
+  const outputs = response.outputs ?? {};
+  const candidate =
+    outputs.narrative ??
+    outputs.answer ??
+    outputs.text ??
+    outputs.message ??
+    outputs.report_summary ??
+    outputs.cfo_commentary ??
+    outputs.output;
+
+  if (typeof candidate === "string" && candidate.trim()) {
+    return candidate;
+  }
+
+  if (response.configured === false) {
+    return "Workflow bao cao AI chua cau hinh API key trong .env.";
+  }
+
+  return "AI da xu ly workflow nhung output chua co truong narrative/answer/text.";
+}
+
+const aiReportTypeByKey: Record<ReportKey, string> = {
+  "cash-flow": "CASH_FLOW",
+  receivables: "RECEIVABLES_PAYABLES",
+  profit: "PROFITABILITY",
+  management: "MANAGEMENT_FINANCE",
+};
+
+const automaticReportScope = [
+  "Bao cao dong tien: thu - chi thuc te va du bao ngan han tu cong no den han.",
+  "Bao cao cong no: tuoi no phai thu/phai tra, top khach no, canh bao qua han, de xuat uu tien thu.",
+  "Bao cao chi phi & loi nhuan: theo khoan muc 621/622/627/641/642, bien loi nhuan theo don hang/mat hang.",
+  "Bao cao tai chinh quan tri: can doi phat sinh, so du TK, so cai, doi chieu nguoc voi WORKIT.",
+];
+
+function markdownCell(value: unknown) {
+  return String(value ?? "")
+    .replace(/\r?\n/g, " ")
+    .replace(/\|/g, "\\|");
+}
+
+function buildFinancialTablesInput(args: {
+  selected: ReportGroup;
+  periodLabel: string;
+  periodFilter: { type: PeriodType; value: string };
+  kpis: Array<{ label: string; value: string; change: string; tone: string }>;
+  columns: string[];
+  rows: string[][];
+}) {
+  const kpiTable = [
+    "| Chi tieu | Gia tri | Ghi chu |",
+    "| --- | ---: | --- |",
+    ...args.kpis.map(
+      (kpi) =>
+        `| ${markdownCell(kpi.label)} | ${markdownCell(kpi.value)} | ${markdownCell(kpi.change)} |`,
+    ),
+  ].join("\n");
+
+  const reportRows = args.rows.slice(0, 10);
+  const detailTable = [
+    `| ${args.columns.map(markdownCell).join(" | ")} |`,
+    `| ${args.columns.map(() => "---").join(" | ")} |`,
+    ...reportRows.map((row) => `| ${row.map(markdownCell).join(" | ")} |`),
+  ].join("\n");
+
+  return [
+    `Loai bao cao: ${args.selected.title}`,
+    `Ky bao cao: ${args.periodLabel}`,
+    `Bo loc: ${args.periodFilter.type} = ${args.periodFilter.value}`,
+    `Nguon du lieu: ${args.selected.source}`,
+    "",
+    "## Chi so tong hop",
+    kpiTable,
+    "",
+    "## Bang chi tiet",
+    detailTable,
+  ].join("\n");
+}
+
 export default function ReportsDashboardScreen() {
   const [selectedKey, setSelectedKey] = useState<ReportKey>("cash-flow");
   const [monitoringFilter, setMonitoringFilter] =
@@ -593,6 +686,8 @@ export default function ReportsDashboardScreen() {
     type: PeriodType;
     value: string;
   }>({ type: "month", value: "2026-07" });
+  const [aiNarrative, setAiNarrative] = useState("");
+  const [isGeneratingAiNarrative, setIsGeneratingAiNarrative] = useState(false);
   const selected =
     reportGroups.find((item) => item.key === selectedKey) ?? reportGroups[0];
   const dashboard = dashboardData[selectedKey];
@@ -637,6 +732,45 @@ export default function ReportsDashboardScreen() {
     }
     setAppliedFilter({ type: periodType, value });
     setAppliedPeriod(formatPeriod(periodType, value));
+    setAiNarrative("");
+  }
+
+  async function generateAiNarrative() {
+    setIsGeneratingAiNarrative(true);
+    setAiNarrative("");
+
+    try {
+      const response = await postApi<AiWorkflowResponse>("/ai/workflows/cfo-report", {
+        inputs: {
+          report_type: aiReportTypeByKey[selectedKey],
+          financial_tables: buildFinancialTablesInput({
+            selected,
+            periodLabel: appliedPeriod,
+            periodFilter: appliedFilter,
+            kpis: dashboard.kpis,
+            columns: dashboard.columns,
+            rows: dashboard.rows,
+          }),
+          report_scope: automaticReportScope,
+          delivery_channels: ["email", "dashboard"],
+          schedule_modes: ["daily", "weekly", "monthly", "on_demand"],
+          report_key: selectedKey,
+          report_title: selected.title,
+          period_label: appliedPeriod,
+          period_filter: appliedFilter,
+          kpis: dashboard.kpis,
+          table_columns: dashboard.columns,
+          table_rows: dashboard.rows.slice(0, 10),
+          source: selected.source,
+        },
+      });
+
+      setAiNarrative(readAiNarrative(response));
+    } catch (error) {
+      setAiNarrative(error instanceof Error ? error.message : "Khong tao duoc nhan xet AI.");
+    } finally {
+      setIsGeneratingAiNarrative(false);
+    }
   }
 
   const cashView = useMemo(() => {
@@ -1175,6 +1309,33 @@ export default function ReportsDashboardScreen() {
               <small>Đang hiển thị</small>
               <strong>{appliedPeriod}</strong>
             </div>
+          </div>
+
+          <div className="report-ai-narrative">
+            <div>
+              <span className="report-ai-icon">
+                <AppIcon name="Bot" size={17} />
+              </span>
+              <span>
+                <small>AI Agent</small>
+                {aiNarrative ? (
+                  <MarkdownText className="report-ai-markdown" content={aiNarrative} />
+                ) : (
+                  <p className="report-ai-placeholder">
+                    San sang lap bao cao quan tri AI cho nhom dang xem.
+                  </p>
+                )}
+              </span>
+            </div>
+            <button
+              className="button"
+              type="button"
+              onClick={generateAiNarrative}
+              disabled={isGeneratingAiNarrative}
+            >
+              <AppIcon name="Bot" size={15} />
+              {isGeneratingAiNarrative ? "Dang lap..." : "AI lap bao cao"}
+            </button>
           </div>
 
           {selectedKey === "cash-flow" ? (

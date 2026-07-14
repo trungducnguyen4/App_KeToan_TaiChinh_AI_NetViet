@@ -3,6 +3,7 @@
 import {
   ArrowRight,
   Bot,
+  BriefcaseBusiness,
   Calculator,
   Database,
   BookOpen,
@@ -40,6 +41,7 @@ const icons = {
   ArrowLeft,
   BookOpen,
   Bot,
+  BriefcaseBusiness,
   ArrowLeftRight,
   BadgeDollarSign,
   Calculator,

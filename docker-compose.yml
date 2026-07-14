@@ -1,20 +1,21 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: app_quan_tri_mysql
+  postgres:
+    image: postgres:18
+    container_name: app_ke_toan_postgres
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: root
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: app_ke_toan
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app_ke_toan"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  mysql_data:
+  postgres_data:

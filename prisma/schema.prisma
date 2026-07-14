@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -236,7 +236,7 @@ model SyncMapping {
   sourceSystem    SourceSystem @relation(fields: [sourceSystemId], references: [id], onUpdate: Restrict, map: "fk_sync_mappings_source")
 
   @@unique([sourceSystemId, entityName, sourceRecordId], map: "uq_sync_mappings_source")
-  @@index([lastSyncRunId], map: "fk_sync_mappings_last_run")
+  @@index([lastSyncRunId], map: "fk_sync_mappings_last_run_idx")
   @@index([localTableName, localRecordId], map: "idx_sync_mappings_local")
   @@index([organizationId], map: "idx_sync_mappings_org")
   @@map("sync_mappings")
@@ -247,7 +247,7 @@ model SyncRawPayload {
   syncRunId      String   @map("sync_run_id") @db.Char(36)
   entityName     String   @map("entity_name") @db.VarChar(120)
   sourceRecordId String   @map("source_record_id") @db.VarChar(128)
-  payload        String   @db.LongText
+  payload        String   @db.Text
   payloadHash    String   @map("payload_hash") @db.VarChar(128)
   createdAt      DateTime @map("created_at")
   syncRun        SyncRun  @relation(fields: [syncRunId], references: [id], onUpdate: Restrict, map: "fk_sync_raw_payloads_run")
@@ -293,7 +293,7 @@ model Account {
   voucher_lines                    VoucherLine[]
 
   @@unique([organizationId, code], map: "uq_accounts_org_code")
-  @@index([parentId], map: "fk_accounts_parent")
+  @@index([parentId], map: "fk_accounts_parent_idx")
   @@index([organizationId, isActive], map: "idx_accounts_active")
   @@index([organizationId, accountGroup], map: "idx_accounts_group")
   @@index([organizationId, parentId], map: "idx_accounts_org_parent")
@@ -418,14 +418,14 @@ model Voucher {
   users_vouchers_updated_byTousers User?                     @relation("vouchers_updated_byTousers", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_updated_by")
 
   @@unique([organizationId, voucherType, voucherNo], map: "uq_vouchers_org_type_no")
-  @@index([createdBy], map: "fk_vouchers_created_by")
-  @@index([updated_by], map: "fk_vouchers_updated_by")
+  @@index([createdBy], map: "fk_vouchers_created_by_idx")
+  @@index([updated_by], map: "fk_vouchers_updated_by_idx")
   @@index([organizationId, status, voucherDate], map: "idx_vouchers_org_status_date")
   @@index([organizationId, voucherType, voucherDate], map: "idx_vouchers_org_type_date")
   @@index([organizationId, bank_account_id, voucherDate], map: "idx_vouchers_org_bank_date")
   @@index([organizationId, cash_book_id, voucherDate], map: "idx_vouchers_org_cash_book_date")
-  @@index([bank_account_id], map: "fk_vouchers_bank_account")
-  @@index([cash_book_id], map: "fk_vouchers_cash_book")
+  @@index([bank_account_id], map: "fk_vouchers_bank_account_idx")
+  @@index([cash_book_id], map: "fk_vouchers_cash_book_idx")
   @@index([source_system_id, source_record_id], map: "idx_vouchers_source")
   @@map("vouchers")
 }
@@ -462,10 +462,10 @@ model VoucherLine {
   warehouses      warehouses?    @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_voucher_lines_warehouse")
 
   @@unique([voucherId, lineNo], map: "uq_voucher_lines_voucher_line")
-  @@index([contract_id], map: "fk_voucher_lines_contract")
-  @@index([cost_item_id], map: "fk_voucher_lines_cost_item")
-  @@index([employee_id], map: "fk_voucher_lines_employee")
-  @@index([item_id], map: "fk_voucher_lines_item")
+  @@index([contract_id], map: "fk_voucher_lines_contract_idx")
+  @@index([cost_item_id], map: "fk_voucher_lines_cost_item_idx")
+  @@index([employee_id], map: "fk_voucher_lines_employee_idx")
+  @@index([item_id], map: "fk_voucher_lines_item_idx")
   @@index([account_id], map: "idx_voucher_lines_account")
   @@index([bank_account_id], map: "idx_voucher_lines_bank_account")
   @@index([customer_id], map: "idx_voucher_lines_customer")
@@ -490,7 +490,7 @@ model ApprovalInstance {
   organizations   Organization     @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_approval_instances_org")
 
   @@unique([organization_id, document_type, document_id], map: "uq_approval_instances_doc")
-  @@index([flow_id], map: "fk_approval_instances_flow")
+  @@index([flow_id], map: "fk_approval_instances_flow_idx")
   @@map("approval_instances")
 }
 
@@ -505,7 +505,7 @@ model ApprovalAction {
   approvalInstance   ApprovalInstance @relation(fields: [approvalInstanceId], references: [id], onUpdate: Restrict, map: "fk_approval_actions_instance")
   users              User             @relation(fields: [acted_by], references: [id], onUpdate: Restrict, map: "fk_approval_actions_user")
 
-  @@index([acted_by], map: "fk_approval_actions_user")
+  @@index([acted_by], map: "fk_approval_actions_user_idx")
   @@index([approvalInstanceId], map: "idx_approval_actions_instance")
   @@map("approval_actions")
 }
@@ -526,7 +526,7 @@ model AttachmentFile {
   organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_attachment_files_org")
 
   @@unique([organization_id, file_hash, storageKey], map: "uq_attachment_files_hash_key")
-  @@index([created_by], map: "fk_attachment_files_created_by")
+  @@index([created_by], map: "fk_attachment_files_created_by_idx")
   @@map("attachment_files")
 }
 
@@ -546,7 +546,7 @@ model BankStatement {
   bank_accounts        bank_accounts       @relation(fields: [bank_account_id], references: [id], onUpdate: Restrict, map: "fk_bank_statements_bank_account")
   organization         Organization        @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_bank_statements_org")
 
-  @@index([organizationId], map: "fk_bank_statements_org")
+  @@index([organizationId], map: "fk_bank_statements_org_idx")
   @@index([bank_account_id], map: "idx_bank_statements_bank_account")
   @@map("bank_statements")
 }
@@ -584,8 +584,8 @@ model BankReconciliationMatch {
   voucher              Voucher           @relation(fields: [voucherId], references: [id], onUpdate: Restrict, map: "fk_bank_reconciliation_matches_voucher")
 
   @@unique([statement_line_id, voucherId], map: "uq_bank_reconciliation_matches_line_voucher")
-  @@index([matchedBy], map: "fk_bank_reconciliation_matches_user")
-  @@index([voucherId], map: "fk_bank_reconciliation_matches_voucher")
+  @@index([matchedBy], map: "fk_bank_reconciliation_matches_user_idx")
+  @@index([voucherId], map: "fk_bank_reconciliation_matches_voucher_idx")
   @@map("bank_reconciliation_matches")
 }
 
@@ -596,8 +596,8 @@ model AuditEvent {
   action         String       @db.VarChar(120)
   entityName     String       @map("entity_name") @db.VarChar(120)
   entityId       String       @map("entity_id") @db.Char(36)
-  before_data    String?      @db.LongText
-  after_data     String?      @db.LongText
+  before_data    String?      @db.Text
+  after_data     String?      @db.Text
   ipAddress      String?      @map("ip_address") @db.VarChar(45)
   user_agent     String?      @db.VarChar(500)
   request_id     String?      @db.VarChar(128)
@@ -605,7 +605,7 @@ model AuditEvent {
   users          User?        @relation(fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_audit_events_actor_user")
   organization   Organization @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_audit_events_org")
 
-  @@index([actorUserId], map: "fk_audit_events_actor_user")
+  @@index([actorUserId], map: "fk_audit_events_actor_user_idx")
   @@index([organizationId, action, createdAt], map: "idx_audit_events_action_created")
   @@index([organizationId, entityName, entityId], map: "idx_audit_events_entity")
   @@map("audit_events")
@@ -626,7 +626,7 @@ model AiJob {
   users          User?            @relation(fields: [created_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ai_jobs_created_by")
   organization   Organization     @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_ai_jobs_org")
 
-  @@index([created_by], map: "fk_ai_jobs_created_by")
+  @@index([created_by], map: "fk_ai_jobs_created_by_idx")
   @@index([organizationId, status], map: "idx_ai_jobs_org_status")
   @@map("ai_jobs")
 }
@@ -636,12 +636,12 @@ model ai_job_outputs {
   id          String   @id @db.Char(36)
   ai_job_id   String   @db.Char(36)
   output_type String   @db.VarChar(80)
-  payload     String   @db.LongText
+  payload     String   @db.Text
   confidence  Decimal? @db.Decimal(5, 4)
   created_at  DateTime
   ai_jobs     AiJob    @relation(fields: [ai_job_id], references: [id], onUpdate: Restrict, map: "fk_ai_job_outputs_job")
 
-  @@index([ai_job_id], map: "fk_ai_job_outputs_job")
+  @@index([ai_job_id], map: "fk_ai_job_outputs_job_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -658,8 +658,8 @@ model approval_flow_steps {
   users            User?          @relation(fields: [approver_user_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_approval_flow_steps_user")
 
   @@unique([flow_id, step_no], map: "uq_approval_flow_steps_flow_step")
-  @@index([approver_role_id], map: "fk_approval_flow_steps_role")
-  @@index([approver_user_id], map: "fk_approval_flow_steps_user")
+  @@index([approver_role_id], map: "fk_approval_flow_steps_role_idx")
+  @@index([approver_user_id], map: "fk_approval_flow_steps_user_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -690,7 +690,7 @@ model asset_movements {
   fixed_assets     fixed_assets     @relation(fields: [asset_id], references: [id], onUpdate: Restrict, map: "fk_asset_movements_asset")
   journal_entries  journal_entries? @relation(fields: [journal_entry_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_asset_movements_journal_entry")
 
-  @@index([journal_entry_id], map: "fk_asset_movements_journal_entry")
+  @@index([journal_entry_id], map: "fk_asset_movements_journal_entry_idx")
   @@index([asset_id], map: "idx_asset_movements_asset")
 }
 
@@ -752,7 +752,7 @@ model contracts {
   voucher_lines                    VoucherLine[]
 
   @@unique([organization_id, contract_no], map: "uq_contracts_org_contract_no")
-  @@index([source_system_id], map: "fk_contracts_source")
+  @@index([source_system_id], map: "fk_contracts_source_idx")
   @@index([customer_id], map: "idx_contracts_customer")
   @@index([supplier_id], map: "idx_contracts_supplier")
 }
@@ -780,7 +780,7 @@ model cost_items {
   voucher_lines       VoucherLine[]
 
   @@unique([organization_id, code], map: "uq_cost_items_org_code")
-  @@index([source_system_id], map: "fk_cost_items_source")
+  @@index([source_system_id], map: "fk_cost_items_source_idx")
   @@index([parent_id], map: "idx_cost_items_parent")
 }
 
@@ -795,9 +795,9 @@ model depreciation_lines {
   journal_entries     journal_entries?  @relation(fields: [journal_entry_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_depreciation_lines_journal_entry")
   depreciation_runs   depreciation_runs @relation(fields: [depreciation_run_id], references: [id], onUpdate: Restrict, map: "fk_depreciation_lines_run")
 
-  @@index([asset_id], map: "fk_depreciation_lines_asset")
-  @@index([journal_entry_id], map: "fk_depreciation_lines_journal_entry")
-  @@index([depreciation_run_id], map: "fk_depreciation_lines_run")
+  @@index([asset_id], map: "fk_depreciation_lines_asset_idx")
+  @@index([journal_entry_id], map: "fk_depreciation_lines_journal_entry_idx")
+  @@index([depreciation_run_id], map: "fk_depreciation_lines_run_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -814,7 +814,7 @@ model depreciation_runs {
   organizations      Organization         @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_depreciation_runs_org")
 
   @@unique([organization_id, period_year, period_month], map: "uq_depreciation_runs_period")
-  @@index([created_by], map: "fk_depreciation_runs_created_by")
+  @@index([created_by], map: "fk_depreciation_runs_created_by_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -886,8 +886,8 @@ model inventory_balances {
   warehouses      warehouses   @relation(fields: [warehouse_id], references: [id], onUpdate: Restrict, map: "fk_inventory_balances_warehouse")
 
   @@unique([organization_id, snapshot_date, item_id, warehouse_id, lot_no], map: "uq_inventory_balances_snapshot")
-  @@index([item_id], map: "fk_inventory_balances_item")
-  @@index([warehouse_id], map: "fk_inventory_balances_warehouse")
+  @@index([item_id], map: "fk_inventory_balances_item_idx")
+  @@index([warehouse_id], map: "fk_inventory_balances_warehouse_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -907,8 +907,8 @@ model inventory_document_lines {
   warehouses            warehouses          @relation(fields: [warehouse_id], references: [id], onUpdate: Restrict, map: "fk_inventory_document_lines_warehouse")
 
   @@unique([inventory_document_id, line_no], map: "uq_inventory_document_lines_doc_line")
-  @@index([item_id], map: "fk_inventory_document_lines_item")
-  @@index([warehouse_id], map: "fk_inventory_document_lines_warehouse")
+  @@index([item_id], map: "fk_inventory_document_lines_item_idx")
+  @@index([warehouse_id], map: "fk_inventory_document_lines_warehouse_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -927,7 +927,7 @@ model inventory_documents {
   vouchers                 Voucher?                   @relation(fields: [source_voucher_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_inventory_documents_source_voucher")
 
   @@unique([organization_id, document_type, document_no], map: "uq_inventory_documents_org_type_no")
-  @@index([source_voucher_id], map: "fk_inventory_documents_source_voucher")
+  @@index([source_voucher_id], map: "fk_inventory_documents_source_voucher_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1007,7 +1007,7 @@ model journal_entries {
   prepaid_allocations prepaid_allocations[]
 
   @@unique([organization_id, entry_no], map: "uq_journal_entries_org_entry_no")
-  @@index([created_by], map: "fk_journal_entries_created_by")
+  @@index([created_by], map: "fk_journal_entries_created_by_idx")
   @@index([organization_id, entry_date], map: "idx_journal_entries_org_date")
 }
 
@@ -1040,14 +1040,14 @@ model journal_entry_lines {
   warehouses       warehouses?     @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_journal_entry_lines_warehouse")
 
   @@unique([journal_entry_id, line_no], map: "uq_journal_entry_lines_entry_line")
-  @@index([bank_account_id], map: "fk_journal_entry_lines_bank_account")
-  @@index([contract_id], map: "fk_journal_entry_lines_contract")
-  @@index([cost_item_id], map: "fk_journal_entry_lines_cost_item")
-  @@index([customer_id], map: "fk_journal_entry_lines_customer")
-  @@index([employee_id], map: "fk_journal_entry_lines_employee")
-  @@index([item_id], map: "fk_journal_entry_lines_item")
-  @@index([supplier_id], map: "fk_journal_entry_lines_supplier")
-  @@index([warehouse_id], map: "fk_journal_entry_lines_warehouse")
+  @@index([bank_account_id], map: "fk_journal_entry_lines_bank_account_idx")
+  @@index([contract_id], map: "fk_journal_entry_lines_contract_idx")
+  @@index([cost_item_id], map: "fk_journal_entry_lines_cost_item_idx")
+  @@index([customer_id], map: "fk_journal_entry_lines_customer_idx")
+  @@index([employee_id], map: "fk_journal_entry_lines_employee_idx")
+  @@index([item_id], map: "fk_journal_entry_lines_item_idx")
+  @@index([supplier_id], map: "fk_journal_entry_lines_supplier_idx")
+  @@index([warehouse_id], map: "fk_journal_entry_lines_warehouse_idx")
   @@index([account_id], map: "idx_journal_entry_lines_account")
 }
 
@@ -1076,11 +1076,11 @@ model ledger_balances {
   suppliers       Supplier?    @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ledger_balances_supplier")
   warehouses      warehouses?  @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ledger_balances_warehouse")
 
-  @@index([account_id], map: "fk_ledger_balances_account")
-  @@index([contract_id], map: "fk_ledger_balances_contract")
-  @@index([customer_id], map: "fk_ledger_balances_customer")
-  @@index([supplier_id], map: "fk_ledger_balances_supplier")
-  @@index([warehouse_id], map: "fk_ledger_balances_warehouse")
+  @@index([account_id], map: "fk_ledger_balances_account_idx")
+  @@index([contract_id], map: "fk_ledger_balances_contract_idx")
+  @@index([customer_id], map: "fk_ledger_balances_customer_idx")
+  @@index([supplier_id], map: "fk_ledger_balances_supplier_idx")
+  @@index([warehouse_id], map: "fk_ledger_balances_warehouse_idx")
   @@index([organization_id, period_year, period_month, account_id], map: "idx_ledger_balances_org_period_account")
 }
 
@@ -1123,12 +1123,12 @@ model opening_balance_account_lines {
   warehouses              warehouses?             @relation(fields: [warehouse_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_account_lines_warehouse")
 
   @@unique([batch_id, line_no], map: "uq_opening_balance_account_lines_batch_line")
-  @@index([contract_id], map: "fk_ob_account_lines_contract")
-  @@index([customer_id], map: "fk_ob_account_lines_customer")
-  @@index([employee_id], map: "fk_ob_account_lines_employee")
-  @@index([item_id], map: "fk_ob_account_lines_item")
-  @@index([supplier_id], map: "fk_ob_account_lines_supplier")
-  @@index([warehouse_id], map: "fk_ob_account_lines_warehouse")
+  @@index([contract_id], map: "fk_ob_account_lines_contract_idx")
+  @@index([customer_id], map: "fk_ob_account_lines_customer_idx")
+  @@index([employee_id], map: "fk_ob_account_lines_employee_idx")
+  @@index([item_id], map: "fk_ob_account_lines_item_idx")
+  @@index([supplier_id], map: "fk_ob_account_lines_supplier_idx")
+  @@index([warehouse_id], map: "fk_ob_account_lines_warehouse_idx")
   @@index([account_id], map: "idx_opening_balance_account_lines_account")
 }
 
@@ -1151,7 +1151,7 @@ model opening_balance_batches {
   opening_balance_receivable_lines opening_balance_receivable_lines[]
 
   @@unique([organization_id, period_year, period_month], map: "uq_opening_balance_batches_period")
-  @@index([source_system_id], map: "fk_opening_balance_batches_source")
+  @@index([source_system_id], map: "fk_opening_balance_batches_source_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1168,8 +1168,8 @@ model opening_balance_inventory_lines {
   items                   items                   @relation(fields: [item_id], references: [id], onUpdate: Restrict, map: "fk_ob_inventory_item")
   warehouses              warehouses              @relation(fields: [warehouse_id], references: [id], onUpdate: Restrict, map: "fk_ob_inventory_warehouse")
 
-  @@index([batch_id], map: "fk_ob_inventory_batch")
-  @@index([warehouse_id], map: "fk_ob_inventory_warehouse")
+  @@index([batch_id], map: "fk_ob_inventory_batch_idx")
+  @@index([warehouse_id], map: "fk_ob_inventory_warehouse_idx")
   @@index([item_id, warehouse_id], map: "idx_ob_inventory_lines_item_warehouse")
 }
 
@@ -1189,9 +1189,9 @@ model opening_balance_payable_lines {
   contracts               contracts?              @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_payable_contract")
   suppliers               Supplier                @relation(fields: [supplier_id], references: [id], onUpdate: Restrict, map: "fk_ob_payable_supplier")
 
-  @@index([account_id], map: "fk_ob_payable_account")
-  @@index([batch_id], map: "fk_ob_payable_batch")
-  @@index([contract_id], map: "fk_ob_payable_contract")
+  @@index([account_id], map: "fk_ob_payable_account_idx")
+  @@index([batch_id], map: "fk_ob_payable_batch_idx")
+  @@index([contract_id], map: "fk_ob_payable_contract_idx")
   @@index([supplier_id], map: "idx_ob_payable_lines_supplier")
 }
 
@@ -1211,9 +1211,9 @@ model opening_balance_receivable_lines {
   contracts               contracts?              @relation(fields: [contract_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_ob_receivable_contract")
   customers               Customer                @relation(fields: [customer_id], references: [id], onUpdate: Restrict, map: "fk_ob_receivable_customer")
 
-  @@index([account_id], map: "fk_ob_receivable_account")
-  @@index([batch_id], map: "fk_ob_receivable_batch")
-  @@index([contract_id], map: "fk_ob_receivable_contract")
+  @@index([account_id], map: "fk_ob_receivable_account_idx")
+  @@index([batch_id], map: "fk_ob_receivable_batch_idx")
+  @@index([contract_id], map: "fk_ob_receivable_contract_idx")
   @@index([customer_id], map: "idx_ob_receivable_lines_customer")
 }
 
@@ -1227,8 +1227,8 @@ model prepaid_allocations {
   journal_entries    journal_entries? @relation(fields: [journal_entry_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_prepaid_allocations_journal_entry")
   prepaid_expenses   prepaid_expenses @relation(fields: [prepaid_expense_id], references: [id], onUpdate: Restrict, map: "fk_prepaid_allocations_prepaid")
 
-  @@index([journal_entry_id], map: "fk_prepaid_allocations_journal_entry")
-  @@index([prepaid_expense_id], map: "fk_prepaid_allocations_prepaid")
+  @@index([journal_entry_id], map: "fk_prepaid_allocations_journal_entry_idx")
+  @@index([prepaid_expense_id], map: "fk_prepaid_allocations_prepaid_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1248,7 +1248,7 @@ model prepaid_expenses {
   suppliers           Supplier?             @relation(fields: [supplier_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_prepaid_expenses_supplier")
 
   @@unique([organization_id, prepaid_code], map: "uq_prepaid_expenses_org_code")
-  @@index([supplier_id], map: "fk_prepaid_expenses_supplier")
+  @@index([supplier_id], map: "fk_prepaid_expenses_supplier_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1259,14 +1259,14 @@ model report_snapshots {
   period_year     Int
   period_month    Int?
   snapshot_key    String       @db.VarChar(255)
-  payload         String       @db.LongText
+  payload         String       @db.Text
   generated_at    DateTime
   generated_by    String?      @db.Char(36)
   users           User?        @relation(fields: [generated_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_report_snapshots_generated_by")
   organizations   Organization @relation(fields: [organization_id], references: [id], onUpdate: Restrict, map: "fk_report_snapshots_org")
 
   @@unique([organization_id, report_code, snapshot_key], map: "uq_report_snapshots_org_report_key")
-  @@index([generated_by], map: "fk_report_snapshots_generated_by")
+  @@index([generated_by], map: "fk_report_snapshots_generated_by_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
