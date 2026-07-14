@@ -36,12 +36,12 @@ export const workitModules: WorkitModule[] = [
     key: "receivables",
     code: "38",
     name: "Công nợ",
-    description: "Phải thu, phải trả, tuổi nợ, hạn mức và kế hoạch dòng tiền.",
+    description: "Theo dõi TK131/TK331 theo khách hàng, nhà cung cấp, hóa đơn, hạn thanh toán và tuổi nợ.",
     icon: "ReceiptText",
     accent: "#5967d8",
     status: "scaffold",
     route: "/modules/receivables",
-    primaryScreens: ["Công nợ phải thu", "Công nợ phải trả", "Cấn trừ công nợ"]
+    primaryScreens: ["Tổng quan công nợ", "Công nợ phải thu", "Công nợ phải trả", "Nhắc nợ và cảnh báo"]
   },
   {
     key: "inventory",

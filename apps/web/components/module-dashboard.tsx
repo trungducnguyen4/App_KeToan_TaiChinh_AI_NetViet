@@ -74,58 +74,38 @@ const accountingAssetGroups = [
 
 const receivablesGroups = [
   {
-    title: "Công nợ phải thu",
+    title: "Quản lý công nợ",
+    description: "Theo dõi tập trung công nợ phải thu, phải trả và các khoản cần xử lý.",
     cards: [
-      { title: "BC công nợ khách hàng TK131", icon: "BookOpen", tone: "green", href: "/modules/receivables?report=ar-ledger" },
       {
-        title: "Theo dõi phải thu (131) / phải trả (331) theo KH-NCC-hóa đơn, tuổi nợ",
-        icon: "Database",
-        tone: "red",
-        href: "/modules/receivables?report=ar-ap-overview",
-        badge: "NEW"
-      },
-      { title: "BC công nợ KH (theo hóa đơn)", icon: "Calculator", tone: "blue", href: "/modules/receivables?report=ar-by-invoice" },
-      { title: "BC công nợ KH đến hạn", icon: "TrendingUp", tone: "green", href: "/modules/receivables?report=ar-due" },
-      {
-        title: "Nhắc nợ khách hàng tự động",
-        icon: "Bot",
-        tone: "amber",
-        href: "/modules/receivables?report=ar-auto-reminder",
-        badge: "NEW"
-      },
-      { title: "BC công nợ KH quá hạn", icon: "ShieldCheck", tone: "amber", href: "/modules/receivables?report=ar-overdue" },
-      { title: "BC công nợ KH vượt hạn mức", icon: "Bot", tone: "red", href: "/modules/receivables?report=ar-limit" },
-      { title: "BC tuổi nợ KH", icon: "Database", tone: "blue", href: "/modules/receivables?report=ar-aging" },
-      { title: "Báo cáo công nợ hợp đồng", icon: "FileText", tone: "green", href: "/modules/receivables?report=ar-contract" },
-      { title: "Top 20 công nợ phải thu KH", icon: "LayoutGrid", tone: "amber", href: "/modules/receivables?report=ar-top20" },
-      { title: "Kế hoạch dòng tiền phải thu KH", icon: "WalletCards", tone: "blue", href: "/modules/receivables?report=ar-cashflow" },
-      { title: "BC công nợ nhân viên TK141", icon: "ReceiptText", tone: "green", href: "/modules/receivables?report=ar-employee" },
-      { title: "Báo cáo phải thu khác TK1388", icon: "PieChart", tone: "gray", href: "/modules/receivables?report=ar-other" }
-    ]
-  },
-  {
-    title: "Công nợ phải trả",
-    cards: [
-      { title: "BC công nợ nhà cung cấp TK331", icon: "BookOpen", tone: "green", href: "/modules/receivables?report=ap-ledger" },
-      { title: "BC công nợ NCC (theo hóa đơn)", icon: "Calculator", tone: "blue", href: "/modules/receivables?report=ap-by-invoice" },
-      {
-        title: "Theo dõi tuổi nợ nhà cung cấp",
-        icon: "Database",
-        tone: "blue",
-        href: "/modules/receivables?report=ap-aging",
-        badge: "NEW"
-      },
-      { title: "BC công nợ NCC quá hạn", icon: "ShieldCheck", tone: "amber", href: "/modules/receivables?report=ap-overdue" },
-      {
-        title: "Theo dõi khoản phải trả NCC đến hạn",
-        icon: "TrendingUp",
+        title: "Tổng quan công nợ",
+        description: "Tổng hợp số dư TK131/TK331, khoản đến hạn và quá hạn trong kỳ.",
+        icon: "LayoutGrid",
         tone: "green",
-        href: "/modules/receivables?report=ap-due",
-        badge: "NEW"
+        href: "/modules/receivables?view=overview"
       },
-      { title: "Kế hoạch dòng tiền phải trả NCC", icon: "TrendingUp", tone: "green", href: "/modules/receivables?report=ap-cashflow" },
-      { title: "Top 20 công nợ phải trả NCC", icon: "Bot", tone: "red", href: "/modules/receivables?report=ap-top20" },
-      { title: "BC phải trả khác TK3388", icon: "PieChart", tone: "gray", href: "/modules/receivables?report=ap-other" }
+      {
+        title: "Công nợ phải thu (TK131)",
+        description: "Theo khách hàng, hóa đơn, ngày đến hạn và nhóm tuổi nợ.",
+        icon: "TrendingUp",
+        tone: "blue",
+        href: "/modules/receivables?view=receivable"
+      },
+      {
+        title: "Công nợ phải trả (TK331)",
+        description: "Theo nhà cung cấp, hóa đơn, lịch thanh toán và nhóm tuổi nợ.",
+        icon: "WalletCards",
+        tone: "amber",
+        href: "/modules/receivables?view=payable"
+      },
+      {
+        title: "Nhắc nợ & cảnh báo",
+        description: "Tập trung khoản sắp đến hạn, quá hạn và lịch sử nhắc nợ.",
+        icon: "ShieldCheck",
+        tone: "red",
+        href: "/modules/receivables?view=reminders",
+        badge: "NEW"
+      }
     ]
   }
 ] as const;
@@ -226,6 +206,11 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
                 <AppIcon name="WalletCards" />
                 Mở PT/PC/BN/BC
               </a>
+            ) : isReceivables ? (
+              <a className="button primary" href="/modules/receivables?view=overview">
+                <AppIcon name={current.icon} />
+                Mở tổng quan công nợ
+              </a>
             ) : (
               <button className="button primary" type="button">
                 <AppIcon name={current.icon} />
@@ -250,11 +235,7 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
             <section className="receivables-group" key={group.title}>
               <div className="section-title">
                 <h2>{group.title}</h2>
-                <span className="module-meta">
-                  {group.title === "Công nợ phải thu"
-                    ? "Báo cáo, tuổi nợ, kế hoạch dòng tiền và top khách hàng phải thu"
-                    : "Báo cáo NCC, tuổi nợ, hạn thanh toán và kế hoạch chi tiền"}
-                </span>
+                <span className="module-meta">{group.description}</span>
               </div>
               <div className="report-grid receivables-report-grid">
                 {group.cards.map((item) => (
@@ -265,7 +246,7 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
                     {"badge" in item ? <span className="report-badge">{item.badge}</span> : null}
                     <span className="report-copy">
                       <strong>{item.title}</strong>
-                      <span>Xem báo cáo, theo dõi và phân tích công nợ.</span>
+                      <span>{item.description}</span>
                     </span>
                   </a>
                 ))}
