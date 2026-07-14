@@ -2,6 +2,14 @@ import { inputEInvoiceScreen } from "@domain/index";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
 import { useRouter } from "next/router";
+import { useState } from "react";
+import { invoiceAssistantMock } from "../lib/document-assistant-mock-data";
+
+const currency = new Intl.NumberFormat("vi-VN", {
+  style: "currency",
+  currency: "VND",
+  maximumFractionDigits: 0
+});
 
 const invoiceRows = [
   {
@@ -58,6 +66,7 @@ const pendingLineRows = [
 export default function InputEInvoiceScreen() {
   const router = useRouter();
   const isPendingView = router.query.status === "pending";
+  const [assistantFeedback, setAssistantFeedback] = useState("");
 
   if (isPendingView) {
     return (
@@ -217,6 +226,102 @@ export default function InputEInvoiceScreen() {
             <strong>HĐĐT</strong>
             <span>Các hành động được gom thành chip gọn, không dùng dropdown nặng như ảnh gốc.</span>
           </div>
+        </section>
+
+        <section className="panel ai-assistant-panel">
+          <div className="ai-assistant-heading">
+            <div>
+              <span className="ai-assistant-eyebrow">OCR hóa đơn NCC</span>
+              <h2>Đọc - phân loại - trích xuất hóa đơn đầu vào</h2>
+              <p>
+                Demo đọc file {invoiceAssistantMock.fileName}, nhận diện hóa đơn NCC, trích xuất thông tin thuế và
+                đề xuất mapping trước khi tạo hóa đơn chờ duyệt.
+              </p>
+            </div>
+            <span className="ai-assistant-badge">{invoiceAssistantMock.confidence}% tin cậy</span>
+          </div>
+
+          <div className="ai-doc-layout">
+            <article className="ai-doc-card">
+              <span className="ai-doc-file">
+                <AppIcon name="FileText" />
+                {invoiceAssistantMock.fileName}
+              </span>
+              <strong>{invoiceAssistantMock.classificationLabel}</strong>
+              <p>{invoiceAssistantMock.recommendation}</p>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => setAssistantFeedback("Đã mô phỏng tạo hóa đơn đầu vào chờ duyệt từ kết quả OCR.")}
+              >
+                <AppIcon name="Bot" />
+                Tạo hóa đơn chờ duyệt
+              </button>
+            </article>
+
+            <div className="ai-extract-grid">
+              {invoiceAssistantMock.extractedFields.map((field) => (
+                <div className="ai-extract-item" key={field.label}>
+                  <span>{field.label}</span>
+                  <strong>{field.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="ai-assistant-columns">
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Mapping</th>
+                    <th>Đề xuất</th>
+                    <th>Tin cậy</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceAssistantMock.mappingSuggestions.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.sourceType}</td>
+                      <td>{item.suggestedValue}</td>
+                      <td>{item.confidence}%</td>
+                      <td>{item.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nợ</th>
+                    <th>Có</th>
+                    <th>Số tiền</th>
+                    <th>Yếu tố TK</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceAssistantMock.journalLines.map((line) => (
+                    <tr key={`${line.debitAccount}-${line.creditAccount}-${line.amount}`}>
+                      <td>{line.debitAccount}</td>
+                      <td>{line.creditAccount}</td>
+                      <td>{currency.format(line.amount)}</td>
+                      <td>{line.dimension}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {assistantFeedback ? (
+            <div className="ai-feedback-box">
+              <strong>Kết quả mô phỏng</strong>
+              <p>{assistantFeedback}</p>
+            </div>
+          ) : null}
         </section>
 
         <section className="panel">

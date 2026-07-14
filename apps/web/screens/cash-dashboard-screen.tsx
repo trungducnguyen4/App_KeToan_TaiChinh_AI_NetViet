@@ -178,37 +178,6 @@ export default function CashDashboardScreen() {
           <span>Sổ quỹ và Ngân hàng</span>
         </div>
 
-        <section className="hero-panel">
-          <div>
-            <div className="eyebrow">M2 cash engine</div>
-            <h2 className="hero-title">Sổ quỹ &amp; Ngân hàng</h2>
-            <p className="hero-copy">
-              Module M2 gom PT, PC, BN, BC, import sao kê và đối chiếu ngân hàng trên một voucher engine chung.
-            </p>
-            <div className="hero-actions">
-              <a className="button primary" href={cashVoucherScreens[0].route}>
-                <AppIcon name="WalletCards" />
-                Mở PT/PC
-              </a>
-              <a className="button" href={reconciliationScreen.route}>
-                <AppIcon name="Search" />
-                Mở đối chiếu
-              </a>
-              <a className="button" href={`${reconciliationScreen.route}?mode=auto`}>
-                <AppIcon name="ArrowLeftRight" />
-                Đối chiếu tự động
-              </a>
-            </div>
-          </div>
-          <div className="sync-panel">
-            <strong>Read-only GD1</strong>
-            <span>
-              Dữ liệu Workit được đồng bộ theo source id + checksum, lưu raw payload để phục vụ audit và đối chiếu.
-              Hiện tại có {metrics[2]?.value ?? 0} dòng cần đối chiếu và {metrics[3]?.value ?? 0} chứng từ chờ duyệt.
-            </span>
-          </div>
-        </section>
-
         <div className="cash-summary-grid">
           {cashSummaryCards.map((card, index) => (
             <article className={`cash-summary-card tone-${card.tone}`} key={card.label}>
@@ -230,7 +199,7 @@ export default function CashDashboardScreen() {
           <StatusPill status="ready" />
         </div>
         <div className="cash-operation-grid">
-          {cashOperationCards.map((card) => (
+          {cashOperationCards.slice(4).map((card) => (
             <a
               className={`cash-operation-card${card.featured ? " cash-operation-card--featured" : ""}`}
               href={card.href}
@@ -308,3 +277,4 @@ export default function CashDashboardScreen() {
     </AppShell>
   );
 }
+

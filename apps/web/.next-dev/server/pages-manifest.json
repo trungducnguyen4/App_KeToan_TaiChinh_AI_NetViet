@@ -2,7 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/modules/cash/payments": "pages/modules/cash/payments.js",
   "/modules/cash": "pages/modules/cash.js",
+  "/modules/[moduleKey]": "pages/modules/[moduleKey].js",
   "/modules/cash/reconciliation": "pages/modules/cash/reconciliation.js"
 }
