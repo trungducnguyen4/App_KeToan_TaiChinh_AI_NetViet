@@ -1,0 +1,182 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/modules/[moduleKey]",
+      "regex": "^/modules/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPmoduleKey": "nxtPmoduleKey"
+      },
+      "namedRegex": "^/modules/(?<nxtPmoduleKey>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/contracts",
+      "regex": "^/modules/accounting/contracts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/contracts(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/input-einvoices",
+      "regex": "^/modules/accounting/input\\-einvoices(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/input\\-einvoices(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/journal-vouchers",
+      "regex": "^/modules/accounting/journal\\-vouchers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/journal\\-vouchers(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/journal-vouchers/new",
+      "regex": "^/modules/accounting/journal\\-vouchers/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/journal\\-vouchers/new(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/report/account-ledger",
+      "regex": "^/modules/accounting/report/account\\-ledger(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/report/account\\-ledger(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/report/account-trial-balance",
+      "regex": "^/modules/accounting/report/account\\-trial\\-balance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/report/account\\-trial\\-balance(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/report/general-journal",
+      "regex": "^/modules/accounting/report/general\\-journal(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/report/general\\-journal(?:/)?$"
+    },
+    {
+      "page": "/modules/accounting/tax-notifications",
+      "regex": "^/modules/accounting/tax\\-notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/tax\\-notifications(?:/)?$"
+    },
+    {
+      "page": "/modules/cash",
+      "regex": "^/modules/cash(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/bank-credits",
+      "regex": "^/modules/cash/bank\\-credits(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/bank\\-credits(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/bank-credits/new",
+      "regex": "^/modules/cash/bank\\-credits/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/bank\\-credits/new(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/bank-debits",
+      "regex": "^/modules/cash/bank\\-debits(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/bank\\-debits(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/bank-debits/new",
+      "regex": "^/modules/cash/bank\\-debits/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/bank\\-debits/new(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/bank-statements",
+      "regex": "^/modules/cash/bank\\-statements(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/bank\\-statements(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/payments",
+      "regex": "^/modules/cash/payments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/payments(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/payments/new",
+      "regex": "^/modules/cash/payments/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/payments/new(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/receipts",
+      "regex": "^/modules/cash/receipts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/receipts(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/receipts/new",
+      "regex": "^/modules/cash/receipts/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/receipts/new(?:/)?$"
+    },
+    {
+      "page": "/modules/cash/reconciliation",
+      "regex": "^/modules/cash/reconciliation(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/cash/reconciliation(?:/)?$"
+    },
+    {
+      "page": "/modules/reports",
+      "regex": "^/modules/reports(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/reports(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
