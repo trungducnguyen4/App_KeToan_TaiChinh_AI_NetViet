@@ -60,25 +60,6 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
           </span>
         </a>
 
-        <nav className="nav-section" aria-label="Phân hệ nghiệp vụ">
-          <p className="nav-section-title">Quản trị doanh nghiệp</p>
-          {workitModules.slice(0, 6).map((module) => (
-            <a
-              key={module.key}
-              href={module.route}
-              className={`module-link ${activeModule === module.key ? "is-active" : ""}`}
-            >
-              <span className="module-icon">
-                <AppIcon name={module.icon} />
-              </span>
-              <span className="module-copy">
-                <span className="module-name">{module.name}</span>
-                <span className="module-meta">Mã phân hệ {module.code}</span>
-              </span>
-            </a>
-          ))}
-        </nav>
-
         <nav className="nav-section nav-section--enterprise" aria-label="Quản trị doanh nghiệp mở rộng">
           <p className="nav-section-title">Quản trị doanh nghiệp (New)</p>
           <div className="enterprise-stack">
