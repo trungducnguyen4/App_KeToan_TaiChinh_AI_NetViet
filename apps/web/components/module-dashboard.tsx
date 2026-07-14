@@ -14,6 +14,7 @@ import {
 } from "@domain/index";
 import type { ModuleKey } from "@domain/types";
 import { useEffect, useRef, useState } from "react";
+import { assistantMappingSuggestions } from "../lib/document-assistant-mock-data";
 import { AppIcon } from "./icons";
 import { StatusPill } from "./status-pill";
 
@@ -153,8 +154,11 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
   const current = workitModules.find((module) => module.key === moduleKey) ?? workitModules[0];
   const isAccounting = current.key === "accounting";
   const isCash = current.key === "cash";
+  const isMasterData = current.key === "masterData";
   const isReceivables = current.key === "receivables";
+  const shouldShowKpis = isAccounting || isCash;
   const kpis = isCash ? cashDashboardMetrics : accountingKpis;
+  const [mappingFeedback, setMappingFeedback] = useState("");
   const moduleRoutes = isCash
     ? [
         cashVoucherScreens[0].route,
@@ -210,41 +214,8 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
         <span>{current.name}</span>
       </div>
 
-      <section className="hero-panel">
-        <div>
-          <div className="eyebrow">Enterprise workspace</div>
-          <h2 className="hero-title">{current.name}</h2>
-          <p className="hero-copy">{current.description}</p>
-          <div className="hero-actions">
-            {isAccounting ? (
-              <a className="button primary" href={current.route}>
-                <AppIcon name="FileText" />
-                Mở sổ cái &amp; hạch toán
-              </a>
-            ) : isCash ? (
-              <a className="button primary" href={cashVoucherScreens[0].route}>
-                <AppIcon name="WalletCards" />
-                Mở PT/PC/BN/BC
-              </a>
-            ) : (
-              <button className="button primary" type="button">
-                <AppIcon name={current.icon} />
-                Mở danh sách
-              </button>
-            )}
-            <button className="button" type="button">
-              <AppIcon name="Bot" />
-              AI đối chiếu
-            </button>
-          </div>
-        </div>
-        <div className="sync-panel">
-          <strong>GD1</strong>
-          <span>Workit là nguồn gốc read-only. App mới tập trung chuẩn hóa, đối chiếu, phân tích và báo cáo.</span>
-        </div>
-      </section>
-
       {isReceivables ? (
+
         <div className="receivables-groups">
           {receivablesGroups.map((group) => (
             <section className="receivables-group" key={group.title}>
@@ -275,25 +246,78 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
         </div>
       ) : (
         <>
-          <div className={`kpi-grid${isAccounting ? " kpi-grid--compact" : ""}`}>
-            {kpis.map((kpi, index) => (
-              <article className={`kpi-card${isAccounting ? " kpi-card--compact" : ""}`} key={kpi.label}>
-                <div className={`kpi-accent tone-${kpi.tone}`} aria-hidden="true" />
-                <div className="kpi-header">
-                  <span className="kpi-badge">
-                    <AppIcon name={kpiIcons[kpi.tone]} size={isAccounting ? 12 : 14} />
-                  </span>
-                  <span className="kpi-index">{String(index + 1).padStart(2, "0")}</span>
+          {shouldShowKpis ? (
+            <div className={`kpi-grid${isAccounting ? " kpi-grid--compact" : ""}`}>
+              {kpis.map((kpi, index) => (
+                <article className={`kpi-card${isAccounting ? " kpi-card--compact" : ""}`} key={kpi.label}>
+                  <div className={`kpi-accent tone-${kpi.tone}`} aria-hidden="true" />
+                  <div className="kpi-header">
+                    <span className="kpi-badge">
+                      <AppIcon name={kpiIcons[kpi.tone]} size={isAccounting ? 12 : 14} />
+                    </span>
+                    <span className="kpi-index">{String(index + 1).padStart(2, "0")}</span>
+                  </div>
+                  <div className="kpi-label">{kpi.label}</div>
+                  <div className="kpi-value">{kpi.value}</div>
+                  <div className="kpi-track" aria-hidden="true">
+                    <span />
+                  </div>
+                  <div className="kpi-delta">{kpiCaption(kpi)}</div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+
+          {isMasterData ? (
+            <section className="panel ai-assistant-panel">
+              <div className="ai-assistant-heading">
+                <div>
+                  <span className="ai-assistant-eyebrow">AI document assistant</span>
+                  <h2>Mapping AI đề xuất</h2>
+                  <p>
+                    Chuẩn hóa KH/NCC/hợp đồng/tài khoản từ hóa đơn, sao kê và chứng từ nguồn. WORKIT là nguồn
+                    read-only; kế toán duyệt mapping trước khi dùng cho đối chiếu và hạch toán.
+                  </p>
                 </div>
-                <div className="kpi-label">{kpi.label}</div>
-                <div className="kpi-value">{kpi.value}</div>
-                <div className="kpi-track" aria-hidden="true">
-                  <span />
+                <span className="ai-assistant-badge">AI đề xuất, kế toán duyệt</span>
+              </div>
+
+              <div className="ai-mapping-grid">
+                {assistantMappingSuggestions.map((item) => (
+                  <article className="ai-mapping-card" key={item.id}>
+                    <div className="ai-mapping-top">
+                      <span>{item.sourceType}</span>
+                      <strong>{item.confidence}%</strong>
+                    </div>
+                    <h3>{item.sourceValue}</h3>
+                    <p>{item.suggestedValue}</p>
+                    <div className="ai-mapping-meta">
+                      <span className={`ai-status-chip status-${item.status.replace(/\s+/g, "-").toLowerCase()}`}>
+                        {item.status}
+                      </span>
+                      <small>{item.sourceModule}</small>
+                    </div>
+                    <small className="ai-mapping-reason">{item.reason}</small>
+                    <button
+                      className="button primary"
+                      type="button"
+                      onClick={() => setMappingFeedback(`Đã mô phỏng duyệt mapping: ${item.suggestedValue}`)}
+                    >
+                      <AppIcon name="ShieldCheck" />
+                      Duyệt mapping
+                    </button>
+                  </article>
+                ))}
+              </div>
+
+              {mappingFeedback ? (
+                <div className="ai-feedback-box">
+                  <strong>Kết quả mô phỏng</strong>
+                  <p>{mappingFeedback}</p>
                 </div>
-                <div className="kpi-delta">{kpiCaption(kpi)}</div>
-              </article>
-            ))}
-          </div>
+              ) : null}
+            </section>
+          ) : null}
 
           <div className="section-title">
             <h2>Nghiệp vụ</h2>
@@ -421,3 +445,4 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
     </div>
   );
 }
+

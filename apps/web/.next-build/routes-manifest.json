@@ -42,6 +42,12 @@
       "namedRegex": "^/login(?:/)?$"
     },
     {
+      "page": "/modules/accounting/assets/prepaid-expense/allocation",
+      "regex": "^/modules/accounting/assets/prepaid\\-expense/allocation(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/modules/accounting/assets/prepaid\\-expense/allocation(?:/)?$"
+    },
+    {
       "page": "/modules/accounting/contracts",
       "regex": "^/modules/accounting/contracts(?:/)?$",
       "routeKeys": {},
