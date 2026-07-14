@@ -28,7 +28,11 @@ const billions = (value: number) =>
   `${(value / 1_000_000_000).toLocaleString("vi-VN", { maximumFractionDigits: 2 })} tỷ`;
 const money = (value: number) => value.toLocaleString("vi-VN");
 const sumDebt = (
-  rows: Array<{ opening_amount: number; current_amount: number; overdue_amount: number }>,
+  rows: Array<{
+    opening_amount: number;
+    current_amount: number;
+    overdue_amount: number;
+  }>,
   field: "opening_amount" | "current_amount" | "overdue_amount",
 ) => rows.reduce((total, row) => total + row[field], 0);
 
@@ -788,15 +792,48 @@ export default function ReportsDashboardScreen() {
     return {
       receivables,
       payables,
-      receivableMax: Math.max(1, ...receivables.map((item) => item.current_amount)),
+      receivableMax: Math.max(
+        1,
+        ...receivables.map((item) => item.current_amount),
+      ),
       payableMax: Math.max(1, ...payables.map((item) => item.current_amount)),
       kpis: [
-        { label: "Dư nợ KH đầu năm", value: billions(sumDebt(receivables, "opening_amount")), icon: "BadgeDollarSign", tone: "mint" },
-        { label: "Dư nợ KH hiện tại", value: billions(sumDebt(receivables, "current_amount")), icon: "CircleDollarSign", tone: "cyan" },
-        { label: "Dư nợ KH quá hạn", value: billions(sumDebt(receivables, "overdue_amount")), icon: "ReceiptText", tone: "red" },
-        { label: "Dư nợ NCC đầu năm", value: billions(sumDebt(payables, "opening_amount")), icon: "Landmark", tone: "green" },
-        { label: "Dư nợ NCC hiện tại", value: billions(sumDebt(payables, "current_amount")), icon: "WalletCards", tone: "purple" },
-        { label: "Dư nợ NCC quá hạn", value: billions(sumDebt(payables, "overdue_amount")), icon: "RefreshCw", tone: "orange" },
+        {
+          label: "Dư nợ KH đầu năm",
+          value: billions(sumDebt(receivables, "opening_amount")),
+          icon: "BadgeDollarSign",
+          tone: "mint",
+        },
+        {
+          label: "Dư nợ KH hiện tại",
+          value: billions(sumDebt(receivables, "current_amount")),
+          icon: "CircleDollarSign",
+          tone: "cyan",
+        },
+        {
+          label: "Dư nợ KH quá hạn",
+          value: billions(sumDebt(receivables, "overdue_amount")),
+          icon: "ReceiptText",
+          tone: "red",
+        },
+        {
+          label: "Dư nợ NCC đầu năm",
+          value: billions(sumDebt(payables, "opening_amount")),
+          icon: "Landmark",
+          tone: "green",
+        },
+        {
+          label: "Dư nợ NCC hiện tại",
+          value: billions(sumDebt(payables, "current_amount")),
+          icon: "WalletCards",
+          tone: "purple",
+        },
+        {
+          label: "Dư nợ NCC quá hạn",
+          value: billions(sumDebt(payables, "overdue_amount")),
+          icon: "RefreshCw",
+          tone: "orange",
+        },
       ],
     };
   }, []);
@@ -1294,25 +1331,58 @@ export default function ReportsDashboardScreen() {
             <div className="debt-dashboard">
               <div className="debt-kpi-grid">
                 {debtView.kpis.map((kpi) => (
-                  <article className={`debt-kpi-card tone-${kpi.tone}`} key={kpi.label}>
-                    <span className="debt-kpi-icon"><AppIcon name={kpi.icon} size={20} /></span>
-                    <div><span>{kpi.label}</span><strong>{kpi.value}</strong><small>{appliedPeriod}</small></div>
+                  <article
+                    className={`debt-kpi-card tone-${kpi.tone}`}
+                    key={kpi.label}
+                  >
+                    <span className="debt-kpi-icon">
+                      <AppIcon name={kpi.icon} size={20} />
+                    </span>
+                    <div>
+                      <span>{kpi.label}</span>
+                      <strong>{kpi.value}</strong>
+                      <small>{appliedPeriod}</small>
+                    </div>
                   </article>
                 ))}
               </div>
 
               <div className="debt-chart-grid">
                 {[
-                  { title: "Top 10 công nợ phải thu", rows: debtView.receivables, max: debtView.receivableMax, type: "receivable" },
-                  { title: "Top 10 công nợ phải trả", rows: debtView.payables, max: debtView.payableMax, type: "payable" },
+                  {
+                    title: "Top 10 công nợ phải thu",
+                    rows: debtView.receivables,
+                    max: debtView.receivableMax,
+                    type: "receivable",
+                  },
+                  {
+                    title: "Top 10 công nợ phải trả",
+                    rows: debtView.payables,
+                    max: debtView.payableMax,
+                    type: "payable",
+                  },
                 ].map((chart) => (
                   <article className="debt-horizontal-chart" key={chart.type}>
-                    <header><h3>{chart.title} theo kỳ</h3><span>Đơn vị: VND</span></header>
+                    <header>
+                      <h3>{chart.title} theo kỳ</h3>
+                      <span>Đơn vị: VND</span>
+                    </header>
                     <div className="debt-horizontal-list">
                       {chart.rows.map((row) => (
-                        <div className="debt-horizontal-row" key={row.counterparty_code}>
-                          <span title={row.counterparty_name}>{row.counterparty_name}</span>
-                          <div className="debt-bar-track"><i style={{ width: `${(row.current_amount / chart.max) * 100}%` }} /></div>
+                        <div
+                          className="debt-horizontal-row"
+                          key={row.counterparty_code}
+                        >
+                          <span title={row.counterparty_name}>
+                            {row.counterparty_name}
+                          </span>
+                          <div className="debt-bar-track">
+                            <i
+                              style={{
+                                width: `${(row.current_amount / chart.max) * 100}%`,
+                              }}
+                            />
+                          </div>
                           <strong>{money(row.current_amount)}</strong>
                         </div>
                       ))}

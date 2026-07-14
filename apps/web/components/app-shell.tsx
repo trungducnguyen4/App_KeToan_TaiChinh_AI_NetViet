@@ -1,5 +1,6 @@
 import { workitModules } from "@domain/index";
 import { useRouter } from "next/router";
+import { postApi } from "../lib/api";
 import { clearSession } from "../lib/auth";
 import { AppIcon } from "./icons";
 
@@ -45,8 +46,12 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
   const router = useRouter();
 
   function logout() {
-    clearSession();
-    void router.replace("/login");
+    void postApi<{ success: boolean }>("/auth/logout", {})
+      .catch(() => undefined)
+      .finally(() => {
+        clearSession();
+        void router.replace("/login");
+      });
   }
 
   return (
