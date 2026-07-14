@@ -1,7 +1,7 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/router";
 import { AppIcon } from "../components/icons";
-import { getAccessToken, LoginResponse, saveSession } from "../lib/auth";
+import { LoginResponse, saveSession } from "../lib/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
@@ -13,12 +13,6 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (getAccessToken()) {
-      void router.replace("/");
-    }
-  }, [router]);
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -27,6 +21,7 @@ export default function LoginPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login: login.trim(), password })
       });

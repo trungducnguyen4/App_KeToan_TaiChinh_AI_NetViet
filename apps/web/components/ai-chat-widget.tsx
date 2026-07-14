@@ -111,11 +111,9 @@ export function AiChatWidget() {
           <div className="ai-chat-disclaimer">AI có thể đưa ra thông tin chưa chính xác. Hãy kiểm tra nguồn chứng từ.</div>
         </section>
       ) : (
-        <button className="ai-chat-launcher" type="button" onClick={() => setIsOpen(true)} aria-label="Mở trợ lý AI">
+        <button className="ai-chat-launcher" type="button" onClick={() => setIsOpen(true)} aria-label="Mở trợ lý AI" title="Hỏi AI Agent">
           <span className="ai-chat-pulse" />
-          <AppIcon name="Bot" size={23} />
-          <span className="ai-chat-launcher-copy"><strong>Hỏi AI Agent</strong><small>Trợ lý kế toán</small></span>
-          <AppIcon name="ChevronUp" size={17} />
+          <AppIcon name="Bot" size={27} />
         </button>
       )}
     </div>
