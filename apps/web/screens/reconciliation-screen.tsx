@@ -12,6 +12,8 @@ const currency = new Intl.NumberFormat("vi-VN", {
   maximumFractionDigits: 0
 });
 
+const amountOrDash = (value?: number) => value ? currency.format(value) : "—";
+
 const selectedBankAccount = {
   accountNo: "VCB-001",
   bankName: "Vietcombank - CN Sai Gon",
@@ -37,11 +39,26 @@ type DemoScenario = {
   transactionDate: string;
   description: string;
   amount: number;
+  accountingDate?: string;
+  accountingVoucherNo?: string;
+  accountingIncome?: number;
+  accountingExpense?: number;
+  accountingCounterparty?: string;
+  accountingContent?: string;
+  linkedBankTransaction?: string;
+  bankTransactionTime?: string;
+  bankTransactionNo?: string;
+  bankIncome?: number;
+  bankExpense?: number;
+  bankContent?: string;
   confidence: number;
   status: "matched" | "partial" | "split" | "unmatched";
   matchReason: string;
   accountingEntry: Array<{ debitAccount: string; creditAccount: string; amount: number; description: string }>;
   allocations?: Array<{ invoiceNo: string; amount: number }>;
+  suggestedActionLabel?: string;
+  suggestedActionDescription?: string;
+  suggestedActionResult?: string;
 };
 
 const demoScenarios: DemoScenario[] = [
@@ -167,6 +184,9 @@ const matchedDemoRows: DemoScenario[] = Array.from({ length: 10 }, (_, index) =>
   const amount = 12500000 + index * 1750000;
   const voucherNo = `BC-DEMO-M${String(rowNo).padStart(2, "0")}`;
   const customerCode = `KH${String(101 + index).padStart(3, "0")}`;
+  const referenceNo = `FT-MATCH-${String(260700 + rowNo)}`;
+  const transactionTime = `2026-07-14 ${String(8 + Math.floor(index / 2)).padStart(2, "0")}:${String((index * 7) % 60).padStart(2, "0")}:30`;
+  const bankContent = `${customerCode} thanh toan dung so tien cho hoa don ${voucherNo}`;
 
   return {
     id: `matched-${rowNo}`,
@@ -179,10 +199,22 @@ const matchedDemoRows: DemoScenario[] = Array.from({ length: 10 }, (_, index) =>
     voucherId: `demo-voucher-matched-${rowNo}`,
     voucherNo,
     statementLineId: `statement-line-matched-${rowNo}`,
-    referenceNo: `FT-MATCH-${String(260700 + rowNo)}`,
+    referenceNo,
     transactionDate: "2026-07-14",
-    description: `${customerCode} thanh toan dung so tien cho hoa don ${voucherNo}`,
+    description: bankContent,
     amount,
+    accountingDate: "2026-07-14",
+    accountingVoucherNo: voucherNo,
+    accountingIncome: amount,
+    accountingExpense: 0,
+    accountingCounterparty: customerCode,
+    accountingContent: `Thu tiền ${customerCode} theo hóa đơn ${voucherNo}`,
+    linkedBankTransaction: referenceNo,
+    bankTransactionTime: transactionTime,
+    bankTransactionNo: referenceNo,
+    bankIncome: amount,
+    bankExpense: 0,
+    bankContent,
     confidence: 98 + (rowNo % 3),
     status: "matched",
     matchReason: "Trùng số tiền, số chứng từ, mã khách hàng và nội dung chuyển khoản.",
@@ -228,6 +260,9 @@ const partialDemoRows: DemoScenario[] = [30000000, 18500000, 42000000].map((amou
         description: "Ghi nhận thanh toán một phần công nợ khách hàng."
       }
     ],
+    suggestedActionLabel: "Ghi nhận thanh toán một phần",
+    suggestedActionDescription: "AI sẽ phân bổ số tiền đã thu vào hóa đơn và giữ phần còn lại là công nợ.",
+    suggestedActionResult: `Đã mô phỏng phân bổ ${currency.format(amount)} vào ${invoiceNo}; còn lại ${currency.format(remainingAmount)} tiếp tục theo dõi công nợ.`,
     allocations: [
       { invoiceNo, amount },
       { invoiceNo: "Còn lại", amount: remainingAmount }
@@ -321,7 +356,10 @@ const unmatchedDemoRows: DemoScenario[] = [
         amount: 330000,
         description: "Đề xuất tạo bút toán phí dịch vụ ngân hàng."
       }
-    ]
+    ],
+    suggestedActionLabel: "Tạo chứng từ nháp",
+    suggestedActionDescription: "AI sẽ tạo phiếu hạch toán nháp cho khoản phí ngân hàng để kế toán duyệt.",
+    suggestedActionResult: "Đã mô phỏng tạo chứng từ nháp HT-FEE-VCB-1407 cho phí ngân hàng 330.000 ₫."
   },
   {
     id: "unmatched-2",
@@ -348,30 +386,14 @@ const unmatchedDemoRows: DemoScenario[] = [
         amount: 250000,
         description: "Đề xuất tạo bút toán lãi tiền gửi."
       }
-    ]
+    ],
+    suggestedActionLabel: "Tạo chứng từ nháp",
+    suggestedActionDescription: "AI sẽ tạo phiếu hạch toán nháp ghi nhận lãi tiền gửi để kế toán duyệt.",
+    suggestedActionResult: "Đã mô phỏng tạo chứng từ nháp HT-INT-VCB-1407 cho lãi tiền gửi 250.000 ₫."
   }
 ];
 
 const demoRows: DemoScenario[] = [...matchedDemoRows, ...partialDemoRows, ...splitDemoRows, ...unmatchedDemoRows];
-
-const reconciliationRules = [
-  {
-    title: "Ưu tiên tham chiếu chắc chắn",
-    description: "Mã giao dịch, số chứng từ và số hóa đơn được ưu tiên trước nội dung diễn giải."
-  },
-  {
-    title: "So khớp theo số tiền",
-    description: "Trùng tiền tuyệt đối sẽ đề xuất matched; lệch tiền sẽ chuyển sang partial hoặc ngoại lệ."
-  },
-  {
-    title: "Không tự ghi sổ",
-    description: "Hệ thống chỉ đề xuất match và bút toán; kế toán duyệt rồi mới chốt."
-  },
-  {
-    title: "Giữ audit trail",
-    description: "Mỗi thao tác match, unmatch, import và tạo bút toán cần được ghi nhận để truy vết."
-  }
-] as const;
 
 const processSteps = ["Nhập sao kê", "Chọn case demo", "Gợi ý match", "Kế toán duyệt", "Ghi nhận audit"] as const;
 
@@ -496,6 +518,15 @@ export default function ReconciliationScreen() {
     }
   }
 
+  function handleSuggestedAction() {
+    if (!selectedDemo.suggestedActionResult) {
+      return;
+    }
+
+    setRecentMatchId(`DEMO-ACTION-${selectedDemo.id.toUpperCase()}`);
+    setFeedback(selectedDemo.suggestedActionResult);
+  }
+
   return (
     <AppShell activeModule="cash">
       <div className="workspace">
@@ -506,33 +537,6 @@ export default function ReconciliationScreen() {
           <span>/</span>
           <span>{reconciliationScreen.title}</span>
         </div>
-
-        <section className="hero-panel">
-          <div>
-            <div className="eyebrow">Automatic bank reconciliation</div>
-            <h2 className="hero-title">{reconciliationScreen.title}</h2>
-            <p className="hero-copy">
-              Chọn một tình huống demo để xem hệ thống đọc sao kê, gợi ý chứng từ tương ứng, tính độ tin cậy và đề xuất bút toán kế toán.
-            </p>
-            <div className="hero-actions">
-              <button className="button primary" type="button" onClick={handleMatch} disabled={isSubmitting}>
-                <AppIcon name="Search" />
-                {isSubmitting ? "Đang xử lý..." : "Match case đang chọn"}
-              </button>
-              <button className="button" type="button" onClick={handleAutoMatch} disabled={isSubmitting}>
-                <AppIcon name="ArrowLeftRight" />
-                Gợi ý từ dữ liệu thật
-              </button>
-              <button className="button" type="button" onClick={handleUnmatch} disabled={isSubmitting}>
-                Unmatch
-              </button>
-            </div>
-          </div>
-          <div className="sync-panel">
-            <strong>{demoScenarios.length} case demo</strong>
-            <span>Khớp hoàn toàn, khớp một phần, một giao dịch nhiều hóa đơn và ngoại lệ chưa khớp.</span>
-          </div>
-        </section>
 
         <div className="cash-recon-steps">
           {processSteps.map((step, index) => (
@@ -592,14 +596,28 @@ export default function ReconciliationScreen() {
             <div className="table-scroll">
               <table className="data-table recon-demo-table">
                 <thead>
+                  <tr className="recon-demo-group-row">
+                    <th rowSpan={2}>#</th>
+                    <th colSpan={7}>Sổ kế toán tiền gửi</th>
+                    <th colSpan={5}>
+                      Sao k&#234; ng&#226;n h&#224;ng <span className="ai-inline-badge">AI đọc sao kê</span>
+                    </th>
+                    <th rowSpan={2}>Chức năng</th>
+                    <th rowSpan={2}>Tin cậy</th>
+                  </tr>
                   <tr>
-                    <th>#</th>
-                    <th>Ngày</th>
-                    <th>Tham chiếu</th>
-                    <th>Diễn giải sao kê</th>
-                    <th>Chứng từ đề xuất</th>
-                    <th>Số tiền</th>
-                    <th>Tin cậy</th>
+                    <th>Ngày hạch toán</th>
+                    <th>Số chứng từ</th>
+                    <th>Số tiền thu</th>
+                    <th>Số tiền chi</th>
+                    <th>Đối tượng</th>
+                    <th>Nội dung</th>
+                    <th>Giao d&#7883;ch ng&#226;n h&#224;ng</th>
+                    <th>Thời gian giao dịch</th>
+                    <th>Số giao dịch</th>
+                    <th>Số tiền thu</th>
+                    <th>Số tiền chi</th>
+                    <th>Nội dung</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -613,11 +631,23 @@ export default function ReconciliationScreen() {
                       }}
                     >
                       <td>{row.rowNo}</td>
-                      <td>{row.transactionDate}</td>
-                      <td>{row.referenceNo}</td>
-                      <td>{row.description}</td>
-                      <td>{row.voucherNo}</td>
-                      <td>{currency.format(row.amount)}</td>
+                      <td>{row.accountingDate ?? row.transactionDate}</td>
+                      <td>{row.accountingVoucherNo ?? row.voucherNo}</td>
+                      <td>{amountOrDash(row.accountingIncome ?? (row.status === "unmatched" ? 0 : row.amount))}</td>
+                      <td>{amountOrDash(row.accountingExpense)}</td>
+                      <td>{row.accountingCounterparty ?? row.subtitle}</td>
+                      <td>{row.accountingContent ?? row.matchReason}</td>
+                      <td>{row.linkedBankTransaction ?? row.referenceNo}</td>
+                      <td>{row.bankTransactionTime ?? `${row.transactionDate} 09:00:00`}</td>
+                      <td>{row.bankTransactionNo ?? row.referenceNo}</td>
+                      <td>{amountOrDash(row.bankIncome ?? row.amount)}</td>
+                      <td>{amountOrDash(row.bankExpense)}</td>
+                      <td>{row.bankContent ?? row.description}</td>
+                      <td>
+                        <button className="recon-link-button" type="button">
+                          Xem match
+                        </button>
+                      </td>
                       <td>{row.confidence}%</td>
                     </tr>
                   ))}
@@ -628,7 +658,7 @@ export default function ReconciliationScreen() {
 
           <div className="recon-visual-panel">
             <article className="recon-visual-card">
-              <span className="recon-visual-label">Dòng sao kê</span>
+              <span className="recon-visual-label">Dòng sao kê · AI đọc sao kê</span>
               <strong>{selectedDemo.referenceNo}</strong>
               <p>{selectedDemo.description}</p>
               <div className="recon-visual-amount">{currency.format(selectedDemo.amount)}</div>
@@ -641,6 +671,15 @@ export default function ReconciliationScreen() {
               <strong>{selectedDemo.voucherNo}</strong>
               <p>{selectedDemo.matchReason}</p>
               <div className={`recon-confidence tone-${selectedDemo.tone}`}>{selectedDemo.confidence}% tin cậy</div>
+              {selectedDemo.suggestedActionLabel ? (
+                <div className="recon-ai-action">
+                  <button type="button" onClick={handleSuggestedAction}>
+                    <AppIcon name="Bot" size={15} />
+                    {selectedDemo.suggestedActionLabel}
+                  </button>
+                  <small>{selectedDemo.suggestedActionDescription}</small>
+                </div>
+              ) : null}
             </article>
           </div>
 
@@ -656,163 +695,7 @@ export default function ReconciliationScreen() {
           ) : null}
         </section>
 
-        <div className="section-title">
-          <h2>Thông tin match đang chọn</h2>
-          <span className="module-meta">{selectedDemo.title}</span>
-        </div>
-        <section className="panel">
-          <form className="form-grid">
-            {reconciliationScreen.fields.map((field) => (
-              <label className={`form-field ${field.width ?? "md"}`} key={field.key}>
-                <span>
-                  {field.label}
-                  {field.required ? " *" : ""}
-                </span>
-                <input className="field" type={field.type === "date" ? "date" : "text"} defaultValue={defaultFilterValue(field.key)} />
-              </label>
-            ))}
-            <label className="form-field lg">
-              <span>Voucher BN/BC được chọn</span>
-              <input className="field" value={selectedVoucherId} onChange={(event) => setSelectedVoucherId(event.target.value)} />
-            </label>
-            <label className="form-field lg">
-              <span>Statement line được chọn</span>
-              <input className="field" value={selectedStatementLineId} onChange={(event) => setSelectedStatementLineId(event.target.value)} />
-            </label>
-            <label className="form-field md">
-              <span>Số tiền khớp</span>
-              <input className="field" value={matchedAmount} onChange={(event) => setMatchedAmount(event.target.value)} />
-            </label>
-          </form>
-
-          <div className="recon-entry-grid">
-            {selectedDemo.accountingEntry.map((entry) => (
-              <div className="attachment-box" key={`${entry.debitAccount}-${entry.creditAccount}-${entry.amount}`}>
-                <strong>Bút toán đề xuất</strong>
-                <p>
-                  Nợ {entry.debitAccount} / Có {entry.creditAccount}: {currency.format(entry.amount)}
-                </p>
-                <p>{entry.description}</p>
-              </div>
-            ))}
-          </div>
-
-          {feedback ? (
-            <div className="attachment-box" style={{ marginTop: 16 }}>
-              <strong>Trạng thái</strong>
-              <p>{feedback}</p>
-              {recentMatchId ? <p>Match ID: {recentMatchId}</p> : null}
-            </div>
-          ) : null}
-        </section>
-
-        <div className="section-title">
-          <h2>Đối chiếu giao dịch</h2>
-          <span className="module-meta">
-            BN / BC <span aria-hidden="true">→</span> sao kê ngân hàng
-          </span>
-        </div>
-        <div className="split-grid">
-          <section className="panel table-scroll">
-            <div className="subsection">
-              <h3>BN / BC chưa khớp</h3>
-            </div>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Loại</th>
-                  <th>Số CT</th>
-                  <th>Ngày</th>
-                  <th>Đối tượng</th>
-                  <th>Số tiền</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.vouchers
-                  .filter((item) => item.voucherType !== "PT")
-                  .map((item) => (
-                    <tr
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedVoucherId(item.voucherId ?? "");
-                        setMatchedAmount(item.amount.toString());
-                      }}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <td>{item.voucherType}</td>
-                      <td>{item.voucherNo}</td>
-                      <td>{item.transactionDate}</td>
-                      <td>{item.counterpartyName}</td>
-                      <td>{currency.format(item.amount)}</td>
-                      <td>{item.matchingStatus}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </section>
-
-          <section className="panel table-scroll">
-            <div className="subsection">
-              <h3>Statement line chưa khớp</h3>
-            </div>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th>Diễn giải</th>
-                  <th>Tài khoản</th>
-                  <th>Số tiền</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.statements.map((item) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => {
-                      setSelectedStatementLineId(item.statementLineId ?? "");
-                      if (!matchedAmount) {
-                        setMatchedAmount(item.amount.toString());
-                      }
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td>{item.transactionDate}</td>
-                    <td>{item.description}</td>
-                    <td>{item.bankAccountCode}</td>
-                    <td>{currency.format(item.amount)}</td>
-                    <td>{item.matchingStatus}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        </div>
-
-        <div className="section-title">
-          <h2>Quy tắc đối chiếu</h2>
-          <span className="module-meta">Ưu tiên match chắc chắn, sau đó mới đến suy đoán</span>
-        </div>
-        <div className="cash-rule-grid">
-          {reconciliationRules.map((rule) => (
-            <article className="cash-rule-card" key={rule.title}>
-              <strong>{rule.title}</strong>
-              <p>{rule.description}</p>
-            </article>
-          ))}
-        </div>
       </div>
     </AppShell>
   );
-}
-
-function defaultFilterValue(key: string) {
-  const values: Record<string, string> = {
-    bankAccountCode: "VCB-001",
-    statementDate: "2026-07-14",
-    matchingStatus: "unmatched"
-  };
-
-  return values[key] ?? "";
 }

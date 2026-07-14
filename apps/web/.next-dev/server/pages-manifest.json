@@ -1,1 +1,9 @@
-{}
+{
+  "/_error": "pages/_error.js",
+  "/_app": "pages/_app.js",
+  "/_document": "pages/_document.js",
+  "/modules/[moduleKey]": "pages/modules/[moduleKey].js",
+  "/modules/cash": "pages/modules/cash.js",
+  "/": "pages/index.js",
+  "/modules/reports": "pages/modules/reports.js"
+}

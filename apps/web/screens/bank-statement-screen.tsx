@@ -5,6 +5,7 @@ import { bankStatementScreen, bankStatements } from "@domain/index";
 import type { BankStatementRecord } from "@domain/types";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
+import { bankStatementAssistantMock } from "../lib/document-assistant-mock-data";
 import { fetchApi, postApi } from "../lib/api";
 
 const currency = new Intl.NumberFormat("vi-VN", {
@@ -44,6 +45,7 @@ export default function BankStatementScreen() {
     creditAmount: "1000000"
   });
   const [feedback, setFeedback] = useState("");
+  const [assistantFeedback, setAssistantFeedback] = useState("");
   const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
@@ -128,6 +130,86 @@ export default function BankStatementScreen() {
             <strong>{statements.length} đợt import</strong>
             <span>Import file, lưu header và từng dòng để phục vụ matching, raw payload và audit.</span>
           </div>
+        </section>
+
+        <section className="panel ai-assistant-panel">
+          <div className="ai-assistant-heading">
+            <div>
+              <span className="ai-assistant-eyebrow">AI đọc sao kê</span>
+              <h2>Đọc sao kê bằng AI</h2>
+              <p>
+                Demo đọc file {bankStatementAssistantMock.fileName}, chuẩn hóa dòng giao dịch, nhận diện giao dịch
+                nghi ngờ và chuyển sang đối chiếu ngân hàng.
+              </p>
+            </div>
+            <span className="ai-assistant-badge">{bankStatementAssistantMock.confidence}% tin cậy</span>
+          </div>
+
+          <div className="ai-doc-layout">
+            <article className="ai-doc-card">
+              <span className="ai-doc-file">
+                <AppIcon name="Upload" />
+                {bankStatementAssistantMock.fileName}
+              </span>
+              <strong>{bankStatementAssistantMock.classificationLabel}</strong>
+              <p>{bankStatementAssistantMock.recommendation}</p>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => setAssistantFeedback("Đã mô phỏng tạo chứng từ nháp cho dòng phí/lãi ngân hàng cần kế toán duyệt.")}
+              >
+                <AppIcon name="Bot" />
+                Tạo chứng từ nháp
+              </button>
+            </article>
+
+            <div className="ai-extract-grid">
+              {bankStatementAssistantMock.extractedFields.map((field) => (
+                <div className="ai-extract-item" key={field.label}>
+                  <span>{field.label}</span>
+                  <strong>{field.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Tham chiếu</th>
+                  <th>Nội dung AI đọc</th>
+                  <th>Thu/Chi</th>
+                  <th>Số tiền</th>
+                  <th>Chứng từ đề xuất</th>
+                  <th>Match</th>
+                  <th>Tin cậy</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(bankStatementAssistantMock.statementLines ?? []).map((line) => (
+                  <tr key={line.id}>
+                    <td>{line.transactionTime}</td>
+                    <td>{line.referenceNo}</td>
+                    <td>{line.description}</td>
+                    <td>{line.direction}</td>
+                    <td>{currency.format(line.amount)}</td>
+                    <td>{line.suggestedVoucher}</td>
+                    <td>{line.matchStatus}</td>
+                    <td>{line.confidence}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {assistantFeedback ? (
+            <div className="ai-feedback-box">
+              <strong>Kết quả mô phỏng</strong>
+              <p>{assistantFeedback}</p>
+            </div>
+          ) : null}
         </section>
 
         <div className="section-title">

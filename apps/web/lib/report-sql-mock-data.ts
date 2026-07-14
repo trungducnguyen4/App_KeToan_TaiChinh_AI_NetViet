@@ -27,6 +27,35 @@ export type VoucherMock = {
   source_record_id: string;
 };
 
+export type MonitoringAlertCategory =
+  | "debt_overdue"
+  | "expense_limit"
+  | "cashflow_negative"
+  | "journal_anomaly";
+
+export type MonitoringAlertSeverity = "critical" | "high" | "medium" | "low";
+export type MonitoringAlertStatus = "new" | "reviewing" | "resolved";
+
+export type MonitoringAlertMock = {
+  id: string;
+  category: MonitoringAlertCategory;
+  severity: MonitoringAlertSeverity;
+  status: MonitoringAlertStatus;
+  title: string;
+  sourceModule: string;
+  entityRef: string;
+  amount: number;
+  threshold: string;
+  actual: string;
+  variance: string;
+  period: string;
+  detectedAt: string;
+  owner: string;
+  recommendation: string;
+  drilldownHref: string;
+  analysisFields: Array<{ label: string; value: string }>;
+};
+
 export const reportMetricMocks: MaterializedMetricMock[] = [
   ...[
     [1, 9010, 4914, 68961], [2, 8420, 5620, 71761], [3, 7580, 6180, 73161], [4, 8660, 5940, 75881],
@@ -80,6 +109,139 @@ export const voucherMocks: VoucherMock[] = [
   { id: "voucher-bn-01", organization_id: "org-ttp-paper", voucher_type: "BN", voucher_no: "BN1-26070008", voucher_date: "2026-07-14", posting_date: "2026-07-14", status: "posted", approval_status: "approved", description: "Thanh toán NCC Tín Phát", total_debit: 118000000, total_credit: 118000000, source_record_id: "WORKIT-BN-0807" },
   { id: "voucher-bc-01", organization_id: "org-ttp-paper", voucher_type: "BC", voucher_no: "BC1-26070018", voucher_date: "2026-07-16", posting_date: "2026-07-16", status: "posted", approval_status: "approved", description: "Thu công nợ khách hàng", total_debit: 320000000, total_credit: 320000000, source_record_id: "WORKIT-BC-1807" },
   { id: "voucher-pc-01", organization_id: "org-ttp-paper", voucher_type: "PC", voucher_no: "PC1-26070041", voucher_date: "2026-07-18", posting_date: "2026-07-18", status: "posted", approval_status: "approved", description: "Chi công nợ nhà cung cấp", total_debit: 164000000, total_credit: 164000000, source_record_id: "WORKIT-PC-4107" }
+];
+
+export const monitoringAlertMocks: MonitoringAlertMock[] = [
+  {
+    id: "alert-debt-001",
+    category: "debt_overdue",
+    severity: "critical",
+    status: "new",
+    title: "Khách hàng Minh An quá hạn 35 ngày",
+    sourceModule: "Công nợ",
+    entityRef: "KH-MINH-AN / BH-26060018",
+    amount: 180000000,
+    threshold: "Quá hạn > 30 ngày hoặc > 100 triệu",
+    actual: "35 ngày quá hạn, 180.000.000 VND",
+    variance: "+80.000.000 VND so với ngưỡng cao",
+    period: "Tháng 07/2026",
+    detectedAt: "2026-07-14 07:45",
+    owner: "Kế toán công nợ",
+    recommendation: "Liên hệ thu ngay, tạm dừng hạn mức bán chịu mới.",
+    drilldownHref: "/modules/receivables",
+    analysisFields: [
+      { label: "Tài khoản", value: "131 - Phải thu khách hàng" },
+      { label: "Ngày đến hạn", value: "10/06/2026" },
+      { label: "Tuổi nợ", value: "31-60 ngày" },
+      { label: "Số tiền còn nợ", value: "820.000.000 VND" },
+      { label: "Số tiền quá hạn", value: "180.000.000 VND" },
+      { label: "Mức ưu tiên", value: "Cao" },
+    ],
+  },
+  {
+    id: "alert-expense-001",
+    category: "expense_limit",
+    severity: "high",
+    status: "reviewing",
+    title: "Chi phí quản lý vượt định mức 18%",
+    sourceModule: "Sổ cái & hạch toán",
+    entityRef: "TK 642 / BP-VAN-PHONG",
+    amount: 118000000,
+    threshold: "Vượt ngân sách > 10%",
+    actual: "Thực chi 118.000.000 / ngân sách 100.000.000",
+    variance: "+18.000.000 VND (+18%)",
+    period: "Tháng 07/2026",
+    detectedAt: "2026-07-14 08:05",
+    owner: "Kế toán tổng hợp",
+    recommendation: "Kiểm tra chứng từ PC1-26070041 và yêu cầu phê duyệt bổ sung.",
+    drilldownHref: "/modules/accounting/report/account-ledger",
+    analysisFields: [
+      { label: "Tài khoản", value: "642 - Chi phí quản lý doanh nghiệp" },
+      { label: "Bộ phận", value: "Văn phòng" },
+      { label: "Dự án", value: "DA-MO-RONG-KHO" },
+      { label: "Định mức", value: "100.000.000 VND" },
+      { label: "Thực chi", value: "118.000.000 VND" },
+      { label: "Chênh lệch", value: "18%" },
+    ],
+  },
+  {
+    id: "alert-cashflow-001",
+    category: "cashflow_negative",
+    severity: "critical",
+    status: "new",
+    title: "Dự báo dòng tiền âm sau 14 ngày",
+    sourceModule: "Sổ quỹ & ngân hàng",
+    entityRef: "VCB-001 / Cash forecast 14D",
+    amount: 420000000,
+    threshold: "Số dư dự báo < 0 trong 30 ngày",
+    actual: "Ngày 28/07/2026 dự kiến thiếu 420.000.000 VND",
+    variance: "-420.000.000 VND",
+    period: "14 ngày tới",
+    detectedAt: "2026-07-14 08:20",
+    owner: "Giám đốc tài chính",
+    recommendation: "Ưu tiên thu KH-MINH-AN và đổi lịch thanh toán NCC-TTP.",
+    drilldownHref: "/modules/cash",
+    analysisFields: [
+      { label: "Số dư hiện tại", value: "2.353.000.000 VND" },
+      { label: "Dòng tiền vào dự kiến", value: "1.050.000.000 VND" },
+      { label: "Dòng tiền ra dự kiến", value: "3.823.000.000 VND" },
+      { label: "Ngày âm tiền", value: "28/07/2026" },
+      { label: "Thiếu hụt", value: "420.000.000 VND" },
+      { label: "Độ tin cậy", value: "82%" },
+    ],
+  },
+  {
+    id: "alert-journal-001",
+    category: "journal_anomaly",
+    severity: "high",
+    status: "new",
+    title: "Phiếu hạch toán lệch Nợ/Có",
+    sourceModule: "Sổ cái & hạch toán",
+    entityRef: "HT-26070027",
+    amount: 12500000,
+    threshold: "Tổng Nợ phải bằng Tổng Có",
+    actual: "Tổng Nợ 312.500.000 / Tổng Có 300.000.000",
+    variance: "Lệch 12.500.000 VND",
+    period: "Tháng 07/2026",
+    detectedAt: "2026-07-14 09:10",
+    owner: "Kế toán tổng hợp",
+    recommendation: "Tạm giữ ghi sổ, kiểm tra dòng hạch toán đối ứng và chứng từ gốc.",
+    drilldownHref: "/modules/accounting/journal-vouchers",
+    analysisFields: [
+      { label: "Mã chứng từ", value: "HT" },
+      { label: "Số chứng từ", value: "HT-26070027" },
+      { label: "Tổng Nợ", value: "312.500.000 VND" },
+      { label: "Tổng Có", value: "300.000.000 VND" },
+      { label: "Số lệch", value: "12.500.000 VND" },
+      { label: "Chứng từ gốc", value: "Chưa gắn" },
+    ],
+  },
+  {
+    id: "alert-journal-002",
+    category: "journal_anomaly",
+    severity: "medium",
+    status: "reviewing",
+    title: "Bút toán giá trị lớn sửa ngoài giờ",
+    sourceModule: "Sổ cái & hạch toán",
+    entityRef: "HT-26070031",
+    amount: 780000000,
+    threshold: "Sửa sau 19:00 và giá trị > 500 triệu",
+    actual: "Sửa lúc 21:38, tổng tiền 780.000.000 VND",
+    variance: "Vượt ngưỡng giá trị 280.000.000 VND",
+    period: "Tháng 07/2026",
+    detectedAt: "2026-07-14 09:35",
+    owner: "Kế toán trưởng",
+    recommendation: "Yêu cầu xác nhận người sửa và đối chiếu phê duyệt nội bộ.",
+    drilldownHref: "/modules/accounting/journal-vouchers",
+    analysisFields: [
+      { label: "Người tạo", value: "user-accountant-02" },
+      { label: "Người sửa gần nhất", value: "user-accountant-05" },
+      { label: "Ngày sửa", value: "13/07/2026 21:38" },
+      { label: "Tài khoản liên quan", value: "112, 331, 642" },
+      { label: "Dự án", value: "Thiếu thông tin" },
+      { label: "Nguồn dữ liệu", value: "WORKIT-HT-26070031" },
+    ],
+  },
 ];
 
 export const ledgerBalanceMocks = [

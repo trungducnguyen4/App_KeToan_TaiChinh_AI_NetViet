@@ -23,7 +23,7 @@ export default function ModulePage() {
   const routeKey = typeof router.query.moduleKey === "string" ? router.query.moduleKey : "accounting";
   const moduleKey = routeToModule[routeKey] ?? "accounting";
   const exists = workitModules.some((module) => module.key === moduleKey);
-  const receivablesView = typeof router.query.view === "string" ? router.query.view : "overview";
+  const receivablesView = typeof router.query.view === "string" ? router.query.view : "menu";
 
   return (
     <AppShell activeModule={moduleKey}>

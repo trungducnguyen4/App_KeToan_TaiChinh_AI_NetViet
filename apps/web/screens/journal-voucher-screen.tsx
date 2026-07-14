@@ -1,7 +1,8 @@
 import { journalVoucherScreen, journalVouchers } from "@domain/index";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
-import { StatusPill } from "../components/status-pill";
+import { useState } from "react";
+import { journalAssistantMock } from "../lib/document-assistant-mock-data";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -11,6 +12,7 @@ const currency = new Intl.NumberFormat("vi-VN", {
 
 export default function JournalVoucherPage() {
   const firstVoucher = journalVouchers[0];
+  const [assistantFeedback, setAssistantFeedback] = useState("");
 
   return (
     <AppShell activeModule="accounting">
@@ -33,6 +35,102 @@ export default function JournalVoucherPage() {
             <strong>{journalVouchers.length}</strong>
             <span>Chứng từ demo đã sẵn sàng để kiểm thử danh sách và chi tiết hạch toán.</span>
           </div>
+        </section>
+
+        <section className="panel ai-assistant-panel">
+          <div className="ai-assistant-heading">
+            <div>
+              <span className="ai-assistant-eyebrow">AI accounting suggestion</span>
+              <h2>Gợi ý định khoản AI</h2>
+              <p>
+                Demo đọc chứng từ nguồn {journalAssistantMock.fileName}, trích xuất đối tượng và đề xuất bút toán
+                nháp. AI không tự ghi sổ; kế toán kiểm tra trước khi duyệt.
+              </p>
+            </div>
+            <span className="ai-assistant-badge">{journalAssistantMock.confidence}% tin cậy</span>
+          </div>
+
+          <div className="ai-doc-layout">
+            <article className="ai-doc-card">
+              <span className="ai-doc-file">
+                <AppIcon name="ReceiptText" />
+                {journalAssistantMock.fileName}
+              </span>
+              <strong>{journalAssistantMock.classificationLabel}</strong>
+              <p>{journalAssistantMock.recommendation}</p>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => setAssistantFeedback("Đã mô phỏng tạo phiếu hạch toán nháp HT-AI-0001 từ gợi ý định khoản.")}
+              >
+                <AppIcon name="Bot" />
+                Tạo phiếu hạch toán nháp
+              </button>
+            </article>
+
+            <div className="ai-extract-grid">
+              {journalAssistantMock.extractedFields.map((field) => (
+                <div className="ai-extract-item" key={field.label}>
+                  <span>{field.label}</span>
+                  <strong>{field.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="ai-assistant-columns">
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nợ</th>
+                    <th>Có</th>
+                    <th>Số tiền</th>
+                    <th>Yếu tố TK</th>
+                    <th>Diễn giải</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {journalAssistantMock.journalLines.map((line) => (
+                    <tr key={`${line.debitAccount}-${line.creditAccount}-${line.amount}`}>
+                      <td>{line.debitAccount}</td>
+                      <td>{line.creditAccount}</td>
+                      <td>{currency.format(line.amount)}</td>
+                      <td>{line.dimension}</td>
+                      <td>{line.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Mapping</th>
+                    <th>Đề xuất</th>
+                    <th>Lý do</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {journalAssistantMock.mappingSuggestions.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.sourceType}</td>
+                      <td>{item.suggestedValue}</td>
+                      <td>{item.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {assistantFeedback ? (
+            <div className="ai-feedback-box">
+              <strong>Kết quả mô phỏng</strong>
+              <p>{assistantFeedback}</p>
+            </div>
+          ) : null}
         </section>
 
         <div className="section-title">
@@ -72,14 +170,21 @@ export default function JournalVoucherPage() {
                   <td>{voucher.voucherType}</td>
                   <td>{voucher.voucherNo}</td>
                   <td>{voucher.voucherDate}</td>
+                  <td>{voucher.counterpartyCode ?? "-"}</td>
+                  <td>{voucher.counterpartyName ?? "-"}</td>
                   <td>{currency.format(voucher.amount)}</td>
+                  <td>{formatForeignAmount(voucher)}</td>
                   <td>{voucher.content}</td>
-                  <td>{voucher.counterpartyCode}</td>
-                  <td>{voucher.counterpartyName}</td>
+                  <td>{voucher.counterpartyCode ?? "-"}</td>
+                  <td>{voucher.counterpartyAddress ?? "-"}</td>
+                  <td>{voucher.projectName ?? "-"}</td>
+                  <td>{voucher.sourceVoucherNo ?? voucher.referenceInvoiceNo ?? "-"}</td>
+                  <td>{voucher.referenceNo ?? voucher.referenceInvoiceNo ?? "-"}</td>
                   <td>{voucher.currency}</td>
-                  <td>
-                    <StatusPill status={voucher.status} />
-                  </td>
+                  <td>{voucher.createdBy}</td>
+                  <td>{formatDateTime(voucher.createdAt)}</td>
+                  <td>{voucher.updatedBy ?? voucher.createdBy}</td>
+                  <td>{formatDateTime(voucher.updatedAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -189,4 +294,14 @@ export default function JournalVoucherPage() {
       </div>
     </AppShell>
   );
+}
+
+function formatForeignAmount(voucher: (typeof journalVouchers)[number]) {
+  const total = voucher.lines.reduce((sum, line) => sum + (line.foreignAmount ?? 0), 0);
+  return total > 0 ? currency.format(total) : "-";
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return "-";
+  return value.slice(0, 16).replace("T", " ");
 }

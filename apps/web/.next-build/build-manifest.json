@@ -5,8 +5,8 @@
   "devFiles": [],
   "ampDevFiles": [],
   "lowPriorityFiles": [
-    "static/2i6txhpCYDkK738Mnyff5/_buildManifest.js",
-    "static/2i6txhpCYDkK738Mnyff5/_ssgManifest.js"
+    "static/RjKAferZykC0C3ZgbjQvR/_buildManifest.js",
+    "static/RjKAferZykC0C3ZgbjQvR/_ssgManifest.js"
   ],
   "rootMainFiles": [],
   "rootMainFilesTree": {},
@@ -15,15 +15,15 @@
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/index-f7e99d164b1a071b.js"
     ],
     "/_app": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/css/a961933721da64bb.css",
-      "static/chunks/pages/_app-dd03769c500fc5c8.js"
+      "static/css/add2fe7bc5d2869d.css",
+      "static/chunks/pages/_app-fd89389a903f9b4e.js"
     ],
     "/_error": [
       "static/chunks/webpack-9301788721fe7e85.js",
@@ -35,118 +35,125 @@
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/pages/login-19407f549b96dc9f.js"
+      "static/chunks/pages/login-be65c6adaa235d6f.js"
     ],
     "/modules/[moduleKey]": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
-      "static/chunks/pages/modules/[moduleKey]-0f5c1a17f0106733.js"
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/[moduleKey]-ad75ae0d0884aa23.js"
+    ],
+    "/modules/accounting/assets/prepaid-expense/allocation": [
+      "static/chunks/webpack-9301788721fe7e85.js",
+      "static/chunks/framework-7318ce553e854ad6.js",
+      "static/chunks/main-0677174a73b33243.js",
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/accounting/assets/prepaid-expense/allocation-42b00299e2358d11.js"
     ],
     "/modules/accounting/contracts": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/accounting/contracts-d3b4f855005bc931.js"
     ],
     "/modules/accounting/input-einvoices": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
-      "static/chunks/pages/modules/accounting/input-einvoices-8ce77a72b488c804.js"
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/accounting/input-einvoices-99fb1c86d285f72b.js"
     ],
     "/modules/accounting/journal-vouchers": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
-      "static/chunks/pages/modules/accounting/journal-vouchers-886dda0a1ed63b16.js"
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/accounting/journal-vouchers-10ad9917b24c3568.js"
     ],
     "/modules/accounting/journal-vouchers/new": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/accounting/journal-vouchers/new-e4b71809f9b9dedc.js"
     ],
     "/modules/accounting/report/account-ledger": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/accounting/report/account-ledger-eb5937ef0e99ba58.js"
     ],
     "/modules/accounting/report/account-trial-balance": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/accounting/report/account-trial-balance-957be6e230c42b62.js"
     ],
     "/modules/accounting/report/general-journal": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/accounting/report/general-journal-ddf61e8399827a72.js"
     ],
     "/modules/accounting/tax-notifications": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/accounting/tax-notifications-49ad392e1247b8f7.js"
     ],
     "/modules/cash": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
-      "static/chunks/pages/modules/cash-00c10520f2966582.js"
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/cash-c46636d9a4fe9f3f.js"
     ],
     "/modules/cash/bank-credits": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/cash/bank-credits-5b10caf5041bce65.js"
     ],
     "/modules/cash/bank-credits/new": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/cash/bank-credits/new-ab59096022c2cfee.js"
     ],
     "/modules/cash/bank-debits": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/cash/bank-debits-65be37ff65920c67.js"
     ],
     "/modules/cash/bank-debits/new": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/pages/modules/cash/bank-debits/new-2b93f2e5206eaf94.js"
     ],
     "/modules/cash/bank-statements": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
-      "static/chunks/pages/modules/cash/bank-statements-2b84c29d2df4b681.js"
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/cash/bank-statements-68c501ce174d538f.js"
     ],
     "/modules/cash/payments": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/241-ccada029fa0829fb.js",
       "static/chunks/pages/modules/cash/payments-dcc8320ec1221e4d.js"
     ],
@@ -154,7 +161,7 @@
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/241-ccada029fa0829fb.js",
       "static/chunks/pages/modules/cash/payments/new-fa0a884943982bb7.js"
     ],
@@ -162,7 +169,7 @@
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/241-ccada029fa0829fb.js",
       "static/chunks/pages/modules/cash/receipts-1f42fdb78ad70d74.js"
     ],
@@ -170,7 +177,7 @@
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
+      "static/chunks/283-a3324d08a6d87468.js",
       "static/chunks/241-ccada029fa0829fb.js",
       "static/chunks/pages/modules/cash/receipts/new-e81c98425c80f75e.js"
     ],
@@ -178,15 +185,15 @@
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
-      "static/chunks/pages/modules/cash/reconciliation-66c7f3c269aa27b9.js"
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/cash/reconciliation-a1bc806a73635eba.js"
     ],
     "/modules/reports": [
       "static/chunks/webpack-9301788721fe7e85.js",
       "static/chunks/framework-7318ce553e854ad6.js",
       "static/chunks/main-0677174a73b33243.js",
-      "static/chunks/283-4630c4017edcc2df.js",
-      "static/chunks/pages/modules/reports-a1dd1681d68cdbae.js"
+      "static/chunks/283-a3324d08a6d87468.js",
+      "static/chunks/pages/modules/reports-e67888b6e9dafe8b.js"
     ]
   },
   "ampFirstPages": []
