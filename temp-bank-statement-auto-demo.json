@@ -1,0 +1,171 @@
+{
+  "statementNo": "VCB-AUTO-DEMO-14072026",
+  "bankAccountCode": "VCB-001",
+  "statementDate": "2026-07-14",
+  "openingBalance": 8069000000,
+  "closingBalance": 8136200000,
+  "sourceName": "VCB CSV auto reconciliation demo",
+  "demoPurpose": "Mock sao kê cho màn Đối chiếu sao kê ngân hàng tự động: khớp hoàn toàn, khớp một phần/nhiều chứng từ và ngoại lệ chưa khớp.",
+  "demoCases": [
+    {
+      "case": "matched",
+      "title": "Khớp hoàn toàn",
+      "description": "Số tiền, mã chứng từ và nội dung chuyển khoản trùng với chứng từ kế toán."
+    },
+    {
+      "case": "partial",
+      "title": "Khớp một phần",
+      "description": "Khách hàng thanh toán thấp hơn số còn phải thu, hệ thống đề xuất ghi nhận thanh toán một phần."
+    },
+    {
+      "case": "split",
+      "title": "Một giao dịch khớp nhiều chứng từ",
+      "description": "Một khoản chuyển tiền thanh toán nhiều hóa đơn hoặc nhiều chứng từ công nợ."
+    },
+    {
+      "case": "unmatched",
+      "title": "Không tìm thấy giao dịch tương ứng",
+      "description": "Phí ngân hàng, lãi ngân hàng hoặc giao dịch chưa có chứng từ kế toán tương ứng."
+    }
+  ],
+  "lines": [
+    {
+      "lineNo": 1,
+      "transactionDate": "2026-07-14",
+      "referenceNo": "BN1-26070003",
+      "description": "THANH TOAN NCC TTP MH-26070008 REF BN1-26070003",
+      "debitAmount": 62000000,
+      "creditAmount": 0,
+      "amount": 62000000,
+      "runningBalance": 8007000000,
+      "demoCase": "matched",
+      "expectedMatch": {
+        "voucherNo": "BN1-26070003",
+        "counterpartyCode": "NCC-TTP",
+        "confidence": 100,
+        "reason": "Trùng số tiền, mã chứng từ và nội dung nhà cung cấp."
+      },
+      "expectedAccountingEntry": [
+        {
+          "debitAccount": "331",
+          "creditAccount": "1121",
+          "amount": 62000000,
+          "description": "Thanh toán nhà cung cấp TTP qua ngân hàng."
+        }
+      ]
+    },
+    {
+      "lineNo": 2,
+      "transactionDate": "2026-07-14",
+      "referenceNo": "FT2619600101",
+      "description": "CONG TY CO PHAN 32 TT MOT PHAN BH-26070011",
+      "debitAmount": 0,
+      "creditAmount": 30000000,
+      "amount": 30000000,
+      "runningBalance": 8037000000,
+      "demoCase": "partial",
+      "expectedMatch": {
+        "voucherNo": "BC1-26070005",
+        "counterpartyCode": "KH32",
+        "invoiceNo": "BH-26070011",
+        "voucherAmount": 54000000,
+        "matchedAmount": 30000000,
+        "remainingAmount": 24000000,
+        "confidence": 88,
+        "reason": "Trùng khách hàng và hóa đơn, nhưng số tiền thấp hơn công nợ còn lại."
+      },
+      "expectedAccountingEntry": [
+        {
+          "debitAccount": "1121",
+          "creditAccount": "131",
+          "amount": 30000000,
+          "description": "Ghi nhận khách hàng KH32 thanh toán một phần."
+        }
+      ]
+    },
+    {
+      "lineNo": 3,
+      "transactionDate": "2026-07-14",
+      "referenceNo": "FT2619600102",
+      "description": "CONG TY ABC TT HD00256 HD00257 HD00258",
+      "debitAmount": 0,
+      "creditAmount": 15500000,
+      "amount": 15500000,
+      "runningBalance": 8052500000,
+      "demoCase": "split",
+      "expectedMatch": {
+        "counterpartyCode": "KH-ABC",
+        "confidence": 92,
+        "reason": "Nội dung chứa nhiều số hóa đơn, tổng tiền khớp tổng các khoản phải thu đề xuất.",
+        "allocations": [
+          {
+            "invoiceNo": "HD00256",
+            "amount": 5500000
+          },
+          {
+            "invoiceNo": "HD00257",
+            "amount": 7000000
+          },
+          {
+            "invoiceNo": "HD00258",
+            "amount": 3000000
+          }
+        ]
+      },
+      "expectedAccountingEntry": [
+        {
+          "debitAccount": "1121",
+          "creditAccount": "131",
+          "amount": 15500000,
+          "description": "Khách hàng ABC thanh toán nhiều hóa đơn trong một giao dịch."
+        }
+      ]
+    },
+    {
+      "lineNo": 4,
+      "transactionDate": "2026-07-14",
+      "referenceNo": "FEE-VCB-1407",
+      "description": "PHI DICH VU NGAN HANG THANG 07/2026",
+      "debitAmount": 330000,
+      "creditAmount": 0,
+      "amount": 330000,
+      "runningBalance": 8052170000,
+      "demoCase": "unmatched",
+      "expectedMatch": {
+        "confidence": 0,
+        "reason": "Không có voucher hiện hữu; hệ thống đưa vào ngoại lệ để kế toán tạo bút toán phí ngân hàng."
+      },
+      "suggestedAccountingEntry": [
+        {
+          "debitAccount": "642",
+          "creditAccount": "1121",
+          "amount": 330000,
+          "description": "Phí dịch vụ ngân hàng."
+        }
+      ]
+    },
+    {
+      "lineNo": 5,
+      "transactionDate": "2026-07-14",
+      "referenceNo": "INT-VCB-1407",
+      "description": "LAI TIEN GUI KHONG KY HAN",
+      "debitAmount": 0,
+      "creditAmount": 250000,
+      "amount": 250000,
+      "runningBalance": 8052420000,
+      "demoCase": "unmatched",
+      "expectedMatch": {
+        "confidence": 0,
+        "reason": "Không có chứng từ kế toán tương ứng; hệ thống đề xuất tạo bút toán lãi tiền gửi."
+      },
+      "suggestedAccountingEntry": [
+        {
+          "debitAccount": "1121",
+          "creditAccount": "515",
+          "amount": 250000,
+          "description": "Lãi tiền gửi ngân hàng."
+        }
+      ]
+    }
+  ]
+}

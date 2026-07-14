@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "npm run web:dev",
     "web:dev": "npm --workspace @workit/web run dev",
+    "web:dev:fresh": "npm --workspace @workit/web run dev:fresh",
+    "web:clean": "npm --workspace @workit/web run clean",
     "web:build": "npm --workspace @workit/web run build",
     "web:start": "npm --workspace @workit/web run start",
     "web:lint": "npm --workspace @workit/web run lint",
