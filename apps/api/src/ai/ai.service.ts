@@ -100,11 +100,20 @@ export class AiService {
         updatedSelectedFilters.voucherType = voucherType;
       }
 
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const currentDateStr = `${year}-${month}-${day}`;
+      const currentPeriodStr = `${year}-${month}`;
+
       const payload = {
         inputs: {
           current_screen: input.currentScreen ?? "unknown",
           selected_filters: updatedSelectedFilters,
           user_role: input.user.roles.join(","),
+          current_date: currentDateStr,
+          current_period: currentPeriodStr,
           allowed_tools: [
             "detect_missing_vouchers",
             "get_expense_by_category",
