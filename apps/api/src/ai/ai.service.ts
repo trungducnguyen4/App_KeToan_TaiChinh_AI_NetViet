@@ -469,9 +469,27 @@ export class AiService {
 
     const isMissingFileOrOcrError = /chua nhan duoc tep|chưa nhận được tệp|tep tin dinh kem|tệp tin đính kèm|upload|file|đính kèm|dinh kem|không nhận diện được|khong nhan dien duoc|chưa nhận diện được|chua nhan dien duoc|chua nhan duoc thong tin/i.test(this.normalizeFreeText(answer));
 
-    if (isMissingFileOrOcrError && (hasUpload || isOcrRequest)) {
-      const voucherType = this.inferVoucherTypeFromScreen(input.currentScreen) ?? "HT1";
-      return this.getMockOcrText(voucherType);
+    if (isMissingFileOrOcrError) {
+      if (hasUpload || isOcrRequest) {
+        const voucherType = this.inferVoucherTypeFromScreen(input.currentScreen) ?? "HT1";
+        return this.getMockOcrText(voucherType);
+      }
+
+      const normalizedMsg = this.normalizeFreeText(input.message);
+      const isShortPeriodQuery = /thang \d+|tháng \d+|nam \d+|năm \d+/i.test(normalizedMsg) && normalizedMsg.length < 20;
+
+      if (this.isDebtReportQuestion(input.message) || (isShortPeriodQuery && (input.currentScreen?.includes("receivables") || input.currentScreen?.includes("debt")))) {
+        return this.buildDebtReportCommentary();
+      }
+      if (this.isCashflowQuestion(input.message) || (isShortPeriodQuery && (input.currentScreen?.includes("cash") || input.currentScreen?.includes("reports")))) {
+        return this.buildCashflowCommentary();
+      }
+      if (this.isExpenseQuestion(input.message) || (isShortPeriodQuery && input.currentScreen?.includes("reports"))) {
+        return this.buildExpenseCommentary();
+      }
+      if (this.isMissingVouchersQuestion(input.message) || (isShortPeriodQuery && input.currentScreen?.includes("einvoices"))) {
+        return this.buildMissingVouchersCommentary();
+      }
     }
 
     const localVoucherAnswer = this.buildCashVoucherReviewIfPossible(input);
@@ -482,11 +500,42 @@ export class AiService {
       return localVoucherAnswer;
     }
 
+    const cleanAnswer = answer.trim();
+
     if (
-      this.isDebtReportQuestion(input.message) &&
-      /get_due_debts|truy xu[aấ]t d[uữ] li[eệ]u|tong no phai thu|tổng nợ phải thu|ocr/i.test(answer)
+      this.isDebtReportQuestion(input.message) ||
+      /get_due_debts/i.test(cleanAnswer)
     ) {
-      return this.buildDebtReportCommentary();
+      if (/get_due_debts|truy xu[aấ]t d[uữ] li[eệ]u|tong no phai thu|tổng nợ phải thu|ocr/i.test(cleanAnswer) || cleanAnswer === "get_due_debts") {
+        return this.buildDebtReportCommentary();
+      }
+    }
+
+    if (
+      this.isCashflowQuestion(input.message) ||
+      /get_cashflow_summary/i.test(cleanAnswer)
+    ) {
+      if (/get_cashflow_summary|dòng tiền|dong tien|thu chi/i.test(cleanAnswer) || cleanAnswer === "get_cashflow_summary") {
+        return this.buildCashflowCommentary();
+      }
+    }
+
+    if (
+      this.isExpenseQuestion(input.message) ||
+      /get_expense_by_category/i.test(cleanAnswer)
+    ) {
+      if (/get_expense_by_category|chi phí|chi phi/i.test(cleanAnswer) || cleanAnswer === "get_expense_by_category") {
+        return this.buildExpenseCommentary();
+      }
+    }
+
+    if (
+      this.isMissingVouchersQuestion(input.message) ||
+      /detect_missing_vouchers/i.test(cleanAnswer)
+    ) {
+      if (/detect_missing_vouchers|chứng từ thiếu|hoa don thieu/i.test(cleanAnswer) || cleanAnswer === "detect_missing_vouchers") {
+        return this.buildMissingVouchersCommentary();
+      }
     }
 
     return answer;
@@ -512,6 +561,18 @@ export class AiService {
 
     if (this.isDebtReportQuestion(input.message)) {
       return this.buildDebtReportCommentary();
+    }
+
+    if (this.isCashflowQuestion(input.message)) {
+      return this.buildCashflowCommentary();
+    }
+
+    if (this.isExpenseQuestion(input.message)) {
+      return this.buildExpenseCommentary();
+    }
+
+    if (this.isMissingVouchersQuestion(input.message)) {
+      return this.buildMissingVouchersCommentary();
     }
 
     return undefined;
@@ -696,6 +757,18 @@ export class AiService {
     return /c[oô]ng n[oợ]|cong no|ph[aả]i thu|phai thu|ph[aả]i tr[aả]|phai tra|tu[oổ]i n[oợ]|tuoi no/i.test(message);
   }
 
+  private isCashflowQuestion(message: string) {
+    return /d[oò]ng ti[eề]n|dong tien|thu chi|s[oố] d[uư]|ng[aâ]n h[aà]ng|tien mat|tiền mặt/i.test(message);
+  }
+
+  private isExpenseQuestion(message: string) {
+    return /chi ph[ií]|chi phi|v[uư]ợt đ[iị]nh m[uứ]c|vuot dinh muc|ng[aâ]n s[aá]ch/i.test(message);
+  }
+
+  private isMissingVouchersQuestion(message: string) {
+    return /thi[eế]u ch[uứ]ng t[uừ]|thieu chung tu|h[oóa] đ[oơn] thi[eế]u|hoa don thieu|ch[uứ]ng t[uừ] ch[uư]a h[aạ]ch to[aá]n|chung tu chua hach toan/i.test(message);
+  }
+
   private buildDebtReportCommentary() {
     return [
       "### Nhận xét báo cáo công nợ tháng 07/2026",
@@ -707,6 +780,39 @@ export class AiService {
       "- **Ưu tiên hành động:** thu trước các khoản quá hạn của Minh An/CP32, đồng thời đối chiếu hóa đơn NCC quá hạn trước khi lập lịch thanh toán.",
       "",
       "Khuyến nghị: trong 7 ngày tới nên tách danh sách công nợ thành 3 nhóm **thu ngay**, **nhắc nợ**, **đối chiếu trước khi thanh toán** để giảm áp lực dòng tiền và tránh thanh toán NCC khi chứng từ chưa khớp.",
+    ].join("\n");
+  }
+
+  private buildCashflowCommentary() {
+    return [
+      "### Nhận xét dòng tiền tháng 07/2026 (Mô phỏng)",
+      "",
+      "Tổng thu trong tháng đạt **8,54 tỷ VND**, chi đạt **6,04 tỷ VND**, mang lại dòng tiền thuần dương **2,50 tỷ VND**.",
+      "- **Số dư cuối kỳ:** Tổng số dư tiền mặt và tiền gửi ngân hàng đạt **82,64 tỷ VND**, đảm bảo khả năng thanh toán rất tốt.",
+      "- **Khuyến nghị:** Dòng tiền dương ổn định nhờ thu hồi công nợ tốt. Tiếp tục duy trì kế hoạch giãn thanh toán cho các nhà cung cấp chưa đối chiếu xong chứng từ.",
+    ].join("\n");
+  }
+
+  private buildExpenseCommentary() {
+    return [
+      "### Nhận xét tình hình chi phí tháng 07/2026 (Mô phỏng)",
+      "",
+      "Tổng chi phí ghi nhận **6,18 tỷ VND**.",
+      "- **Điểm nóng vượt định mức:** Chi phí quản lý doanh nghiệp (TK 642) thực tế là **860 triệu VND**, vượt định mức ngân sách **780 triệu VND** (vượt **80 triệu VND**, tương đương **10,2%**).",
+      "- **Khuyến nghị:** Cần kiểm tra kỹ các khoản chi phí dịch vụ mua ngoài hành chính trong tháng 7 để làm rõ nguyên nhân vượt định mức.",
+    ].join("\n");
+  }
+
+  private buildMissingVouchersCommentary() {
+    return [
+      "### Phát hiện hóa đơn/chứng từ thiếu hạch toán tháng 07/2026 (Mô phỏng)",
+      "",
+      "Hệ thống phát hiện **3 chứng từ/giao dịch** chưa được hạch toán hoặc thiếu liên kết:",
+      "1. **Hóa đơn đầu vào HD-26070122** trị giá **56 triệu VND** chưa có chứng từ mua hàng tương ứng.",
+      "2. **Giao dịch ngân hàng VCB-20260714-009** nhận **118 triệu VND** chưa được đối chiếu với Báo nợ/Báo có.",
+      "3. **Đơn hàng SO-2607021** trị giá **760 triệu VND** đã giao hàng nhưng chưa hạch toán doanh thu.",
+      "",
+      "Khuyến nghị: Truy cập màn hình đối chiếu hoặc hạch toán tương ứng để xử lý các chứng từ này.",
     ].join("\n");
   }
 
