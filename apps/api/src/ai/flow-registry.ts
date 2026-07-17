@@ -15,7 +15,7 @@ export const AI_WORKFLOWS = {
     apiKeyEnvAliases: ["DIFY_WORKFLOW_ALERT_KEY"],
   },
   "cfo-report": {
-    label: "AI lap bao cao quan tri",
+    label: "AI lập báo cáo quản trị",
     apiKeyEnv: "DIFY_WORKFLOW_REPORT_API_KEY",
     apiKeyEnvAliases: ["DIFY_WORKFLOW_CFO_REPORT_KEY"],
   },

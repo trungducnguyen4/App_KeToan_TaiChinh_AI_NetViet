@@ -20,7 +20,7 @@ const initialMessages: ChatMessage[] = [
   {
     id: 1,
     sender: "agent",
-    content: "Xin chao! Toi la tro ly AI ke toan. Ban muon tra cuu bao cao, chung tu hay cong no?",
+    content: "Xin chào! Tôi là trợ lý AI kế toán. Bạn muốn tra cứu báo cáo, chứng từ hay công nợ?",
   },
 ];
 

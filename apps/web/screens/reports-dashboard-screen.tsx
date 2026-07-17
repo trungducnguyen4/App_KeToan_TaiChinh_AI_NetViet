@@ -1322,7 +1322,7 @@ export default function ReportsDashboardScreen() {
                   <MarkdownText className="report-ai-markdown" content={aiNarrative} />
                 ) : (
                   <p className="report-ai-placeholder">
-                    San sang lap bao cao quan tri AI cho nhom dang xem.
+                    Sẵn sàng lập báo cáo quản trị AI cho nhóm đang xem.
                   </p>
                 )}
               </span>
@@ -1334,7 +1334,7 @@ export default function ReportsDashboardScreen() {
               disabled={isGeneratingAiNarrative}
             >
               <AppIcon name="Bot" size={15} />
-              {isGeneratingAiNarrative ? "Dang lap..." : "AI lap bao cao"}
+              {isGeneratingAiNarrative ? "Đang lập..." : "AI lập báo cáo"}
             </button>
           </div>
 
