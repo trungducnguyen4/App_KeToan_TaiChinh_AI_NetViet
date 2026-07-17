@@ -104,7 +104,7 @@ export default function BankDebitListScreen() {
 
   async function handleAskAi() {
     if (!selectedVoucher) {
-      setAiSuggestion("Chua co chung tu BN duoc chon de AI kiem tra.");
+      setAiSuggestion("Chưa có chứng từ BN được chọn để AI kiểm tra.");
       return;
     }
 
@@ -114,7 +114,7 @@ export default function BankDebitListScreen() {
     try {
       const response = await postApi<AiChatResponse>("/ai/chat", {
         message:
-          "Kiem tra nhanh chung tu bao no ngan hang dang chon: dinh khoan No/Co, rui ro doi chieu sao ke, thong tin con thieu va viec can lam tiep. Tra loi ngan gon theo bullet.",
+          "Kiểm tra nhanh chứng từ báo nợ ngân hàng đang chọn: định khoản Nợ/Có, rủi ro đối chiếu sao kê, thông tin còn thiếu và việc cần làm tiếp. Trả lời ngắn gọn theo bullet.",
         currentScreen: "/modules/cash/bank-debits",
         selectedFilters: {
           voucherType: "BN",

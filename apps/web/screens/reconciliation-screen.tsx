@@ -6,7 +6,7 @@ import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
 import { MarkdownText } from "../components/markdown-text";
 import { readAiWorkflowOutput, readAiWorkflowOutputValue, type AiWorkflowResponse } from "../lib/ai-workflows";
-import { fetchApi, postApi } from "../lib/api";
+import { fetchApi, postApi, postFormApi } from "../lib/api";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -22,9 +22,50 @@ const selectedBankAccount = {
   holderName: "Cong ty Workit Demo"
 };
 
-const importedStatementFile = "VCB_auto_reconciliation_demo_2026-07-14.csv";
-
 type ReconciliationPayload = typeof reconciliationItems;
+
+type BankStatementPreviewLine = {
+  id: string;
+  transactionDate: string;
+  transactionTime: string;
+  referenceNo: string;
+  description: string;
+  debitAmount: number;
+  creditAmount: number;
+  amount: number;
+  runningBalance: number;
+  counterparty?: string;
+  suggestedVoucher: string;
+  matchStatus: string;
+  confidence: number;
+};
+
+type ReconciliationCandidateDocument = {
+  document_id?: string;
+  invoice_no?: string;
+  partner_name?: string;
+  partner_code?: string;
+  amount?: number;
+  document_date?: string;
+  account_code?: string;
+  counterparty_type?: string;
+  voucher_type?: string;
+  status?: string;
+  expected_match_score?: number;
+  note?: string;
+};
+
+type BankStatementPreviewResponse = {
+  fileName: string;
+  bankName: string;
+  bankAccountCode: string;
+  accountNo: string;
+  statementNo: string;
+  statementDate: string;
+  lineCount: number;
+  candidateDocuments?: ReconciliationCandidateDocument[];
+  lines: BankStatementPreviewLine[];
+};
 
 type DemoScenario = {
   id: string;
@@ -61,6 +102,9 @@ type DemoScenario = {
   suggestedActionLabel?: string;
   suggestedActionDescription?: string;
   suggestedActionResult?: string;
+  candidateDocument?: ReconciliationCandidateDocument;
+  bankAccountCode?: string;
+  sourceFileName?: string;
 };
 
 type SemanticMatch = {
@@ -469,6 +513,244 @@ function getSemanticMatches(value: unknown): SemanticMatch[] {
   return candidate.filter((item): item is SemanticMatch => Boolean(asRecord(item)));
 }
 
+function normalizeSemanticText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function pickUnmatchedPreviewLine(preview: BankStatementPreviewResponse, fallback?: ReconciliationPayload["statements"][number]) {
+  const readableLines = preview.lines.filter((line) => line.description || line.referenceNo || line.amount);
+  const preferredLine =
+    readableLines.find((line) => /needs_semantic|semantic|review|can_doi_chieu|chua_khop|needs|true|yes|^1$/.test(normalizeSemanticText(line.matchStatus))) ??
+    readableLines.find((line) => line.suggestedVoucher || line.counterparty) ??
+    readableLines.find((line) => !/unmatched|khong_khop/.test(normalizeSemanticText(line.matchStatus))) ??
+    readableLines[0];
+
+  if (preferredLine) {
+    return {
+      date: preferredLine.transactionDate || preview.statementDate,
+      time: preferredLine.transactionTime,
+      reference_no: preferredLine.referenceNo,
+      amount: preferredLine.amount,
+      debit_amount: preferredLine.debitAmount,
+      credit_amount: preferredLine.creditAmount,
+      description: preferredLine.description,
+      counterparty: preferredLine.counterparty,
+      suggested_voucher: preferredLine.suggestedVoucher,
+      match_status: preferredLine.matchStatus,
+      bank_account_code: preview.bankAccountCode || selectedBankAccount.accountNo,
+      source_file_name: preview.fileName,
+    };
+  }
+
+  return {
+    date: fallback?.transactionDate ?? "",
+    amount: fallback?.amount ?? 0,
+    description: fallback?.description ?? "",
+    bank_account_code: fallback?.bankAccountCode ?? selectedBankAccount.accountNo,
+    source_file_name: preview.fileName,
+  };
+}
+
+function buildPreviewCandidateDocuments(preview: BankStatementPreviewResponse): ReconciliationCandidateDocument[] {
+  const sheetCandidates = preview.candidateDocuments ?? [];
+  const lineCandidates = preview.lines
+    .filter((line) => line.suggestedVoucher)
+    .map((line) => ({
+      document_id: line.suggestedVoucher,
+      invoice_no: line.suggestedVoucher,
+      partner_name: line.counterparty,
+      amount: line.amount,
+      document_date: line.transactionDate || preview.statementDate,
+      note: line.description,
+    }));
+
+  const unique = new Map<string, ReconciliationCandidateDocument>();
+
+  for (const item of [...sheetCandidates, ...lineCandidates]) {
+    const key = String(item.document_id ?? item.invoice_no ?? "").trim();
+    if (key && !unique.has(key)) {
+      unique.set(key, item);
+    }
+  }
+
+  return [...unique.values()];
+}
+
+function scoreToPercent(value: unknown) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 0;
+  }
+
+  return Math.round((numeric <= 1 ? numeric * 100 : numeric));
+}
+
+function normalizeDocumentToken(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/([a-z]+)0+(\d+)/g, "$1$2")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function classifyPreviewLine(line: BankStatementPreviewLine, semanticMatches: SemanticMatch[]): DemoScenario["status"] {
+  const status = normalizeSemanticText(line.matchStatus);
+
+  if (/partial/.test(status)) {
+    return "partial";
+  }
+
+  if (/many|multi|split|nhieu/.test(status)) {
+    return "split";
+  }
+
+  if (/unmatched|bank_fee|fee|interest|khong_khop/.test(status)) {
+    return "unmatched";
+  }
+
+  if (/needs_semantic|semantic|review|needs/.test(status)) {
+    return semanticMatches.length ? "matched" : "unmatched";
+  }
+
+  return "matched";
+}
+
+function toneForStatus(status: DemoScenario["status"]): DemoScenario["tone"] {
+  if (status === "matched") return "green";
+  if (status === "partial") return "blue";
+  if (status === "split") return "amber";
+  return "red";
+}
+
+function titleForStatus(status: DemoScenario["status"]) {
+  if (status === "matched") return "Khớp hoàn toàn";
+  if (status === "partial") return "Khớp một phần";
+  if (status === "split") return "Một giao dịch nhiều hóa đơn";
+  return "Ngoại lệ chưa khớp";
+}
+
+function iconForStatus(status: DemoScenario["status"]) {
+  if (status === "matched") return "ShieldCheck";
+  if (status === "partial") return "Calculator";
+  if (status === "split") return "ArrowLeftRight";
+  return "FileText";
+}
+
+function findCandidateForLine(
+  line: BankStatementPreviewLine,
+  candidates: ReconciliationCandidateDocument[],
+  semanticMatches: SemanticMatch[],
+) {
+  const lineText = normalizeDocumentToken(`${line.referenceNo} ${line.description} ${line.suggestedVoucher}`);
+  const semanticMatch = semanticMatches[0];
+  const semanticDocumentId = normalizeDocumentToken(semanticMatch?.document_id ?? semanticMatch?.invoice_id);
+
+  return (
+    candidates.find((candidate) => semanticDocumentId && normalizeDocumentToken(candidate.document_id) === semanticDocumentId) ??
+    candidates.find((candidate) => {
+      const invoice = normalizeDocumentToken(candidate.invoice_no);
+      const document = normalizeDocumentToken(candidate.document_id);
+      return Boolean((invoice && lineText.includes(invoice)) || (document && lineText.includes(document)));
+    }) ??
+    candidates.find((candidate) => normalizeDocumentToken(candidate.document_id) === normalizeDocumentToken(line.suggestedVoucher)) ??
+    candidates.find((candidate) => Number(candidate.amount ?? 0) === line.amount) ??
+    undefined
+  );
+}
+
+function buildPreviewAccountingEntry(
+  line: BankStatementPreviewLine,
+  candidate: ReconciliationCandidateDocument | undefined,
+): DemoScenario["accountingEntry"] {
+  const accountCode = String(candidate?.account_code ?? "").trim();
+  const description = normalizeSemanticText(line.description);
+  const amount = line.amount || Math.max(line.debitAmount, line.creditAmount);
+
+  if (accountCode === "131" || line.creditAmount > 0) {
+    if (/interest|lai tien gui|lai ngan hang/.test(description) && accountCode !== "131") {
+      return [{ debitAccount: "1121", creditAccount: "515", amount, description: line.description || "Lãi tiền gửi ngân hàng" }];
+    }
+
+    return [{ debitAccount: "1121", creditAccount: "131", amount, description: line.description || "Thu công nợ khách hàng qua ngân hàng" }];
+  }
+
+  if (/fee|phi ngan hang|phi dich vu/.test(description) && accountCode !== "331") {
+    return [{ debitAccount: "642", creditAccount: "1121", amount, description: line.description || "Phí ngân hàng" }];
+  }
+
+  return [{ debitAccount: "331", creditAccount: "1121", amount, description: line.description || "Thanh toán công nợ nhà cung cấp qua ngân hàng" }];
+}
+
+function buildReconciliationRowsFromPreview(
+  preview: BankStatementPreviewResponse,
+  semanticMatches: SemanticMatch[],
+  extraCandidates: ReconciliationCandidateDocument[] = [],
+): DemoScenario[] {
+  const candidates = [...buildPreviewCandidateDocuments(preview), ...extraCandidates];
+
+  return preview.lines.map((line, index) => {
+    const status = classifyPreviewLine(line, semanticMatches);
+    const tone = toneForStatus(status);
+    const candidate = findCandidateForLine(line, candidates, semanticMatches);
+    const semanticMatch = semanticMatches[index] ?? semanticMatches[0];
+    const confidence =
+      scoreToPercent(semanticMatch?.match_score) ||
+      scoreToPercent(candidate?.expected_match_score) ||
+      (status === "unmatched" ? 0 : line.confidence);
+    const voucherNo = String(candidate?.document_id ?? candidate?.invoice_no ?? line.suggestedVoucher ?? "Chưa có chứng từ");
+    const matchReason = String(
+      semanticMatch?.reason ??
+      candidate?.note ??
+      (status === "unmatched"
+        ? "Chưa tìm thấy chứng từ đủ điều kiện khớp trong danh sách ứng viên."
+        : "AI đọc file sao kê và tìm thấy tín hiệu đối chiếu từ nội dung, số tiền hoặc mã chứng từ."),
+    );
+
+    return {
+      id: `uploaded-${index + 1}`,
+      category: status,
+      rowNo: index + 1,
+      title: titleForStatus(status),
+      subtitle: `${line.referenceNo || "Không có số giao dịch"} · ${line.matchStatus || "AI đọc file"}`,
+      icon: iconForStatus(status),
+      tone,
+      voucherId: voucherNo,
+      voucherNo,
+      statementLineId: line.id,
+      referenceNo: line.referenceNo,
+      transactionDate: line.transactionDate || preview.statementDate,
+      description: line.description,
+      amount: line.amount,
+      accountingDate: candidate?.document_date || line.transactionDate || preview.statementDate,
+      accountingVoucherNo: voucherNo,
+      accountingIncome: status === "unmatched" ? 0 : (line.creditAmount || line.amount),
+      accountingExpense: status === "unmatched" ? 0 : line.debitAmount,
+      accountingCounterparty: candidate?.partner_name || line.counterparty || "Chưa xác định",
+      accountingContent: matchReason,
+      linkedBankTransaction: line.referenceNo,
+      bankTransactionTime: line.transactionTime || line.transactionDate || preview.statementDate,
+      bankTransactionNo: line.referenceNo,
+      bankIncome: line.creditAmount,
+      bankExpense: line.debitAmount,
+      bankContent: line.description,
+      confidence,
+      status,
+      matchReason,
+      accountingEntry: buildPreviewAccountingEntry(line, candidate),
+      suggestedActionLabel: status === "unmatched" ? "Tạo chứng từ nháp" : undefined,
+      suggestedActionDescription: status === "unmatched" ? "AI sẽ tạo chứng từ nháp để kế toán kiểm tra và duyệt." : undefined,
+      suggestedActionResult: status === "unmatched" ? `Đã mô phỏng tạo chứng từ nháp cho ${line.referenceNo || "dòng sao kê này"}.` : undefined,
+      candidateDocument: candidate,
+      bankAccountCode: preview.bankAccountCode,
+      sourceFileName: preview.fileName,
+    };
+  });
+}
+
 function SemanticReconciliationResult({ value }: { value: unknown }) {
   const matches = getSemanticMatches(value);
 
@@ -525,26 +807,39 @@ export default function ReconciliationScreen() {
   const [selectedDemoId, setSelectedDemoId] = useState(demoScenarios[0].id);
   const [selectedDemoRowId, setSelectedDemoRowId] = useState(matchedDemoRows[0].id);
   const [isAskingAi, setIsAskingAi] = useState(false);
+  const [statementFile, setStatementFile] = useState<File | null>(null);
+  const [hasAutoReconciliationRun, setHasAutoReconciliationRun] = useState(false);
+  const [resultRows, setResultRows] = useState<DemoScenario[]>([]);
+  const [debtCandidates, setDebtCandidates] = useState<ReconciliationCandidateDocument[]>([]);
 
-  const visibleDemoRows = demoRows.filter((row) => row.category === selectedDemoId);
-  const selectedDemo = visibleDemoRows.find((row) => row.id === selectedDemoRowId) ?? visibleDemoRows[0] ?? demoRows[0];
+  const reconciliationRows = hasAutoReconciliationRun && resultRows.length ? resultRows : demoRows;
+  const visibleDemoRows = reconciliationRows.filter((row) => row.category === selectedDemoId);
+  const selectedDemo = visibleDemoRows.find((row) => row.id === selectedDemoRowId) ?? visibleDemoRows[0] ?? reconciliationRows[0] ?? demoRows[0];
 
   async function loadReconciliation() {
     const data = await fetchApi<ReconciliationPayload>("/cash/reconciliation");
     setItems(data);
   }
 
+  async function loadDebtCandidates() {
+    const data = await fetchApi<ReconciliationCandidateDocument[]>("/cash/reconciliation/debt-candidates");
+    setDebtCandidates(data);
+  }
+
   useEffect(() => {
     void loadReconciliation().catch(() => undefined);
+    void loadDebtCandidates().catch(() => setDebtCandidates([]));
   }, []);
 
   useEffect(() => {
     const firstRow = visibleDemoRows[0];
     if (firstRow) {
       setSelectedDemoRowId(firstRow.id);
-      applyDemoScenario(firstRow);
+      if (hasAutoReconciliationRun) {
+        applyDemoScenario(firstRow);
+      }
     }
-  }, [selectedDemoId]);
+  }, [selectedDemoId, hasAutoReconciliationRun]);
 
   const autoCandidates = useMemo(() => items.vouchers.filter((voucher) => voucher.voucherType !== "PT"), [items.vouchers]);
 
@@ -555,15 +850,17 @@ export default function ReconciliationScreen() {
     setFeedback(`${scenario.title}: ${scenario.matchReason}`);
   }
 
+  function resetAiReconciliation() {
+    setHasAutoReconciliationRun(false);
+    setResultRows([]);
+    setAiSuggestion("");
+    setRecentMatchId("");
+    setFeedback("");
+  }
+
   async function handleMatch() {
     if (!selectedVoucherId || !selectedStatementLineId || !matchedAmount) {
       setFeedback("Cần chọn chứng từ BN/BC, dòng sao kê và số tiền khớp trước khi match.");
-      return;
-    }
-
-    if (demoRows.some((row) => row.statementLineId === selectedStatementLineId)) {
-      setRecentMatchId(`DEMO-${selectedDemo.id.toUpperCase()}`);
-      setFeedback(`Demo đã match: ${selectedDemo.title}. Đây là mô phỏng, chưa ghi vào database.`);
       return;
     }
 
@@ -571,6 +868,41 @@ export default function ReconciliationScreen() {
     setFeedback("");
 
     try {
+      if (hasAutoReconciliationRun && reconciliationRows.some((row) => row.statementLineId === selectedStatementLineId)) {
+        const result = await postApi<{
+          id: string;
+          status: string;
+          voucherNo: string;
+          voucherType: string;
+          createdVoucher: boolean;
+          importedStatementLine: boolean;
+          matchedAmount: number;
+        }>("/cash/reconciliation/ai-confirm", {
+          statementLine: {
+            transactionDate: selectedDemo.transactionDate,
+            transactionTime: selectedDemo.bankTransactionTime,
+            referenceNo: selectedDemo.referenceNo,
+            description: selectedDemo.description,
+            debitAmount: selectedDemo.bankExpense ?? 0,
+            creditAmount: selectedDemo.bankIncome ?? 0,
+            amount: selectedDemo.amount,
+            counterparty: selectedDemo.accountingCounterparty,
+          },
+          candidateDocument: selectedDemo.candidateDocument,
+          bankAccountCode: selectedDemo.bankAccountCode || selectedBankAccount.accountNo,
+          sourceFileName: selectedDemo.sourceFileName,
+          status: selectedDemo.status,
+          note: selectedDemo.matchReason,
+        });
+        setRecentMatchId(result.id);
+        setFeedback(
+          `Đã ghi match thật ${result.voucherType} ${result.voucherNo} với ${currency.format(result.matchedAmount)}.${result.createdVoucher ? " AI đã tạo chứng từ nháp vì chưa có chứng từ." : ""}${result.importedStatementLine ? " Dòng sao kê đã được import vào sổ." : ""}`,
+        );
+        await loadReconciliation();
+        await loadDebtCandidates().catch(() => undefined);
+        return;
+      }
+
       const result = await postApi<{ id: string; status: string }>("/cash/reconciliation/match", {
         voucherId: selectedVoucherId,
         bankStatementLineId: selectedStatementLineId,
@@ -606,57 +938,137 @@ export default function ReconciliationScreen() {
   }
 
   async function handleAskSemanticReconciliation() {
+    const pendingDocuments = autoCandidates.slice(0, 8);
     const selectedStatement =
       items.statements.find((item) => (item.statementLineId ?? item.id) === selectedStatementLineId) ??
       items.statements[0];
-    const pendingDocuments = autoCandidates.slice(0, 8);
 
-    if (!selectedStatement || pendingDocuments.length === 0) {
-      setAiSuggestion("Chua co du lieu sao ke hoac chung tu cho AI doi chieu.");
+    if (!statementFile) {
+      setFeedback("Vui lòng upload file sao kê CSV hoặc XLSX trước khi chạy AI đối chiếu.");
+      setAiSuggestion("");
+      setHasAutoReconciliationRun(false);
+      setResultRows([]);
+      return;
+    }
+
+    if (!selectedStatement) {
+      setFeedback("Chưa có dòng sao kê để gửi sang AI đối chiếu.");
+      setAiSuggestion("");
+      setHasAutoReconciliationRun(false);
+      setResultRows([]);
       return;
     }
 
     setIsAskingAi(true);
     setAiSuggestion("");
+    setFeedback("");
+    setHasAutoReconciliationRun(false);
+    setResultRows([]);
 
     try {
-      const response = await postApi<AiWorkflowResponse>("/ai/workflows/semantic-reconciliation", {
-        inputs: {
-          unmatched_transaction: JSON.stringify(
-            {
-              date: selectedStatement.transactionDate,
-              amount: selectedStatement.amount,
-              description: selectedStatement.description,
-              bank_account_code: selectedStatement.bankAccountCode,
-            },
-            null,
-            2,
-          ),
-          pending_documents: JSON.stringify(
-            pendingDocuments.map((item) => ({
-              document_id: item.voucherId ?? item.id,
-              invoice_no: item.voucherNo,
-              partner_name: item.counterpartyName,
-              amount: item.amount,
-              document_date: item.transactionDate,
-              voucher_type: item.voucherType,
-              status: item.matchingStatus,
+      const previewFormData = new FormData();
+      previewFormData.append("file", statementFile);
+      const preview = await postFormApi<BankStatementPreviewResponse>("/cash/bank-statements/preview-upload", previewFormData);
+      const uploadedStatement = pickUnmatchedPreviewLine(preview, selectedStatement);
+      const workbookCandidates = buildPreviewCandidateDocuments(preview);
+      const documentsForMatching = [
+        ...workbookCandidates,
+        ...debtCandidates,
+        ...pendingDocuments.map((item) => ({
+          document_id: item.voucherId ?? item.id,
+          invoice_no: item.voucherNo,
+          partner_name: item.counterpartyName,
+          amount: item.amount,
+          document_date: item.transactionDate,
+          voucher_type: item.voucherType,
+          status: item.matchingStatus,
+        })),
+      ];
+
+      if (!preview.lines.length) {
+        setFeedback("AI đã đọc file nhưng chưa tìm thấy dòng sao kê hợp lệ để đối chiếu.");
+        setHasAutoReconciliationRun(false);
+        setResultRows([]);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", statementFile);
+      formData.append(
+        "inputs",
+        JSON.stringify({
+          bank_statement_file_name: preview.fileName || statementFile.name,
+          bank_statement_no: preview.statementNo,
+          bank_statement_date: preview.statementDate,
+          bank_account: {
+            ...selectedBankAccount,
+            accountNo: preview.accountNo || selectedBankAccount.accountNo,
+            bankName: preview.bankName || selectedBankAccount.bankName,
+          },
+          unmatched_transaction: JSON.stringify(uploadedStatement, null, 2),
+          bank_statement_lines: JSON.stringify(
+            preview.lines.map((line) => ({
+              date: line.transactionDate || preview.statementDate,
+              time: line.transactionTime,
+              reference_no: line.referenceNo,
+              amount: line.amount,
+              debit_amount: line.debitAmount,
+              credit_amount: line.creditAmount,
+              description: line.description,
+              counterparty: line.counterparty,
+              suggested_voucher: line.suggestedVoucher,
+              match_status: line.matchStatus,
             })),
             null,
             2,
           ),
-        },
-      });
-      const outputValue = readAiWorkflowOutputValue(response);
-      setAiSuggestion(
-        outputValue ??
-          readAiWorkflowOutput(
-            response,
-            "Workflow semantic-reconciliation chua cau hinh API key trong .env.",
+          pending_documents: JSON.stringify(
+            documentsForMatching,
+            null,
+            2,
           ),
+        }),
+      );
+
+      const response = await postFormApi<AiWorkflowResponse>("/ai/workflows/semantic-reconciliation/upload", formData);
+      const outputValue = readAiWorkflowOutputValue(response);
+      const semanticOutput =
+        outputValue ??
+        readAiWorkflowOutput(
+          response,
+          "Workflow semantic-reconciliation chua cau hinh API key trong .env.",
+        );
+      const semanticMatches = getSemanticMatches(semanticOutput);
+      const nextRows = buildReconciliationRowsFromPreview(preview, semanticMatches, documentsForMatching);
+
+      setAiSuggestion(semanticOutput);
+      setResultRows(nextRows);
+      setHasAutoReconciliationRun(true);
+
+      const firstCategory = nextRows[0]?.category ?? demoScenarios[0].id;
+      const firstRow = nextRows.find((row) => row.category === firstCategory) ?? nextRows[0];
+      setSelectedDemoId(firstCategory);
+      if (firstRow) {
+        setSelectedDemoRowId(firstRow.id);
+        applyDemoScenario(firstRow);
+      }
+
+      if (!semanticMatches.length) {
+        setFeedback(
+          `AI đã đọc file ${statementFile.name}; bảng bên dưới đang hiển thị ${nextRows.length} dòng từ file nhưng workflow chưa trả gợi ý đạt ngưỡng.`,
+        );
+        return;
+      }
+
+      setFeedback(
+        `AI đã đọc file ${statementFile.name}, hiển thị ${nextRows.length} dòng và tìm thấy ${semanticMatches.length} gợi ý đối chiếu.`,
       );
     } catch (error) {
-      setAiSuggestion(error instanceof Error ? error.message : "Khong goi duoc workflow doi chieu AI.");
+      const message = error instanceof Error ? error.message : "Khong goi duoc workflow doi chieu AI.";
+      setAiSuggestion("");
+      setFeedback(message);
+      setHasAutoReconciliationRun(false);
+      setResultRows([]);
     } finally {
       setIsAskingAi(false);
     }
@@ -668,10 +1080,10 @@ export default function ReconciliationScreen() {
       return;
     }
 
-    if (recentMatchId.startsWith("DEMO-")) {
+    if (recentMatchId.startsWith("DEMO-") || recentMatchId.startsWith("AI-")) {
       setRecentMatchId("");
       applyDemoScenario(selectedDemo);
-      setFeedback("Đã reset match demo.");
+      setFeedback("Đã reset lựa chọn match.");
       return;
     }
 
@@ -698,8 +1110,7 @@ export default function ReconciliationScreen() {
       return;
     }
 
-    setRecentMatchId(`DEMO-ACTION-${selectedDemo.id.toUpperCase()}`);
-    setFeedback(selectedDemo.suggestedActionResult);
+    void handleMatch();
   }
 
   return (
@@ -723,24 +1134,28 @@ export default function ReconciliationScreen() {
         </div>
 
         <div className="section-title">
-          <h2>Demo đối chiếu tự động</h2>
-          <span className="module-meta">Bấm từng nút để đổi tình huống trình bày</span>
+          <h2>AI đối chiếu tự động</h2>
+          <span className="module-meta">Upload sao kê CSV/XLSX rồi chạy AI để sinh kết quả đối chiếu</span>
           <div className="topbar-actions">
-            <button className="button primary" type="button" onClick={handleMatch} disabled={isSubmitting}>
-              <AppIcon name="Search" />
-              {isSubmitting ? "Đang xử lý..." : "Match BN/BC"}
-            </button>
-            <button className="button" type="button" onClick={handleAutoMatch} disabled={isSubmitting}>
-              <AppIcon name="ArrowLeftRight" />
-              Đề xuất match
-            </button>
-            <button className="button" type="button" onClick={handleAskSemanticReconciliation} disabled={isAskingAi}>
+            <button className="button primary" type="button" onClick={handleAskSemanticReconciliation} disabled={isAskingAi}>
               <AppIcon name="Bot" />
-              {isAskingAi ? "AI đang đối chiếu..." : "AI đối chiếu lệch"}
+              {isAskingAi ? "AI đang đối chiếu..." : "AI đối chiếu tự động"}
             </button>
-            <button className="button" type="button" onClick={handleUnmatch} disabled={isSubmitting}>
-              Unmatch
-            </button>
+            {hasAutoReconciliationRun ? (
+              <>
+                <button className="button" type="button" onClick={handleMatch} disabled={isSubmitting}>
+                  <AppIcon name="Search" />
+                  {isSubmitting ? "Đang xử lý..." : "Match BN/BC"}
+                </button>
+                <button className="button" type="button" onClick={handleAutoMatch} disabled={isSubmitting}>
+                  <AppIcon name="ArrowLeftRight" />
+                  Đề xuất match
+                </button>
+                <button className="button" type="button" onClick={handleUnmatch} disabled={isSubmitting}>
+                  Unmatch
+                </button>
+              </>
+            ) : null}
           </div>
         </div>
         <section className="panel">
@@ -751,140 +1166,167 @@ export default function ReconciliationScreen() {
               <small>{selectedBankAccount.holderName}</small>
             </label>
             <label className="recon-source-field">
-              <span>Tên file đã import</span>
-              <strong>{importedStatementFile}</strong>
-              <small>Mock CSV dùng cho demo đối chiếu tự động</small>
+              <span>Upload file sao kê CSV/XLSX</span>
+              <input
+                className="field recon-upload-input"
+                type="file"
+                accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={(event) => {
+                  setStatementFile(event.target.files?.[0] ?? null);
+                  resetAiReconciliation();
+                }}
+              />
+              <strong>{statementFile?.name ?? "Chưa chọn file"}</strong>
+              <small>AI chỉ hiển thị kết quả sau khi đọc file và chạy đối chiếu.</small>
             </label>
           </div>
 
-          <div className="recon-demo-grid">
-            {demoScenarios.map((scenario) => {
-              const count = demoRows.filter((row) => row.category === scenario.id).length;
-
-              return (
-                <button
-                  className={`recon-demo-button tone-${scenario.tone} ${selectedDemoId === scenario.id ? "is-active" : ""}`}
-                  key={scenario.id}
-                  type="button"
-                  onClick={() => setSelectedDemoId(scenario.id)}
-                >
-                  <span className="recon-demo-icon">
-                    <AppIcon name={scenario.icon} />
-                  </span>
-                  <span>
-                    <strong>{scenario.title}</strong>
-                    <small>{count} dòng · {scenario.subtitle}</small>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="recon-demo-table-wrap">
-            <div className="subsection">
-              <h3>{visibleDemoRows.length} dòng sao kê demo</h3>
-              <span className="module-meta">Bấm từng dòng để xem chi tiết match</span>
+          {!hasAutoReconciliationRun ? (
+            <div className="recon-empty-state">
+              <AppIcon name="Upload" size={24} />
+              <strong>Chưa có kết quả đối chiếu</strong>
+              <p>Chọn file sao kê CSV/XLSX, sau đó bấm AI đối chiếu tự động để đọc file, so khớp chứng từ và sinh bảng kết quả.</p>
             </div>
-            <div className="table-scroll">
-              <table className="data-table recon-demo-table">
-                <thead>
-                  <tr className="recon-demo-group-row">
-                    <th rowSpan={2}>#</th>
-                    <th colSpan={7}>Sổ kế toán tiền gửi</th>
-                    <th colSpan={5}>
-                      Sao k&#234; ng&#226;n h&#224;ng <span className="ai-inline-badge">AI đọc sao kê</span>
-                    </th>
-                    <th rowSpan={2}>Chức năng</th>
-                    <th rowSpan={2}>Tin cậy</th>
-                  </tr>
-                  <tr>
-                    <th>Ngày hạch toán</th>
-                    <th>Số chứng từ</th>
-                    <th>Số tiền thu</th>
-                    <th>Số tiền chi</th>
-                    <th>Đối tượng</th>
-                    <th>Nội dung</th>
-                    <th>Giao d&#7883;ch ng&#226;n h&#224;ng</th>
-                    <th>Thời gian giao dịch</th>
-                    <th>Số giao dịch</th>
-                    <th>Số tiền thu</th>
-                    <th>Số tiền chi</th>
-                    <th>Nội dung</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleDemoRows.map((row) => (
-                    <tr
-                      className={selectedDemo.id === row.id ? "is-selected" : ""}
-                      key={row.id}
-                      onClick={() => {
-                        setSelectedDemoRowId(row.id);
-                        applyDemoScenario(row);
-                      }}
+          ) : (
+            <>
+              <div className="recon-demo-grid">
+                {demoScenarios.map((scenario) => {
+                  const count = reconciliationRows.filter((row) => row.category === scenario.id).length;
+
+                  return (
+                    <button
+                      className={`recon-demo-button tone-${scenario.tone} ${selectedDemoId === scenario.id ? "is-active" : ""}`}
+                      key={scenario.id}
+                      type="button"
+                      onClick={() => setSelectedDemoId(scenario.id)}
                     >
-                      <td>{row.rowNo}</td>
-                      <td>{row.accountingDate ?? row.transactionDate}</td>
-                      <td>{row.accountingVoucherNo ?? row.voucherNo}</td>
-                      <td>{amountOrDash(row.accountingIncome ?? (row.status === "unmatched" ? 0 : row.amount))}</td>
-                      <td>{amountOrDash(row.accountingExpense)}</td>
-                      <td>{row.accountingCounterparty ?? row.subtitle}</td>
-                      <td>{row.accountingContent ?? row.matchReason}</td>
-                      <td>{row.linkedBankTransaction ?? row.referenceNo}</td>
-                      <td>{row.bankTransactionTime ?? `${row.transactionDate} 09:00:00`}</td>
-                      <td>{row.bankTransactionNo ?? row.referenceNo}</td>
-                      <td>{amountOrDash(row.bankIncome ?? row.amount)}</td>
-                      <td>{amountOrDash(row.bankExpense)}</td>
-                      <td>{row.bankContent ?? row.description}</td>
-                      <td>
-                        <button className="recon-link-button" type="button">
-                          Xem match
-                        </button>
-                      </td>
-                      <td>{row.confidence}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      <span className="recon-demo-icon">
+                        <AppIcon name={scenario.icon} />
+                      </span>
+                      <span>
+                        <strong>{scenario.title}</strong>
+                        <small>{count} dòng · {scenario.subtitle}</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-          <div className="recon-visual-panel">
-            <article className="recon-visual-card">
-              <span className="recon-visual-label">Dòng sao kê · AI đọc sao kê</span>
-              <strong>{selectedDemo.referenceNo}</strong>
-              <p>{selectedDemo.description}</p>
-              <div className="recon-visual-amount">{currency.format(selectedDemo.amount)}</div>
-            </article>
-            <div className="recon-visual-arrow">
-              <AppIcon name="ArrowLeftRight" size={22} />
-            </div>
-            <article className="recon-visual-card">
-              <span className="recon-visual-label">Chứng từ đề xuất</span>
-              <strong>{selectedDemo.voucherNo}</strong>
-              <p>{selectedDemo.matchReason}</p>
-              <div className={`recon-confidence tone-${selectedDemo.tone}`}>{selectedDemo.confidence}% tin cậy</div>
-              {selectedDemo.suggestedActionLabel ? (
-                <div className="recon-ai-action">
-                  <button type="button" onClick={handleSuggestedAction}>
-                    <AppIcon name="Bot" size={15} />
-                    {selectedDemo.suggestedActionLabel}
-                  </button>
-                  <small>{selectedDemo.suggestedActionDescription}</small>
+              <div className="recon-demo-table-wrap">
+                <div className="subsection">
+                  <h3>{visibleDemoRows.length} dòng sao kê AI đã đối chiếu</h3>
+                  <span className="module-meta">Bấm từng dòng để xem chi tiết match</span>
+                </div>
+                <div className="table-scroll">
+                  <table className="data-table recon-demo-table">
+                    <thead>
+                      <tr className="recon-demo-group-row">
+                        <th rowSpan={2}>#</th>
+                        <th colSpan={7}>Sổ kế toán tiền gửi</th>
+                        <th colSpan={5}>
+                          Sao k&#234; ng&#226;n h&#224;ng <span className="ai-inline-badge">AI đọc sao kê</span>
+                        </th>
+                        <th rowSpan={2}>Chức năng</th>
+                        <th rowSpan={2}>Tin cậy</th>
+                      </tr>
+                      <tr>
+                        <th>Ngày hạch toán</th>
+                        <th>Số chứng từ</th>
+                        <th>Số tiền thu</th>
+                        <th>Số tiền chi</th>
+                        <th>Đối tượng</th>
+                        <th>Nội dung</th>
+                        <th>Giao d&#7883;ch ng&#226;n h&#224;ng</th>
+                        <th>Thời gian giao dịch</th>
+                        <th>Số giao dịch</th>
+                        <th>Số tiền thu</th>
+                        <th>Số tiền chi</th>
+                        <th>Nội dung</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleDemoRows.map((row) => (
+                        <tr
+                          className={selectedDemo.id === row.id ? "is-selected" : ""}
+                          key={row.id}
+                          onClick={() => {
+                            setSelectedDemoRowId(row.id);
+                            applyDemoScenario(row);
+                          }}
+                        >
+                          <td>{row.rowNo}</td>
+                          <td>{row.accountingDate ?? row.transactionDate}</td>
+                          <td>{row.accountingVoucherNo ?? row.voucherNo}</td>
+                          <td>{amountOrDash(row.accountingIncome ?? (row.status === "unmatched" ? 0 : row.amount))}</td>
+                          <td>{amountOrDash(row.accountingExpense)}</td>
+                          <td>{row.accountingCounterparty ?? row.subtitle}</td>
+                          <td>{row.accountingContent ?? row.matchReason}</td>
+                          <td>{row.linkedBankTransaction ?? row.referenceNo}</td>
+                          <td>{row.bankTransactionTime ?? `${row.transactionDate} 09:00:00`}</td>
+                          <td>{row.bankTransactionNo ?? row.referenceNo}</td>
+                          <td>{amountOrDash(row.bankIncome ?? row.amount)}</td>
+                          <td>{amountOrDash(row.bankExpense)}</td>
+                          <td>{row.bankContent ?? row.description}</td>
+                          <td>
+                            <button className="recon-link-button" type="button">
+                              Xem match
+                            </button>
+                          </td>
+                          <td>{row.confidence}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="recon-visual-panel">
+                <article className="recon-visual-card">
+                  <span className="recon-visual-label">Dòng sao kê · AI đọc sao kê</span>
+                  <strong>{selectedDemo.referenceNo}</strong>
+                  <p>{selectedDemo.description}</p>
+                  <div className="recon-visual-amount">{currency.format(selectedDemo.amount)}</div>
+                </article>
+                <div className="recon-visual-arrow">
+                  <AppIcon name="ArrowLeftRight" size={22} />
+                </div>
+                <article className="recon-visual-card">
+                  <span className="recon-visual-label">Chứng từ đề xuất</span>
+                  <strong>{selectedDemo.voucherNo}</strong>
+                  <p>{selectedDemo.matchReason}</p>
+                  <div className={`recon-confidence tone-${selectedDemo.tone}`}>{selectedDemo.confidence}% tin cậy</div>
+                  {selectedDemo.suggestedActionLabel ? (
+                    <div className="recon-ai-action">
+                      <button type="button" onClick={handleSuggestedAction}>
+                        <AppIcon name="Bot" size={15} />
+                        {selectedDemo.suggestedActionLabel}
+                      </button>
+                      <small>{selectedDemo.suggestedActionDescription}</small>
+                    </div>
+                  ) : null}
+                </article>
+              </div>
+
+              {selectedDemo.allocations ? (
+                <div className="recon-allocation-grid">
+                  {selectedDemo.allocations.map((item) => (
+                    <div className="recon-allocation-card" key={item.invoiceNo}>
+                      <span>{item.invoiceNo}</span>
+                      <strong>{currency.format(item.amount)}</strong>
+                    </div>
+                  ))}
                 </div>
               ) : null}
-            </article>
-          </div>
+            </>
+          )}
 
-          {selectedDemo.allocations ? (
-            <div className="recon-allocation-grid">
-              {selectedDemo.allocations.map((item) => (
-                <div className="recon-allocation-card" key={item.invoiceNo}>
-                  <span>{item.invoiceNo}</span>
-                  <strong>{currency.format(item.amount)}</strong>
-                </div>
-              ))}
+          {feedback ? (
+            <div className="attachment-box" style={{ marginTop: 16 }}>
+              <strong>Trạng thái</strong>
+              <p>{feedback}</p>
             </div>
           ) : null}
+
           {aiSuggestion ? (
             <div className="attachment-box" style={{ marginTop: 16 }}>
               <strong>AI đối chiếu ngữ nghĩa</strong>

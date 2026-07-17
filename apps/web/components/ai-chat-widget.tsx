@@ -32,8 +32,43 @@ export function AiChatWidget() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isReplying, setIsReplying] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
+  const [isLoaded, setIsLoaded] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedMessages = sessionStorage.getItem("ai_chat_messages");
+      if (savedMessages) {
+        try {
+          setMessages(JSON.parse(savedMessages));
+        } catch (e) {
+          console.error("Failed to parse saved chat messages", e);
+        }
+      }
+      const savedConvId = sessionStorage.getItem("ai_chat_conversation_id");
+      if (savedConvId) {
+        setConversationId(savedConvId);
+      }
+      setIsLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded && typeof window !== "undefined") {
+      sessionStorage.setItem("ai_chat_messages", JSON.stringify(messages));
+    }
+  }, [messages, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded && typeof window !== "undefined") {
+      if (conversationId) {
+        sessionStorage.setItem("ai_chat_conversation_id", conversationId);
+      } else {
+        sessionStorage.removeItem("ai_chat_conversation_id");
+      }
+    }
+  }, [conversationId, isLoaded]);
 
   useEffect(() => {
     if (isOpen) {
@@ -114,23 +149,23 @@ export function AiChatWidget() {
   return (
     <div className={`ai-chat ${isOpen ? "is-open" : ""}`}>
       {isOpen ? (
-        <section className="ai-chat-panel" aria-label="Tro ly AI ke toan">
+        <section className="ai-chat-panel" aria-label="Trợ lý AI kế toán">
           <header className="ai-chat-header">
             <div className="ai-chat-agent">
               <span className="ai-chat-agent-icon"><AppIcon name="Bot" size={20} /></span>
               <span>
-                <strong>AI Agent ke toan</strong>
-                <small><i /> San sang ho tro</small>
+                <strong>AI Agent kế toán</strong>
+                <small><i /> Sẵn sàng hỗ trợ</small>
               </span>
             </div>
-            <button className="ai-chat-icon-button" type="button" onClick={() => setIsOpen(false)} aria-label="Thu nho cua so chat">
+            <button className="ai-chat-icon-button" type="button" onClick={() => setIsOpen(false)} aria-label="Thu nhỏ cửa sổ chat">
               <AppIcon name="Minus" size={18} />
             </button>
           </header>
 
           <div className="ai-chat-context">
             <AppIcon name="ShieldCheck" size={14} />
-            AI chi tu van va tra cuu, khong tu dong ghi so.
+            AI chỉ tư vấn và tra cứu, không tự động ghi sổ.
           </div>
 
           <div className="ai-chat-messages" aria-live="polite">
@@ -147,14 +182,14 @@ export function AiChatWidget() {
             {isReplying ? (
               <div className="ai-chat-message agent">
                 <span className="ai-message-avatar"><AppIcon name="Bot" size={15} /></span>
-                <span className="ai-typing" aria-label="AI dang tra loi"><i /><i /><i /></span>
+                <span className="ai-typing" aria-label="AI đang trả lời"><i /><i /><i /></span>
               </div>
             ) : null}
             <div ref={endRef} />
           </div>
 
           <form className="ai-chat-composer" onSubmit={submitMessage}>
-            <label className="ai-chat-file-button" aria-label="Dinh kem file">
+            <label className="ai-chat-file-button" aria-label="Đính kèm file">
               <AppIcon name="Upload" size={16} />
               <input
                 type="file"
@@ -168,10 +203,10 @@ export function AiChatWidget() {
               ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Hoi AI ve du lieu ke toan..."
-              aria-label="Noi dung cau hoi"
+              placeholder="Hỏi AI về dữ liệu kế toán..."
+              aria-label="Nội dung câu hỏi"
             />
-            <button type="submit" disabled={(!input.trim() && !selectedFiles.length) || isReplying} aria-label="Gui cau hoi">
+            <button type="submit" disabled={(!input.trim() && !selectedFiles.length) || isReplying} aria-label="Gửi câu hỏi">
               <AppIcon name="Send" size={17} />
             </button>
           </form>
@@ -181,17 +216,17 @@ export function AiChatWidget() {
                 <span key={`${file.name}-${file.size}`}>{file.name}</span>
               ))}
               <button type="button" onClick={() => setSelectedFiles([])}>
-                Xoa
+                Xóa
               </button>
             </div>
           ) : null}
-          <div className="ai-chat-disclaimer">AI co the dua ra thong tin chua chinh xac. Hay kiem tra nguon chung tu.</div>
+          <div className="ai-chat-disclaimer">AI có thể đưa ra thông tin chưa chính xác. Hãy kiểm tra nguồn chứng từ.</div>
         </section>
       ) : (
-        <button className="ai-chat-launcher" type="button" onClick={() => setIsOpen(true)} aria-label="Mo tro ly AI">
+        <button className="ai-chat-launcher" type="button" onClick={() => setIsOpen(true)} aria-label="Mở trợ lý AI">
           <span className="ai-chat-pulse" />
           <AppIcon name="Bot" size={23} />
-          <span className="ai-chat-launcher-copy"><strong>Hoi AI Agent</strong><small>Tro ly ke toan</small></span>
+          <span className="ai-chat-launcher-copy"><strong>Hỏi AI Agent</strong><small>Trợ lý kế toán</small></span>
           <AppIcon name="ChevronUp" size={17} />
         </button>
       )}

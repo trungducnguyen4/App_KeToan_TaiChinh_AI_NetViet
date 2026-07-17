@@ -95,7 +95,7 @@ export class AiController {
     @Req() request: AuthenticatedRequest,
   ) {
     const selectedFilters = parseWorkflowInputs(body.selectedFilters);
-    const message = body.message ?? "Hay doc file dinh kem va ho tro kiem tra chung tu.";
+    const message = body.message ?? "Hãy đọc file đính kèm và hỗ trợ kiểm tra chứng từ.";
     const user = request.user ?? DEMO_AI_USER;
 
     if (files.length > 0 && shouldRunOcrAccountingFromUpload(message, body.currentScreen, selectedFilters)) {
@@ -289,7 +289,7 @@ function toChatUploadWorkflowResponse(
     answer:
       typeof error === "string" && error.trim()
         ? error
-        : output ?? "Workflow OCR da xu ly file nhung chua tra ve noi dung hien thi.",
+        : output ?? "Workflow OCR đã xử lý file nhưng chưa trả về nội dung hiển thị.",
     conversationId,
     workflow:
       workflowResult && typeof workflowResult === "object" && "workflow" in workflowResult

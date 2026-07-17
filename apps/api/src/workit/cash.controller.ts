@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { Type } from "class-transformer";
 import {
   IsArray,
@@ -168,6 +169,104 @@ class ImportBankStatementDto {
   lines!: StatementLineDto[];
 }
 
+class AiStatementLineDto {
+  @IsOptional()
+  @IsString()
+  transactionDate?: string;
+
+  @IsOptional()
+  @IsString()
+  transactionTime?: string;
+
+  @IsOptional()
+  @IsString()
+  referenceNo?: string;
+
+  @IsString()
+  description!: string;
+
+  @IsNumber()
+  @Min(0)
+  debitAmount!: number;
+
+  @IsNumber()
+  @Min(0)
+  creditAmount!: number;
+
+  @IsNumber()
+  @Min(0)
+  amount!: number;
+
+  @IsOptional()
+  @IsNumber()
+  runningBalance?: number;
+
+  @IsOptional()
+  @IsString()
+  counterparty?: string;
+}
+
+class AiCandidateDocumentDto {
+  @IsOptional()
+  @IsString()
+  document_id?: string;
+
+  @IsOptional()
+  @IsString()
+  invoice_no?: string;
+
+  @IsOptional()
+  @IsString()
+  partner_name?: string;
+
+  @IsOptional()
+  @IsString()
+  partner_code?: string;
+
+  @IsOptional()
+  @IsNumber()
+  amount?: number;
+
+  @IsOptional()
+  @IsString()
+  document_date?: string;
+
+  @IsOptional()
+  @IsString()
+  account_code?: string;
+
+  @IsOptional()
+  @IsString()
+  counterparty_type?: string;
+}
+
+class ConfirmAiReconciliationDto {
+  @ValidateNested()
+  @Type(() => AiStatementLineDto)
+  statementLine!: AiStatementLineDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AiCandidateDocumentDto)
+  candidateDocument?: AiCandidateDocumentDto;
+
+  @IsOptional()
+  @IsString()
+  bankAccountCode?: string;
+
+  @IsOptional()
+  @IsString()
+  sourceFileName?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
 class MatchDto {
   @IsString()
   voucherId!: string;
@@ -230,9 +329,26 @@ export class CashController {
     return this.workit.importBankStatement(input);
   }
 
+  @Post("bank-statements/preview-upload")
+  @UseInterceptors(FileInterceptor("file"))
+  previewStatementUpload(@UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string }) {
+    return this.workit.previewBankStatementUpload(file);
+  }
+
   @Get("reconciliation")
   getReconciliation() {
     return this.workit.getReconciliation();
+  }
+
+  @Get("reconciliation/debt-candidates")
+  getDebtCandidates() {
+    return this.workit.getReconciliationDebtCandidates();
+  }
+
+  @Post("reconciliation/ai-confirm")
+  @Roles(AppRole.ChiefAccountant, AppRole.Accountant)
+  confirmAiReconciliation(@Body() input: ConfirmAiReconciliationDto) {
+    return this.workit.confirmAiReconciliation(input);
   }
 
   @Post("reconciliation/match")

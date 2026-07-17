@@ -34,6 +34,9 @@ import {
   ChevronUp,
   WalletCards,
   Warehouse,
+  Plus,
+  Trash2,
+  Check,
 } from "lucide-react";
 
 const icons = {
@@ -70,6 +73,9 @@ const icons = {
   ChevronUp,
   WalletCards,
   Warehouse,
+  Plus,
+  Trash2,
+  Check,
 };
 
 export type IconName = keyof typeof icons;

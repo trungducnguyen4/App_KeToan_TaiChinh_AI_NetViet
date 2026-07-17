@@ -47,53 +47,53 @@ const debtSummary = {
   receivables: [
     {
       counterparty_code: "KH-MINH-AN",
-      counterparty_name: "Cong ty Minh An",
+      counterparty_name: "Công ty Minh An",
       current_amount: 1_515_604_553,
       overdue_amount: 180_000_000,
       priority: "Cao",
-      recommendation: "Lien he thu ngay",
+      recommendation: "Liên hệ thu ngay",
     },
     {
       counterparty_code: "KH-CP32",
-      counterparty_name: "Cong ty Co phan 32",
+      counterparty_name: "Công ty Cổ phần 32",
       current_amount: 1_020_000_000,
       overdue_amount: 95_000_000,
       priority: "Cao",
-      recommendation: "Gui nhac no",
+      recommendation: "Gửi nhắc nợ",
     },
     {
       counterparty_code: "KH-DCL",
-      counterparty_name: "Cong ty CP Duoc pham Cuu Long",
+      counterparty_name: "Công ty CP Dược phẩm Cửu Long",
       current_amount: 390_804_296,
       overdue_amount: 62_000_000,
-      priority: "Trung binh",
-      recommendation: "Doi chieu lich thanh toan",
+      priority: "Trung bình",
+      recommendation: "Đối chiếu lịch thanh toán",
     },
   ],
   payables: [
     {
       counterparty_code: "NCC-TTP",
-      counterparty_name: "Cong ty CP Vat tu Y te Hong Thien My",
+      counterparty_name: "Công ty CP Vật tư Y tế Hồng Thiên Mỹ",
       current_amount: 5_146_668_000,
       overdue_amount: 640_000_000,
       priority: "Cao",
-      recommendation: "Uu tien doi chieu va lap ke hoach thanh toan",
+      recommendation: "Ưu tiên đối chiếu và lập kế hoạch thanh toán",
     },
     {
       counterparty_code: "NCC-VFC",
-      counterparty_name: "Cong ty CP Khu trung Viet Nam - CN HCM",
+      counterparty_name: "Công ty CP Khử trùng Việt Nam - CN HCM",
       current_amount: 1_083_003_896,
       overdue_amount: 120_000_000,
       priority: "Cao",
-      recommendation: "Xac nhan cong no qua han",
+      recommendation: "Xác nhận công nợ quá hạn",
     },
     {
       counterparty_code: "NCC-HV",
-      counterparty_name: "Hong Van",
+      counterparty_name: "Hồng Vân",
       current_amount: 472_500_000,
       overdue_amount: 78_000_000,
-      priority: "Trung binh",
-      recommendation: "Len lich thanh toan",
+      priority: "Trung bình",
+      recommendation: "Lên lịch thanh toán",
     },
   ],
 };
@@ -113,20 +113,20 @@ const expenseSummary = {
   budget_overrun_alerts: [
     {
       category_code: "642",
-      category_name: "Chi phi quan ly doanh nghiep",
+      category_name: "Chi phí quản lý doanh nghiệp",
       actual_amount: 860_000_000,
       budget_amount: 780_000_000,
       variance_amount: 80_000_000,
       variance_ratio: 0.1026,
-      recommendation: "Kiem tra chi phi hanh chinh va phe duyet cac khoan phat sinh lon.",
+      recommendation: "Kiểm tra chi phí hành chính và phê duyệt các khoản phát sinh lớn.",
     },
   ],
   categories: [
-    { category_code: "621", category_name: "Nguyen vat lieu truc tiep", amount: 2_860_000_000 },
-    { category_code: "622", category_name: "Nhan cong truc tiep", amount: 1_240_000_000 },
-    { category_code: "627", category_name: "San xuat chung", amount: 980_000_000 },
-    { category_code: "641", category_name: "Chi phi ban hang", amount: 240_000_000 },
-    { category_code: "642", category_name: "Chi phi quan ly doanh nghiep", amount: 860_000_000 },
+    { category_code: "621", category_name: "Nguyên vật liệu trực tiếp", amount: 2_860_000_000 },
+    { category_code: "622", category_name: "Nhân công trực tiếp", amount: 1_240_000_000 },
+    { category_code: "627", category_name: "Sản xuất chung", amount: 980_000_000 },
+    { category_code: "641", category_name: "Chi phí bán hàng", amount: 240_000_000 },
+    { category_code: "642", category_name: "Chi phí quản lý doanh nghiệp", amount: 860_000_000 },
   ],
 };
 
@@ -138,23 +138,23 @@ const missingVoucherSummary = {
     {
       source: "HDDT",
       reference_no: "HD-26070122",
-      issue: "Hoa don dau vao chua co chung tu hach toan",
+      issue: "Hóa đơn đầu vào chưa có chứng từ hạch toán",
       amount: 56_000_000,
-      recommendation: "Kiem tra man HDDT dau vao va tao chung tu mua hang neu hop le.",
+      recommendation: "Kiểm tra màn HĐĐT đầu vào và tạo chứng từ mua hàng nếu hợp lệ.",
     },
     {
       source: "Bank statement",
       reference_no: "VCB-20260714-009",
-      issue: "Giao dich ngan hang chua doi chieu BN/BC",
+      issue: "Giao dịch ngân hàng chưa đối chiếu BN/BC",
       amount: 118_000_000,
-      recommendation: "Chay doi chieu sao ke hoac tao BN tam.",
+      recommendation: "Chạy đối chiếu sao kê hoặc tạo BN tạm.",
     },
     {
       source: "WORKIT",
       reference_no: "SO-2607021",
-      issue: "Don hang da giao nhung chua thay but toan doanh thu",
+      issue: "Đơn hàng đã giao nhưng chưa thấy bút toán doanh thu",
       amount: 760_000_000,
-      recommendation: "Doi chieu phan he ban hang va nhat ky chung.",
+      recommendation: "Đối chiếu phân hệ bán hàng và nhật ký chung.",
     },
   ],
 };
@@ -179,7 +179,7 @@ function buildOpenApiSpec(publicBaseUrl: string) {
       "/debts/due": {
         post: {
           operationId: "get_due_debts",
-          summary: "Lay tong hop cong no den han va qua han",
+          summary: "Lấy tổng hợp công nợ đến hạn và quá hạn",
           requestBody: {
             required: false,
             content: {
@@ -196,13 +196,13 @@ function buildOpenApiSpec(publicBaseUrl: string) {
               },
             },
           },
-          responses: { "200": { description: "Du lieu cong no" } },
+          responses: { "200": { description: "Dữ liệu công nợ" } },
         },
       },
       "/cashflow/summary": {
         post: {
           operationId: "get_cashflow_summary",
-          summary: "Lay tong hop dong tien",
+          summary: "Lấy tổng hợp dòng tiền",
           requestBody: {
             required: false,
             content: {
@@ -217,13 +217,13 @@ function buildOpenApiSpec(publicBaseUrl: string) {
               },
             },
           },
-          responses: { "200": { description: "Du lieu dong tien" } },
+          responses: { "200": { description: "Dữ liệu dòng tiền" } },
         },
       },
       "/vouchers/missing": {
         post: {
           operationId: "detect_missing_vouchers",
-          summary: "Phat hien hoa don/chung tu thieu lien ket hach toan",
+          summary: "Phát hiện hóa đơn/chứng từ thiếu liên kết hạch toán",
           requestBody: {
             required: false,
             content: {
@@ -239,13 +239,13 @@ function buildOpenApiSpec(publicBaseUrl: string) {
               },
             },
           },
-          responses: { "200": { description: "Danh sach chung tu thieu" } },
+          responses: { "200": { description: "Danh sách chứng từ thiếu" } },
         },
       },
       "/vouchers/detail": {
         post: {
           operationId: "get_voucher_details",
-          summary: "Lay thong tin chung tu theo so chung tu",
+          summary: "Lấy thông tin chứng từ theo số chứng từ",
           requestBody: {
             required: false,
             content: {
@@ -261,13 +261,13 @@ function buildOpenApiSpec(publicBaseUrl: string) {
               },
             },
           },
-          responses: { "200": { description: "Chi tiet chung tu" } },
+          responses: { "200": { description: "Chi tiết chứng từ" } },
         },
       },
       "/expenses/by-category": {
         post: {
           operationId: "get_expense_by_category",
-          summary: "Lay chi phi theo tai khoan/khoan muc",
+          summary: "Lấy chi phí theo tài khoản/khoản mục",
           requestBody: {
             required: false,
             content: {
@@ -283,13 +283,13 @@ function buildOpenApiSpec(publicBaseUrl: string) {
               },
             },
           },
-          responses: { "200": { description: "Du lieu chi phi theo khoan muc" } },
+          responses: { "200": { description: "Dữ liệu chi phí theo khoản mục" } },
         },
       },
       "/bank/reconcile": {
         post: {
           operationId: "reconcile_bank_statement",
-          summary: "Goi y doi chieu sao ke ngan hang",
+          summary: "Gợi ý đối chiếu sao kê ngân hàng",
           requestBody: {
             required: false,
             content: {
@@ -304,13 +304,13 @@ function buildOpenApiSpec(publicBaseUrl: string) {
               },
             },
           },
-          responses: { "200": { description: "Goi y doi chieu" } },
+          responses: { "200": { description: "Gợi ý đối chiếu" } },
         },
       },
       "/ocr/accounting": {
         post: {
           operationId: "ocr_accounting_from_file",
-          summary: "OCR va goi y dinh khoan tu file hoa don/chung tu",
+          summary: "OCR và gợi ý định khoản từ file hóa đơn/chứng từ",
           requestBody: {
             required: false,
             content: {
@@ -335,7 +335,7 @@ function buildOpenApiSpec(publicBaseUrl: string) {
           },
           responses: {
             "200": {
-              description: "Ket qua OCR va goi y dinh khoan",
+              description: "Kết quả OCR và gợi ý định khoản",
             },
           },
         },
@@ -413,7 +413,7 @@ export class AiToolsController {
       voucher: {
         voucher_no: voucherNo,
         voucher_date: "2026-07-16",
-        description: "Thu cong no khach hang",
+        description: "Thu công nợ khách hàng",
         amount: 320_000_000,
         status: "posted",
         entries: [
@@ -497,12 +497,12 @@ export class AiToolsController {
         tool: "ocr_accounting_from_file",
         status: "missing_file",
         message:
-          "Custom tool OCR chua nhan duoc upload_file_id, file_url, files hoac data_json de gui sang workflow ocr-accounting.",
+          "Custom tool OCR chưa nhận được upload_file_id, file_url, files hoặc data_json để gửi sang workflow ocr-accounting.",
         expected_input: {
           voucher_type: voucherType,
           upload_file_id: "Dify upload file id",
-          file_url: "URL file neu dung remote_url",
-          data_json: "Du lieu JSON neu muon gui len workflow duoi dang file .json",
+          file_url: "URL file nếu dùng remote_url",
+          data_json: "Dữ liệu JSON nếu muốn gửi lên workflow dưới dạng file .json",
         },
       };
     }
@@ -571,7 +571,7 @@ export class AiToolsController {
       receivables: includeReceivables ? debtSummary.receivables : [],
       payables: includePayables ? debtSummary.payables : [],
       guidance:
-        "Hay nhan xet truc tiep tren cac so lieu nay, khong hoi lai nguoi dung nhap tong no hoac top doi tac.",
+        "Hãy nhận xét trực tiếp trên các số liệu này, không hỏi lại người dùng nhập tổng nợ hoặc top đối tác.",
     };
   }
 }

@@ -604,10 +604,10 @@ function readAiNarrative(response: AiWorkflowResponse) {
   }
 
   if (response.configured === false) {
-    return "Workflow bao cao AI chua cau hinh API key trong .env.";
+    return "Workflow báo cáo AI chưa cấu hình API key trong .env.";
   }
 
-  return "AI da xu ly workflow nhung output chua co truong narrative/answer/text.";
+  return "AI đã xử lý workflow nhưng output chưa có trường narrative/answer/text.";
 }
 
 const aiReportTypeByKey: Record<ReportKey, string> = {
@@ -618,10 +618,10 @@ const aiReportTypeByKey: Record<ReportKey, string> = {
 };
 
 const automaticReportScope = [
-  "Bao cao dong tien: thu - chi thuc te va du bao ngan han tu cong no den han.",
-  "Bao cao cong no: tuoi no phai thu/phai tra, top khach no, canh bao qua han, de xuat uu tien thu.",
-  "Bao cao chi phi & loi nhuan: theo khoan muc 621/622/627/641/642, bien loi nhuan theo don hang/mat hang.",
-  "Bao cao tai chinh quan tri: can doi phat sinh, so du TK, so cai, doi chieu nguoc voi WORKIT.",
+  "Báo cáo dòng tiền: thu - chi thực tế và dự báo ngắn hạn từ công nợ đến hạn.",
+  "Báo cáo công nợ: tuổi nợ phải thu/phải trả, top khách nợ, cảnh báo quá hạn, đề xuất ưu tiên thu.",
+  "Báo cáo chi phí & lợi nhuận: theo khoản mục 621/622/627/641/642, biên lợi nhuận theo đơn hàng/mặt hàng.",
+  "Báo cáo tài chính quản trị: cân đối phát sinh, số dư TK, sổ cái, đối chiếu ngược với WORKIT.",
 ];
 
 function markdownCell(value: unknown) {

@@ -451,13 +451,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "TM-01",
       bankAccountCode: "",
       counterpartyCode: "KH-NEW",
-      counterpartyName: "Khach hang moi",
+      counterpartyName: "Khách hàng mới",
       referenceInvoiceNo: "INV-NEW",
-      content: "Thu tien mat",
+      content: "Thu tiền mặt",
       amount: "1000000",
       debitAccount: "1111",
       creditAccount: "131",
-      description: "Thu tien cong no"
+      description: "Thu tiền công nợ"
     },
     PC: {
       voucherNo: `PC-${Date.now()}`,
@@ -466,13 +466,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "TM-01",
       bankAccountCode: "",
       counterpartyCode: "NCC-NEW",
-      counterpartyName: "Nha cung cap moi",
+      counterpartyName: "Nhà cung cấp mới",
       referenceInvoiceNo: "BILL-NEW",
-      content: "Chi tien mat",
+      content: "Chi tiền mặt",
       amount: "1000000",
       debitAccount: "331",
       creditAccount: "1111",
-      description: "Chi tien nha cung cap"
+      description: "Chi tiền nhà cung cấp"
     },
     BN: {
       voucherNo: `BN-${Date.now()}`,
@@ -481,13 +481,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "",
       bankAccountCode: "VCB-001",
       counterpartyCode: "NCC-NEW",
-      counterpartyName: "Nha cung cap moi",
+      counterpartyName: "Nhà cung cấp mới",
       referenceInvoiceNo: "BILL-NEW",
-      content: "Bao no ngan hang",
+      content: "Báo nợ ngân hàng",
       amount: "1000000",
       debitAccount: "331",
       creditAccount: "1121",
-      description: "Chuyen khoan thanh toan"
+      description: "Chuyển khoản thanh toán"
     },
     BC: {
       voucherNo: `BC-${Date.now()}`,
@@ -496,13 +496,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "",
       bankAccountCode: "VCB-001",
       counterpartyCode: "KH-NEW",
-      counterpartyName: "Khach hang moi",
+      counterpartyName: "Khách hàng mới",
       referenceInvoiceNo: "INV-NEW",
-      content: "Bao co ngan hang",
+      content: "Báo có ngân hàng",
       amount: "1000000",
       debitAccount: "1121",
       creditAccount: "131",
-      description: "Thu tien qua ngan hang"
+      description: "Thu tiền qua ngân hàng"
     }
   };
 

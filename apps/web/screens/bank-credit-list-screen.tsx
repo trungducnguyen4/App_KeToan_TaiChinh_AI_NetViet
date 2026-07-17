@@ -104,7 +104,7 @@ export default function BankCreditListScreen() {
 
   async function handleAskAi() {
     if (!selectedVoucher) {
-      setAiSuggestion("Chua co chung tu BC duoc chon de AI kiem tra.");
+      setAiSuggestion("Chưa có chứng từ BC được chọn để AI kiểm tra.");
       return;
     }
 
@@ -114,7 +114,7 @@ export default function BankCreditListScreen() {
     try {
       const response = await postApi<AiChatResponse>("/ai/chat", {
         message:
-          "Kiem tra nhanh chung tu bao co ngan hang dang chon: dinh khoan No/Co, rui ro doi chieu sao ke, thong tin con thieu va viec can lam tiep. Tra loi ngan gon theo bullet.",
+          "Kiểm tra nhanh chứng từ báo có ngân hàng đang chọn: định khoản Nợ/Có, rủi ro đối chiếu sao kê, thông tin còn thiếu và việc cần làm tiếp. Trả lời ngắn gọn theo bullet.",
         currentScreen: "/modules/cash/bank-credits",
         selectedFilters: {
           voucherType: "BC",

@@ -125,13 +125,13 @@ export const cashVouchers: VoucherRecord[] = [
     paymentChannel: "cash",
     cashBookCode: "TM-01",
     counterpartyCode: "KH-A",
-    counterpartyName: "Cong ty AAA",
+    counterpartyName: "Công ty AAA",
     counterpartyAddress: "170 Quang Trung, Phường 10, Quận Gò Vấp",
     projectName: "Dự án bán hàng 2026",
     referenceInvoiceNo: "BH-26070018",
     sourceVoucherNo: "PTG-26070012",
     referenceNo: "REF-PT-26070012",
-    content: "Thu tien khach hang cho hoa don BH-26070018",
+    content: "Thu tiền khách hàng cho hóa đơn BH-26070018",
     amount: 24500000,
     matchedAmount: 0,
     reconciliationStatus: "unmatched",
@@ -148,7 +148,7 @@ export const cashVouchers: VoucherRecord[] = [
         creditAccount: "131",
         creditDimension1: "KH-A",
         amount: 24500000,
-        description: "Thu tien mat khach hang"
+        description: "Thu tiền mặt khách hàng"
       }
     ]
   },
@@ -161,13 +161,13 @@ export const cashVouchers: VoucherRecord[] = [
     paymentChannel: "cash",
     cashBookCode: "TM-01",
     counterpartyCode: "NCC-MINH",
-    counterpartyName: "Nha cung cap Minh Long",
+    counterpartyName: "Nhà cung cấp Minh Long",
     counterpartyAddress: "Số 14, Đường 17, Phường Hiệp Bình Phước, Quận Thủ Đức, TPHCM",
     projectName: "Dự án mua hàng 2026",
     referenceInvoiceNo: "MH-26070005",
     sourceVoucherNo: "PCT-26070007",
     referenceNo: "REF-PC-26070007",
-    content: "Chi tien mat thanh toan hoa don mua hang",
+    content: "Chi tiền mặt thanh toán hóa đơn mua hàng",
     amount: 18000000,
     matchedAmount: 0,
     reconciliationStatus: "unmatched",
@@ -184,7 +184,7 @@ export const cashVouchers: VoucherRecord[] = [
         creditAccount: "1111",
         creditDimension1: "TM-01",
         amount: 18000000,
-        description: "Chi tien mat tra nha cung cap"
+        description: "Chi tiền mặt trả nhà cung cấp"
       }
     ]
   },
@@ -198,13 +198,13 @@ export const cashVouchers: VoucherRecord[] = [
     bankAccountCode: "VCB-001",
     bankAccountName: "Ngân hàng TMCP Ngoại thương Việt Nam",
     counterpartyCode: "NCC-TTP",
-    counterpartyName: "Nha cung cap TTP",
+    counterpartyName: "Nhà cung cấp TTP",
     counterpartyAddress: "123 Lê Lợi, Quận 1, TP.HCM",
     projectName: "Dự án nhà máy 2026",
     referenceInvoiceNo: "MH-26070008",
     sourceVoucherNo: "UNC-26070003",
     referenceNo: "REF-26070003",
-    content: "Bao no thanh toan chuyen khoan cho nha cung cap",
+    content: "Báo nợ thanh toán chuyển khoản cho nhà cung cấp",
     amount: 62000000,
     matchedAmount: 62000000,
     reconciliationStatus: "matched",
@@ -221,7 +221,7 @@ export const cashVouchers: VoucherRecord[] = [
         creditAccount: "1121",
         creditDimension1: "VCB-001",
         amount: 62000000,
-        description: "Chuyen khoan thanh toan NCC"
+        description: "Chuyển khoản thanh toán NCC"
       }
     ]
   },
@@ -235,13 +235,13 @@ export const cashVouchers: VoucherRecord[] = [
     bankAccountCode: "VCB-001",
     bankAccountName: "Ngân hàng TMCP Ngoại thương Việt Nam",
     counterpartyCode: "KH32",
-    counterpartyName: "Cong ty Co phan 32",
+    counterpartyName: "Công ty Cổ phần 32",
     counterpartyAddress: "88 Nguyễn Huệ, Quận 1, TP.HCM",
     projectName: "Dự án thương mại 32",
     referenceInvoiceNo: "BH-26070011",
     sourceVoucherNo: "UNC-26070005",
     referenceNo: "REF-26070005",
-    content: "Bao co thu tien khach hang qua ngan hang",
+    content: "Báo có thu tiền khách hàng qua ngân hàng",
     amount: 54000000,
     matchedAmount: 30000000,
     reconciliationStatus: "partial",
@@ -258,7 +258,7 @@ export const cashVouchers: VoucherRecord[] = [
         creditAccount: "131",
         creditDimension1: "KH32",
         amount: 54000000,
-        description: "Thu tien chuyen khoan khach hang"
+        description: "Thu tiền chuyển khoản khách hàng"
       }
     ]
   }
@@ -280,7 +280,7 @@ export const bankStatements: BankStatementRecord[] = [
         id: "statement-line-001",
         lineNo: 1,
         transactionDate: "2026-07-09",
-        description: "Thu tien KH32 BH-26070011",
+        description: "Thu tiền KH32 BH-26070011",
         debitAmount: 0,
         creditAmount: 30000000,
         runningBalance: 8042000000,
@@ -291,7 +291,7 @@ export const bankStatements: BankStatementRecord[] = [
         id: "statement-line-002",
         lineNo: 2,
         transactionDate: "2026-07-09",
-        description: "Thanh toan NCC TTP MH-26070008",
+        description: "Thanh toán NCC TTP MH-26070008",
         debitAmount: 62000000,
         creditAmount: 0,
         runningBalance: 7980000000,
@@ -302,7 +302,7 @@ export const bankStatements: BankStatementRecord[] = [
         id: "statement-line-003",
         lineNo: 3,
         transactionDate: "2026-07-09",
-        description: "Thu tien khach hang le",
+        description: "Thu tiền khách hàng lẻ",
         debitAmount: 0,
         creditAmount: 8700000,
         runningBalance: 8069000000,
@@ -321,8 +321,8 @@ export const reconciliationItems = {
       voucherType: "BC",
       voucherNo: "BC1-26070005",
       transactionDate: "2026-07-09",
-      counterpartyName: "Cong ty Co phan 32",
-      description: "Thu tien chuyen khoan khach hang",
+      counterpartyName: "Công ty Cổ phần 32",
+      description: "Thu tiền chuyển khoản khách hàng",
       amount: 24000000,
       bankAccountCode: "VCB-001",
       matchingStatus: "partial"
@@ -333,8 +333,8 @@ export const reconciliationItems = {
       voucherType: "PT",
       voucherNo: "PT1-26070012",
       transactionDate: "2026-07-09",
-      counterpartyName: "Cong ty AAA",
-      description: "Thu tien mat khach hang",
+      counterpartyName: "Công ty AAA",
+      description: "Thu tiền mặt khách hàng",
       amount: 24500000,
       bankAccountCode: "",
       matchingStatus: "unmatched"
@@ -345,7 +345,7 @@ export const reconciliationItems = {
       id: "recon-statement-001",
       statementLineId: "statement-line-003",
       transactionDate: "2026-07-09",
-      description: "Thu tien khach hang le",
+      description: "Thu tiền khách hàng lẻ",
       amount: 8700000,
       bankAccountCode: "VCB-001",
       matchingStatus: "unmatched"
@@ -354,7 +354,7 @@ export const reconciliationItems = {
       id: "recon-statement-002",
       statementLineId: "statement-line-001",
       transactionDate: "2026-07-09",
-      description: "Thu tien KH32 BH-26070011",
+      description: "Thu tiền KH32 BH-26070011",
       amount: 24000000,
       bankAccountCode: "VCB-001",
       matchingStatus: "partial"

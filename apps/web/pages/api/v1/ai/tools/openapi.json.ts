@@ -52,57 +52,57 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse) {
       "/debts/due": {
         post: {
           operationId: "get_due_debts",
-          summary: "Lay tong hop cong no den han va qua han",
+          summary: "Lấy tổng hợp công nợ đến hạn và quá hạn",
           requestBody: jsonRequest,
-          responses: { "200": { description: "Du lieu cong no" } },
+          responses: { "200": { description: "Dữ liệu công nợ" } },
         },
       },
       "/cashflow/summary": {
         post: {
           operationId: "get_cashflow_summary",
-          summary: "Lay tong hop dong tien",
+          summary: "Lấy tổng hợp dòng tiền",
           requestBody: jsonRequest,
-          responses: { "200": { description: "Du lieu dong tien" } },
+          responses: { "200": { description: "Dữ liệu dòng tiền" } },
         },
       },
       "/vouchers/missing": {
         post: {
           operationId: "detect_missing_vouchers",
-          summary: "Phat hien hoa don/chung tu thieu lien ket hach toan",
+          summary: "Phát hiện hóa đơn/chứng từ thiếu liên kết hạch toán",
           requestBody: jsonRequest,
-          responses: { "200": { description: "Danh sach chung tu thieu" } },
+          responses: { "200": { description: "Danh sách chứng từ thiếu" } },
         },
       },
       "/vouchers/detail": {
         post: {
           operationId: "get_voucher_details",
-          summary: "Lay thong tin chung tu theo so chung tu",
+          summary: "Lấy thông tin chứng từ theo số chứng từ",
           requestBody: jsonRequest,
-          responses: { "200": { description: "Chi tiet chung tu" } },
+          responses: { "200": { description: "Chi tiết chứng từ" } },
         },
       },
       "/expenses/by-category": {
         post: {
           operationId: "get_expense_by_category",
-          summary: "Lay chi phi theo tai khoan/khoan muc",
+          summary: "Lấy chi phí theo tài khoản/khoản mục",
           requestBody: jsonRequest,
-          responses: { "200": { description: "Du lieu chi phi theo khoan muc" } },
+          responses: { "200": { description: "Dữ liệu chi phí theo khoản mục" } },
         },
       },
       "/bank/reconcile": {
         post: {
           operationId: "reconcile_bank_statement",
-          summary: "Goi y doi chieu sao ke ngan hang",
+          summary: "Gợi ý đối chiếu sao kê ngân hàng",
           requestBody: jsonRequest,
-          responses: { "200": { description: "Goi y doi chieu" } },
+          responses: { "200": { description: "Gợi ý đối chiếu" } },
         },
       },
       "/ocr/accounting": {
         post: {
           operationId: "ocr_accounting_from_file",
-          summary: "OCR va goi y dinh khoan tu file hoa don/chung tu",
+          summary: "OCR và gợi ý định khoản từ file hóa đơn/chứng từ",
           requestBody: ocrRequest,
-          responses: { "200": { description: "Ket qua OCR va goi y dinh khoan" } },
+          responses: { "200": { description: "Kết quả OCR và gợi ý định khoản" } },
         },
       },
     },
