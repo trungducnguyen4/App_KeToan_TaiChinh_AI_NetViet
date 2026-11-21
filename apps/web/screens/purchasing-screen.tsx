@@ -271,7 +271,7 @@ export default function PurchasingScreen() {
   async function handleCreatePayment(invoice: PurchasingInvoiceItem, channel: "cash" | "bank") {
     const channelName = channel === "cash" ? "Tiền mặt (Phiếu chi PC)" : "Chuyển khoản (Báo nợ BN)";
     const confirmed = confirm(
-      `Xác nhận thanh toán ${currency.format(invoice.totalAmount)} cho ${invoice.supplierName} qua ${channelName}?\nHệ thống sẽ tự động tạo chứng từ thanh toán trong phân hệ Thu chi (M2).`
+      `Xác nhận thanh toán ${currency.format(invoice.totalAmount)} cho ${invoice.supplierName} qua ${channelName}?\nHệ thống sẽ tự động tạo chứng từ thanh toán trong mục Thu chi & Thanh toán.`
     );
     if (!confirmed) return;
 
@@ -329,7 +329,7 @@ export default function PurchasingScreen() {
         {/* Hero Section */}
         <section className="hero-panel">
           <div>
-            <div className="eyebrow">XƯỞNG ÉP DẦU DỪA NETVIET</div>
+            <div className="eyebrow">XƯỞNG ÉP DẦU DỪA</div>
             <h2 className="hero-title">Hóa đơn Đầu vào & Thu mua vỏ dừa</h2>
             <p className="hero-copy">
               Nhập nhanh phiếu cân thu mua vỏ dừa từ thương lái (không VAT) và hóa đơn chi phí có VAT (điện, màng lọc, bảo trì, bao bì). Tự động phân loại chi phí & chống nhập trùng.

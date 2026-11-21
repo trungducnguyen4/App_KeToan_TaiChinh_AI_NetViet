@@ -25,7 +25,7 @@ export default function JournalVoucherPage() {
 
         <section className="hero-panel">
           <div>
-            <div className="eyebrow">Mã phân hệ 5018</div>
+            <div className="eyebrow">CHỨNG TỪ KẾ TOÁN</div>
             <h2 className="hero-title">{journalVoucherScreen.title}</h2>
             <p className="hero-copy">{journalVoucherScreen.description}</p>
           </div>

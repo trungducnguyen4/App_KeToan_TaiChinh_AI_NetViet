@@ -10,12 +10,12 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
             <AppIcon name="Droplet" size={20} />
           </span>
           <span>
-            <span className="brand-title">Dầu Dừa NetViet</span>
+            <span className="brand-title">Dầu Dừa</span>
             <span className="brand-subtitle">Quản trị Xưởng &amp; Giá thành</span>
           </span>
         </a>
 
-        <nav className="nav-section" aria-label="Phân hệ nghiệp vụ">
+        <nav className="nav-section" aria-label="Quy trình nghiệp vụ">
           <p className="nav-section-title">Quy trình Vận hành Xưởng</p>
           {workitModules.slice(0, 6).map((module) => (
             <a
@@ -28,7 +28,6 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
               </span>
               <span className="module-copy">
                 <span className="module-name">{module.name}</span>
-                <span className="module-meta">Mã phân hệ {module.code}</span>
               </span>
             </a>
           ))}
@@ -47,7 +46,6 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
               </span>
               <span className="module-copy">
                 <span className="module-name">{module.name}</span>
-                <span className="module-meta">{module.status === "ready" ? "Sẵn sàng" : module.status}</span>
               </span>
             </a>
           ))}
@@ -62,7 +60,7 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#059669", display: "inline-block" }} />
               Nhập liệu trực tiếp (Direct CRUD)
             </span>
-            <span className="avatar" title="NetViet Workshop Admin">NV</span>
+            <span className="avatar" title="Quản trị Xưởng">AD</span>
           </div>
         </header>
         {children}

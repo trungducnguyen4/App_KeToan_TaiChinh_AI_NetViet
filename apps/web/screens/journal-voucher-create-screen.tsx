@@ -17,7 +17,7 @@ export default function JournalVoucherCreateScreen() {
 
         <section className="hero-panel">
           <div>
-            <div className="eyebrow">Mã phân hệ 5018</div>
+            <div className="eyebrow">CHỨNG TỪ KẾ TOÁN</div>
             <h2 className="hero-title">Tạo phiếu hạch toán</h2>
             <p className="hero-copy">
               Trang riêng cho nhập liệu chứng từ. Danh sách và chi tiết hạch toán nằm ở màn trước, còn màn này chỉ dùng để tạo mới và lưu.
