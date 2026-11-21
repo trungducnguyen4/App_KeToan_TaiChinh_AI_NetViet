@@ -126,7 +126,7 @@ export default function SalesInvoiceScreen() {
         description: description || undefined
       });
 
-      alert("✅ Đã xuất hóa đơn bán hàng thành công!");
+      alert("Đã xuất hóa đơn bán hàng thành công!");
       setShowCreateModal(false);
       // Reset form
       setCustomerName("");
@@ -156,7 +156,7 @@ export default function SalesInvoiceScreen() {
         description: paymentDesc
       });
 
-      alert(`✅ Đã lập ${paymentChannel === "cash" ? "Phiếu thu (PT)" : "Báo có ngân hàng (BC)"} thành công!`);
+      alert(`Đã lập ${paymentChannel === "cash" ? "Phiếu thu (PT)" : "Báo có ngân hàng (BC)"} thành công!`);
       setPayingInvoice(null);
       await loadInvoices();
     } catch (err: any) {

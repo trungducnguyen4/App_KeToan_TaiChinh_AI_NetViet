@@ -468,7 +468,10 @@ export default function PurchasingScreen() {
                 />
                 {isCheckingDuplicate && <span style={{ fontSize: "11px", color: "var(--muted)" }}>Đang kiểm tra trùng...</span>}
                 {!duplicateWarning && form.voucherNo && !isCheckingDuplicate && (
-                  <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>✓ Chưa có trong hệ thống</span>
+                  <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <AppIcon name="Check" size={13} />
+                    Chưa có trong hệ thống
+                  </span>
                 )}
               </div>
 

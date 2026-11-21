@@ -86,7 +86,7 @@ export default function CostAccountingScreen() {
     try {
       const data = await fetchApi<any>("/cost-accounting/export-package");
       setExportData(data);
-      setExportMessage("✅ Đã tạo gói đóng gói báo cáo hoàn tất! Dữ liệu đã sẵn sàng để xuất hoặc in nộp.");
+      setExportMessage("Đã tạo gói đóng gói báo cáo hoàn tất! Dữ liệu đã sẵn sàng để xuất hoặc in nộp.");
     } catch (err: any) {
       alert("Lỗi xuất gói báo cáo: " + err.message);
     }
