@@ -157,3 +157,75 @@ export interface CashDashboardMetric {
   hint: string;
   tone: "green" | "blue" | "amber" | "red" | "gray";
 }
+
+export type DocType = "PURCHASE_SLIP" | "VAT_INVOICE";
+export type CostCategory = "RAW_MATERIAL" | "PROCESSING" | "OVERHEAD";
+export type ProcessStage = "EP" | "LOC" | "DONG_PHUY";
+export type AllocationMode = "BATCH" | "PERIOD";
+
+export interface PurchasingInvoiceItem {
+  id: string;
+  voucherNo: string;
+  voucherDate: string;
+  docType: DocType;
+  supplierName: string;
+  supplierCode?: string;
+  taxCode?: string;
+  invoiceSeries?: string;
+  invoiceTemplate?: string;
+  costCategory: CostCategory;
+  processStage?: ProcessStage;
+  allocationMode: AllocationMode;
+  batchId?: string;
+  batchCode?: string;
+  vehiclePlate?: string;
+  grossWeightKg?: number;
+  tareWeightKg?: number;
+  netWeightKg?: number;
+  unitPrice?: number;
+  handlingFee?: number;
+  subtotal: number;
+  vatRate?: number;
+  vatAmount?: number;
+  totalAmount: number;
+  description?: string;
+  paymentStatus: "UNPAID" | "PAID";
+  paymentVoucherNo?: string;
+  checksum?: string;
+  attachmentFileName?: string;
+  createdAt: string;
+}
+
+export interface ProductionBatchRecord {
+  id: string;
+  batchCode: string;
+  batchDate: string;
+  supplierId?: string;
+  supplierName?: string;
+  rawMaterialKg: number;
+  crudeOilKg: number;
+  crudeOilLiters: number;
+  byproductKg: number;
+  oilYieldRate: number;
+  lossRate: number;
+  rawMaterialCost: number;
+  processingCost: number;
+  overheadCost: number;
+  byproductRecovery: number;
+  totalCost: number;
+  unitCostPerKg: number;
+  status: "IN_PROGRESS" | "COMPLETED";
+  notes?: string;
+  createdAt: string;
+}
+
+export interface SupplierYieldPerformance {
+  supplierName: string;
+  batchCount: number;
+  totalRawKg: number;
+  totalCrudeOilKg: number;
+  totalByproductKg: number;
+  avgYieldRate: number;
+  rating: "EXCELLENT" | "GOOD" | "AVERAGE" | "POOR";
+  recommendation: string;
+}

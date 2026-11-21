@@ -19,7 +19,8 @@ export async function postApi<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.message || `API request failed: ${response.status}`);
   }
 
   return response.json() as Promise<T>;

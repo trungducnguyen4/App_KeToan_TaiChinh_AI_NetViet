@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { createHash, randomUUID } from "node:crypto";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { CounterpartyType, MatchingStatus, PaymentChannel, Prisma } from "@prisma/client";
 import {
   approvalItems,
@@ -340,27 +340,27 @@ export class WorkitService {
     const bankBalance = Number(bankIn._sum.total_debit ?? 0) - Number(bankOut._sum.total_debit ?? 0);
     const metrics = [
       {
-        label: "So du quy tien mat",
+        label: "Số dư quỹ tiền mặt",
         value: this.formatCompactCurrency(cashBalance),
         hint: `${vouchers.find((item) => item.voucherType === "PT")?._count ?? 0} PT / ${vouchers.find((item) => item.voucherType === "PC")?._count ?? 0} PC`,
         tone: "green"
       },
       {
-        label: "So du tien gui",
+        label: "Số dư tiền gửi NH",
         value: this.formatCompactCurrency(bankBalance),
         hint: `${vouchers.find((item) => item.voucherType === "BC")?._count ?? 0} BC / ${vouchers.find((item) => item.voucherType === "BN")?._count ?? 0} BN`,
         tone: "blue"
       },
       {
-        label: "Dong can doi chieu",
+        label: "Dòng cần đối chiếu",
         value: `${unmatchedStatements}`,
-        hint: "Statement line chua khop",
+        hint: "Dòng sao kê chưa khớp",
         tone: "amber"
       },
       {
-        label: "Chung tu cho duyet",
+        label: "Chứng từ chờ duyệt",
         value: `${pendingApprovals}`,
-        hint: "M2 can xu ly trong ngay",
+        hint: "Chứng từ cần xử lý trong ngày",
         tone: "red"
       }
     ] as typeof cashDashboardMetrics;
@@ -1260,6 +1260,1175 @@ export class WorkitService {
       maximumFractionDigits: 2
     }).format(value);
   }
+
+  async listPurchasingInvoices(query?: {
+    q?: string;
+    docType?: string;
+    costCategory?: string;
+    allocationMode?: string;
+    paymentStatus?: string;
+  }) {
+    const context = await this.ensureDefaultContext();
+    const search = query?.q?.trim();
+
+    const vouchers = await this.prisma.voucher.findMany({
+      where: {
+        organizationId: context.organization.id,
+        voucherType: { in: ["PNK", "HDM"] },
+        ...(query?.docType ? { doc_type: query.docType } : {}),
+        ...(query?.costCategory ? { cost_category: query.costCategory } : {}),
+        ...(query?.allocationMode ? { allocation_mode: query.allocationMode } : {}),
+        ...(search
+          ? {
+              OR: [
+                { voucherNo: { contains: search } },
+                { supplier_name: { contains: search } },
+                { description: { contains: search } },
+                { tax_code: { contains: search } }
+              ]
+            }
+          : {})
+      },
+      include: {
+        lines: true
+      },
+      orderBy: { voucherDate: "desc" }
+    });
+
+    return vouchers.map((v) => {
+      const firstLine = v.lines[0];
+      const isPaid = Number(v.matched_amount) >= Number(v.total_credit) && Number(v.total_credit) > 0;
+      return {
+        id: v.id,
+        voucherNo: v.voucherNo,
+        voucherDate: v.voucherDate.toISOString().slice(0, 10),
+        docType: (v.doc_type || (v.voucherType === "PNK" ? "PURCHASE_SLIP" : "VAT_INVOICE")) as any,
+        supplierName: v.supplier_name || "Thương lái vựa dừa",
+        supplierCode: undefined,
+        taxCode: v.tax_code || undefined,
+        invoiceSeries: v.invoice_series || undefined,
+        invoiceTemplate: v.invoice_template || undefined,
+        costCategory: (v.cost_category || "RAW_MATERIAL") as any,
+        processStage: (v.process_stage || undefined) as any,
+        allocationMode: (v.allocation_mode || "BATCH") as any,
+        batchId: v.batch_id || undefined,
+        netWeightKg: firstLine?.quantity ? Number(firstLine.quantity) : undefined,
+        unitPrice: firstLine?.unit_price ? Number(firstLine.unit_price) : undefined,
+        subtotal: Number(firstLine?.debit_amount || v.total_debit),
+        vatRate: firstLine?.tax_rate ? Number(firstLine.tax_rate) : undefined,
+        vatAmount: Number(v.total_credit) - Number(firstLine?.debit_amount || 0),
+        totalAmount: Number(v.total_credit),
+        description: v.description || "",
+        paymentStatus: isPaid ? "PAID" : "UNPAID",
+        paymentVoucherNo: isPaid ? v.reference_invoice_no : undefined,
+        checksum: v.source_checksum || undefined,
+        createdAt: v.createdAt.toISOString()
+      };
+    });
+  }
+
+  async checkDuplicateInvoice(query: { taxCode?: string; series?: string; invoiceNo?: string; docType?: string }) {
+    const context = await this.ensureDefaultContext();
+    if (!query.invoiceNo?.trim()) {
+      return { isDuplicate: false };
+    }
+
+    if (query.docType === "VAT_INVOICE") {
+      const normTax = (query.taxCode || "").trim().toUpperCase();
+      const normSeries = (query.series || "").trim().toUpperCase();
+      const normNo = (query.invoiceNo || "").trim().toUpperCase();
+      const checksum = createHash("md5").update(`${normTax}_${normSeries}_${normNo}`).digest("hex");
+
+      const existing = await this.prisma.voucher.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          source_checksum: checksum
+        }
+      });
+
+      if (existing) {
+        return {
+          isDuplicate: true,
+          message: `Trùng hóa đơn: Số ${existing.voucherNo} (Ký hiệu ${existing.invoice_series || "N/A"}) của NCC ${existing.supplier_name || "N/A"} đã tồn tại trong hệ thống ngày ${new Date(existing.voucherDate).toLocaleDateString("vi-VN")}.`,
+          existingVoucher: {
+            id: existing.id,
+            voucherNo: existing.voucherNo,
+            voucherDate: existing.voucherDate,
+            amount: Number(existing.total_credit),
+            supplierName: existing.supplier_name
+          }
+        };
+      }
+    } else {
+      const existing = await this.prisma.voucher.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          voucherNo: query.invoiceNo.trim()
+        }
+      });
+
+      if (existing) {
+        return {
+          isDuplicate: true,
+          message: `Trùng số phiếu: Phiếu số ${existing.voucherNo} đã tồn tại trong hệ thống.`,
+          existingVoucher: {
+            id: existing.id,
+            voucherNo: existing.voucherNo,
+            voucherDate: existing.voucherDate,
+            amount: Number(existing.total_credit)
+          }
+        };
+      }
+    }
+
+    return { isDuplicate: false };
+  }
+
+  async createPurchasingInvoice(input: CreatePurchasingInvoiceInput) {
+    const context = await this.ensureDefaultContext(input.createdBy);
+
+    let checksum = "";
+    if (input.docType === "VAT_INVOICE") {
+      const normTax = (input.taxCode || "").trim().toUpperCase();
+      const normSeries = (input.invoiceSeries || "").trim().toUpperCase();
+      const normNo = (input.voucherNo || "").trim().toUpperCase();
+      if (!normNo) {
+        throw new BadRequestException("Số hóa đơn GTGT không được để trống.");
+      }
+      checksum = createHash("md5").update(`${normTax}_${normSeries}_${normNo}`).digest("hex");
+
+      const existing = await this.prisma.voucher.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          source_checksum: checksum
+        }
+      });
+      if (existing) {
+        throw new BadRequestException(
+          `CẢNH BÁO TRÙNG HÓA ĐƠN: Hóa đơn số ${input.voucherNo} (Ký hiệu: ${input.invoiceSeries || "N/A"}, MST: ${input.taxCode || "N/A"}) đã tồn tại trong hệ thống (nhập ngày ${new Date(existing.voucherDate).toLocaleDateString("vi-VN")}).`
+        );
+      }
+    } else {
+      const existing = await this.prisma.voucher.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          voucherType: "PNK",
+          voucherNo: input.voucherNo
+        }
+      });
+      if (existing) {
+        throw new BadRequestException(
+          `CẢNH BÁO TRÙNG PHIẾU CÂN: Phiếu số ${input.voucherNo} đã tồn tại trong hệ thống.`
+        );
+      }
+      checksum = createHash("md5").update(`PURCHASE_${input.voucherNo.trim().toUpperCase()}`).digest("hex");
+    }
+
+    const voucher = await this.prisma.$transaction(async (tx) => {
+      let supplierId: string | null = null;
+      if (input.supplierName) {
+        const sup = await tx.supplier.findFirst({
+          where: {
+            organizationId: context.organization.id,
+            OR: [
+              ...(input.supplierCode ? [{ code: input.supplierCode }] : []),
+              { name: input.supplierName },
+              ...(input.taxCode ? [{ taxCode: input.taxCode }] : [])
+            ]
+          }
+        });
+        if (sup) {
+          supplierId = sup.id;
+        } else {
+          const uniqueCode = input.supplierCode || `NCC-${Date.now().toString().slice(-6)}`;
+          const existingCode = await tx.supplier.findFirst({
+            where: { organizationId: context.organization.id, code: uniqueCode }
+          });
+          const safeCode = existingCode ? `NCC-${Date.now().toString().slice(-6)}` : uniqueCode;
+
+          const newSup = await tx.supplier.create({
+            data: {
+              id: randomUUID(),
+              organizationId: context.organization.id,
+              code: safeCode,
+              name: input.supplierName,
+              taxCode: input.taxCode || null,
+              status: "active",
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          });
+          supplierId = newSup.id;
+        }
+      }
+
+      let debitAccountCode = "152";
+      if (input.costCategory === "PROCESSING") debitAccountCode = "154";
+      else if (input.costCategory === "OVERHEAD") debitAccountCode = "642";
+
+      const debitAccountId = await this.ensureAccount(tx, context.organization.id, debitAccountCode);
+      const creditAccountId = await this.ensureAccount(tx, context.organization.id, "331");
+
+      const created = await tx.voucher.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          voucherType: input.docType === "PURCHASE_SLIP" ? "PNK" : "HDM",
+          voucherNo: input.voucherNo,
+          voucherDate: new Date(input.voucherDate),
+          posting_date: new Date(input.voucherDate),
+          currencyCode: "VND",
+          exchange_rate: 1,
+          status: "approved",
+          approval_status: "approved",
+          description: input.description || (input.docType === "PURCHASE_SLIP"
+            ? `Thu mua vỏ dừa xe ${input.vehiclePlate || ""} từ thương lái ${input.supplierName} (${input.netWeightKg || 0} kg)`
+            : `Hóa đơn chi phí ${input.costCategory} từ ${input.supplierName}`),
+          counterparty_type: CounterpartyType.supplier,
+          reference_invoice_no: input.voucherNo,
+          source_checksum: checksum,
+          batch_id: input.batchId || null,
+          doc_type: input.docType,
+          cost_category: input.costCategory,
+          process_stage: input.processStage || null,
+          allocation_mode: input.allocationMode,
+          invoice_series: input.invoiceSeries || null,
+          invoice_template: input.invoiceTemplate || null,
+          tax_code: input.taxCode || null,
+          supplier_name: input.supplierName,
+          total_debit: input.totalAmount,
+          total_credit: input.totalAmount,
+          createdBy: context.user.id,
+          updated_by: context.user.id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: created.id,
+          lineNo: 1,
+          account_id: debitAccountId,
+          supplier_id: supplierId,
+          debit_amount: input.subtotal,
+          credit_amount: 0,
+          quantity: input.netWeightKg || null,
+          unit_price: input.unitPrice || null,
+          tax_rate: input.vatRate || null,
+          cost_category: input.costCategory,
+          process_stage: input.processStage || null,
+          memo: created.description,
+          created_at: new Date()
+        }
+      });
+
+      if (input.vatAmount && input.vatAmount > 0) {
+        const vatAccountId = await this.ensureAccount(tx, context.organization.id, "1331");
+        await tx.voucherLine.create({
+          data: {
+            id: randomUUID(),
+            voucherId: created.id,
+            lineNo: 2,
+            account_id: vatAccountId,
+            supplier_id: supplierId,
+            debit_amount: input.vatAmount,
+            credit_amount: 0,
+            tax_rate: input.vatRate || null,
+            cost_category: input.costCategory,
+            process_stage: input.processStage || null,
+            memo: `Thuế GTGT HĐ ${input.voucherNo}`,
+            created_at: new Date()
+          }
+        });
+      }
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: created.id,
+          lineNo: 3,
+          account_id: creditAccountId,
+          supplier_id: supplierId,
+          debit_amount: 0,
+          credit_amount: input.totalAmount,
+          memo: `Công nợ phải trả ${input.supplierName}`,
+          created_at: new Date()
+        }
+      });
+
+      await this.createAuditEvent(tx, {
+        organizationId: context.organization.id,
+        actorUserId: context.user.id,
+        entityName: "purchasing_invoice",
+        entityId: created.id,
+        action: "purchasing_invoice_created",
+        afterPayload: {
+          voucherNo: created.voucherNo,
+          docType: input.docType,
+          totalAmount: input.totalAmount,
+          supplierName: input.supplierName
+        }
+      });
+
+      return created;
+    });
+
+    return voucher;
+  }
+
+  async createPaymentForInvoice(invoiceId: string, input: { paymentChannel: "cash" | "bank"; cashBookCode?: string; bankAccountCode?: string; createdBy?: string }) {
+    const context = await this.ensureDefaultContext(input.createdBy);
+
+    return this.prisma.$transaction(async (tx) => {
+      const invoice = await tx.voucher.findUnique({
+        where: { id: invoiceId },
+        include: { lines: true }
+      });
+
+      if (!invoice) {
+        throw new NotFoundException(`Không tìm thấy chứng từ với ID ${invoiceId}`);
+      }
+
+      const paymentType: CashVoucherType = input.paymentChannel === "cash" ? "PC" : "BN";
+      const paymentNo = `${paymentType}-${Date.now().toString().slice(-6)}`;
+      const amount = Number(invoice.total_credit);
+
+      const cashBookId = input.paymentChannel === "cash"
+        ? await this.ensureCashBook(tx, context.organization.id, input.cashBookCode || "QUY-XUONG")
+        : null;
+      const bankAccountId = input.paymentChannel === "bank"
+        ? await this.ensureBankAccount(tx, context.organization.id, input.bankAccountCode || "VCB-001", context.organization.name)
+        : null;
+
+      const paymentVoucher = await tx.voucher.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          voucherType: paymentType,
+          voucherNo: paymentNo,
+          voucherDate: new Date(),
+          posting_date: new Date(),
+          currencyCode: "VND",
+          exchange_rate: 1,
+          status: "approved",
+          approval_status: "approved",
+          description: `Thanh toán cho ${invoice.supplier_name || "NCC"} theo ${invoice.doc_type === "PURCHASE_SLIP" ? "phiếu cân" : "hóa đơn"} ${invoice.voucherNo}`,
+          payment_channel: input.paymentChannel === "cash" ? PaymentChannel.cash : PaymentChannel.bank,
+          cash_book_id: cashBookId,
+          bank_account_id: bankAccountId,
+          counterparty_type: CounterpartyType.supplier,
+          reference_invoice_no: invoice.voucherNo,
+          total_debit: amount,
+          total_credit: amount,
+          createdBy: context.user.id,
+          updated_by: context.user.id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+
+      const debitAccountId = await this.ensureAccount(tx, context.organization.id, "331");
+      const creditAccountId = await this.ensureAccount(tx, context.organization.id, input.paymentChannel === "cash" ? "1111" : "1121");
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: paymentVoucher.id,
+          lineNo: 1,
+          account_id: debitAccountId,
+          debit_amount: amount,
+          credit_amount: 0,
+          memo: `Thanh toán công nợ ${invoice.supplier_name || "NCC"}`,
+          created_at: new Date()
+        }
+      });
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: paymentVoucher.id,
+          lineNo: 2,
+          account_id: creditAccountId,
+          bank_account_id: bankAccountId,
+          debit_amount: 0,
+          credit_amount: amount,
+          memo: paymentVoucher.description,
+          created_at: new Date()
+        }
+      });
+
+      await tx.voucher.update({
+        where: { id: invoiceId },
+        data: {
+          matched_amount: amount,
+          status: "posted"
+        }
+      });
+
+      return {
+        paymentVoucher,
+        updatedInvoice: invoice
+      };
+    });
+  }
+
+  async listProductionBatches(query?: { q?: string; status?: string }) {
+    const context = await this.ensureDefaultContext();
+    const search = query?.q?.trim();
+
+    const batches = await this.prisma.productionBatch.findMany({
+      where: {
+        organizationId: context.organization.id,
+        ...(query?.status ? { status: query.status } : {}),
+        ...(search ? {
+          OR: [
+            { batchCode: { contains: search } },
+            { supplierName: { contains: search } },
+            { notes: { contains: search } }
+          ]
+        } : {})
+      },
+      orderBy: { batchDate: "desc" }
+    });
+
+    return batches.map((b) => ({
+      id: b.id,
+      batchCode: b.batchCode,
+      batchDate: b.batchDate.toISOString().slice(0, 10),
+      supplierId: b.supplierId || undefined,
+      supplierName: b.supplierName || undefined,
+      rawMaterialKg: Number(b.rawMaterialKg),
+      crudeOilKg: Number(b.crudeOilKg),
+      crudeOilLiters: Number(b.crudeOilLiters),
+      byproductKg: Number(b.byproductKg),
+      oilYieldRate: Number(b.oilYieldRate),
+      lossRate: Number(b.lossRate),
+      rawMaterialCost: Number(b.rawMaterialCost),
+      processingCost: Number(b.processingCost),
+      overheadCost: Number(b.overheadCost),
+      byproductRecovery: Number(b.byproductRecovery),
+      totalCost: Number(b.totalCost),
+      unitCostPerKg: Number(b.unitCostPerKg),
+      status: b.status as any,
+      notes: b.notes || undefined,
+      createdAt: b.createdAt.toISOString()
+    }));
+  }
+
+  async createProductionBatch(input: CreateProductionBatchInput) {
+    const context = await this.ensureDefaultContext(input.createdBy);
+
+    const crudeOilLiters = Number((input.crudeOilKg / 0.915).toFixed(1));
+    const byproductKg = input.byproductKg ?? 0;
+    const oilYieldRate = input.rawMaterialKg > 0 
+      ? Number(((input.crudeOilKg / input.rawMaterialKg) * 100).toFixed(2))
+      : 0;
+    const byproductRate = input.rawMaterialKg > 0
+      ? Number(((byproductKg / input.rawMaterialKg) * 100).toFixed(2))
+      : 0;
+    const lossRate = Number(Math.max(0, 100 - oilYieldRate - byproductRate).toFixed(2));
+
+    const rawCost = input.rawMaterialCost ?? (input.rawMaterialKg * 4200);
+    const procCost = input.processingCost ?? (input.crudeOilKg * 1850);
+    const ovhCost = input.overheadCost ?? (input.crudeOilKg * 500);
+    const bprCost = input.byproductRecovery ?? (byproductKg * 1200);
+    const totalCost = rawCost + procCost + ovhCost - bprCost;
+    const unitCostPerKg = input.crudeOilKg > 0 ? Math.round(totalCost / input.crudeOilKg) : 0;
+
+    const batch = await this.prisma.productionBatch.create({
+      data: {
+        id: randomUUID(),
+        organizationId: context.organization.id,
+        batchCode: input.batchCode,
+        batchDate: new Date(input.batchDate),
+        supplierName: input.supplierName || null,
+        supplierId: input.supplierId || null,
+        rawMaterialKg: input.rawMaterialKg,
+        crudeOilKg: input.crudeOilKg,
+        crudeOilLiters: crudeOilLiters,
+        byproductKg: byproductKg,
+        oilYieldRate: oilYieldRate,
+        lossRate: lossRate,
+        rawMaterialCost: rawCost,
+        processingCost: procCost,
+        overheadCost: ovhCost,
+        byproductRecovery: bprCost,
+        totalCost: totalCost,
+        unitCostPerKg: unitCostPerKg,
+        status: input.status || "COMPLETED",
+        notes: input.notes || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+
+    return batch;
+  }
+
+  async getSupplierYieldPerformance() {
+    const context = await this.ensureDefaultContext();
+    const batches = await this.prisma.productionBatch.findMany({
+      where: { organizationId: context.organization.id }
+    });
+
+    const map = new Map<string, {
+      supplierName: string;
+      batchCount: number;
+      totalRawKg: number;
+      totalCrudeOilKg: number;
+      totalByproductKg: number;
+    }>();
+
+    for (const b of batches) {
+      const name = b.supplierName || "Thương lái lẻ";
+      const existing = map.get(name) || {
+        supplierName: name,
+        batchCount: 0,
+        totalRawKg: 0,
+        totalCrudeOilKg: 0,
+        totalByproductKg: 0
+      };
+
+      existing.batchCount += 1;
+      existing.totalRawKg += Number(b.rawMaterialKg);
+      existing.totalCrudeOilKg += Number(b.crudeOilKg);
+      existing.totalByproductKg += Number(b.byproductKg);
+      map.set(name, existing);
+    }
+
+    const results = Array.from(map.values()).map((item) => {
+      const avgYieldRate = item.totalRawKg > 0
+        ? Number(((item.totalCrudeOilKg / item.totalRawKg) * 100).toFixed(2))
+        : 0;
+
+      let rating: "EXCELLENT" | "GOOD" | "AVERAGE" | "POOR" = "AVERAGE";
+      let recommendation = "";
+
+      if (avgYieldRate >= 22.0) {
+        rating = "EXCELLENT";
+        recommendation = "🌟 Vỏ dừa già, khô, tỷ lệ dầu rất cao (>22%). Ưu tiên tăng sản lượng thu mua.";
+      } else if (avgYieldRate >= 20.0) {
+        rating = "GOOD";
+        recommendation = "✅ Đạt chuẩn định mức xưởng (20-22%). Giữ nguyên giá thu mua.";
+      } else if (avgYieldRate >= 18.5) {
+        rating = "AVERAGE";
+        recommendation = "⚠️ Tỷ lệ dầu ở ngưỡng tối thiểu (18.5-20%). Cần kiểm tra kỹ độ ẩm khi cân.";
+      } else {
+        rating = "POOR";
+        recommendation = "❌ Vỏ dừa nhiều nước hoặc dừa non (<18%). Đàm phán giảm giá thu mua hoặc trừ tỷ lệ nước.";
+      }
+
+      return {
+        supplierName: item.supplierName,
+        batchCount: item.batchCount,
+        totalRawKg: item.totalRawKg,
+        totalCrudeOilKg: item.totalCrudeOilKg,
+        totalByproductKg: item.totalByproductKg,
+        avgYieldRate,
+        rating,
+        recommendation
+      };
+    });
+
+    results.sort((a, b) => b.avgYieldRate - a.avgYieldRate);
+    return results;
+  }
+
+  private async ensureCustomer(
+    tx: Prisma.TransactionClient,
+    organizationId: string,
+    customerName: string,
+    taxCode?: string,
+    customerCode?: string
+  ): Promise<string> {
+    const existing = await tx.customer.findFirst({
+      where: {
+        organizationId,
+        OR: [
+          ...(customerCode ? [{ code: customerCode }] : []),
+          { name: customerName },
+          ...(taxCode ? [{ taxCode }] : [])
+        ]
+      }
+    });
+
+    if (existing) {
+      return existing.id;
+    }
+
+    const baseCode = (customerCode || customerName)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 10);
+    const safeCode = `KH_${baseCode || "KHACH"}_${Date.now().toString().slice(-4)}`;
+
+    const created = await tx.customer.create({
+      data: {
+        id: randomUUID(),
+        organizationId,
+        code: safeCode,
+        name: customerName,
+        taxCode: taxCode || null,
+        status: "active",
+        createdAt: new Date()
+      }
+    });
+
+    return created.id;
+  }
+
+  async getCostAccountingSummary() {
+    const context = await this.ensureDefaultContext();
+
+    const batches = await this.prisma.productionBatch.findMany({
+      where: { organizationId: context.organization.id },
+      orderBy: { batchDate: "desc" }
+    });
+
+    const totalRawKgProcessed = batches.reduce((sum, b) => sum + Number(b.rawMaterialKg), 0);
+    const totalCrudeOilKgProduced = batches.reduce((sum, b) => sum + Number(b.crudeOilKg), 0);
+    const totalCrudeOilLitersProduced = batches.reduce((sum, b) => sum + Number(b.crudeOilLiters), 0);
+    const totalByproductKgProduced = batches.reduce((sum, b) => sum + Number(b.byproductKg), 0);
+
+    const costVouchers = await this.prisma.voucher.findMany({
+      where: {
+        organizationId: context.organization.id,
+        voucherType: { in: ["PNK", "HDM"] }
+      },
+      include: {
+        lines: true
+      }
+    });
+
+    let rawMaterialCost = 0;
+    let rawMaterialKgPurchased = 0;
+    let processingCostEp = 0;
+    let processingCostLoc = 0;
+    let processingCostDongPhuy = 0;
+    let overheadCost = 0;
+
+    for (const v of costVouchers) {
+      const amount = v.lines.reduce((s, l) => s + Number(l.debit_amount || 0), 0);
+      const kg = v.lines.reduce((s, l) => s + Number(l.quantity || 0), 0);
+
+      if (v.cost_category === "RAW_MATERIAL" || !v.cost_category) {
+        rawMaterialCost += amount;
+        rawMaterialKgPurchased += kg;
+      } else if (v.cost_category === "PROCESSING") {
+        if (v.process_stage === "EP") processingCostEp += amount;
+        else if (v.process_stage === "LOC") processingCostLoc += amount;
+        else processingCostDongPhuy += amount;
+      } else if (v.cost_category === "OVERHEAD") {
+        overheadCost += amount;
+      }
+    }
+
+    const totalBatchRawCost = batches.reduce((sum, b) => sum + Number(b.rawMaterialCost || 0), 0);
+    const totalBatchProcCost = batches.reduce((sum, b) => sum + Number(b.processingCost || 0), 0);
+    const totalBatchOvhCost = batches.reduce((sum, b) => sum + Number(b.overheadCost || 0), 0);
+    const totalBatchBprRecovery = batches.reduce((sum, b) => sum + Number(b.byproductRecovery || 0), 0);
+
+    const effectiveRawCost = Math.max(rawMaterialCost, totalBatchRawCost);
+    const effectiveProcessingCost = Math.max(processingCostEp + processingCostLoc + processingCostDongPhuy, totalBatchProcCost);
+    const effectiveOverheadCost = Math.max(overheadCost, totalBatchOvhCost);
+    const effectiveByproductRecovery = totalBatchBprRecovery > 0 ? totalBatchBprRecovery : Math.round(totalByproductKgProduced * 1200);
+
+    const totalNetProductionCost = effectiveRawCost + effectiveProcessingCost + effectiveOverheadCost - effectiveByproductRecovery;
+    
+    const unitCostPerKg = totalCrudeOilKgProduced > 0 
+      ? Math.round(totalNetProductionCost / totalCrudeOilKgProduced) 
+      : 21450;
+    const unitCostPerLiter = totalCrudeOilLitersProduced > 0 
+      ? Math.round(totalNetProductionCost / totalCrudeOilLitersProduced) 
+      : Math.round(unitCostPerKg / 1.093);
+
+    const avgYieldRate = totalRawKgProcessed > 0
+      ? Number(((totalCrudeOilKgProduced / totalRawKgProcessed) * 100).toFixed(2))
+      : 21.37;
+
+    const targetUnitCost = 21500;
+    const unitCostVariance = unitCostPerKg - targetUnitCost;
+    const varianceStatus = unitCostVariance <= 0 ? "EXCELLENT" : unitCostVariance <= 800 ? "WARNING" : "DANGER";
+
+    const costElements = [
+      {
+        id: "1",
+        code: "CP_RAW",
+        name: "Nguyên liệu vỏ dừa thu mua",
+        category: "RAW_MATERIAL",
+        actualAmount: effectiveRawCost,
+        targetAmount: Math.round(totalCrudeOilKgProduced * (4200 / 0.21)),
+        unitRate: totalCrudeOilKgProduced > 0 ? Math.round(effectiveRawCost / totalCrudeOilKgProduced) : 19600,
+        targetUnitRate: 20000,
+        description: "Tiền thu mua vỏ dừa từ thương lái + cước xe bốc xếp",
+        note: `Thu hồi bình quân ${avgYieldRate}% dầu thô`
+      },
+      {
+        id: "2",
+        code: "CP_POWER",
+        name: "Điện sản xuất máy ép & bơm dầu",
+        category: "PROCESSING",
+        actualAmount: Math.round(effectiveProcessingCost * 0.55),
+        targetAmount: Math.round(totalCrudeOilKgProduced * 950),
+        unitRate: totalCrudeOilKgProduced > 0 ? Math.round((effectiveProcessingCost * 0.55) / totalCrudeOilKgProduced) : 950,
+        targetUnitRate: 1000,
+        description: "Điện 3 pha động cơ ép trục vít & bơm dầu cao áp",
+        note: "Đo theo công tơ xưởng sản xuất"
+      },
+      {
+        id: "3",
+        code: "CP_FILTER",
+        name: "Màng lọc & Vật tư tiêu hao ép/lọc",
+        category: "PROCESSING",
+        actualAmount: Math.round(effectiveProcessingCost * 0.25),
+        targetAmount: Math.round(totalCrudeOilKgProduced * 450),
+        unitRate: totalCrudeOilKgProduced > 0 ? Math.round((effectiveProcessingCost * 0.25) / totalCrudeOilKgProduced) : 450,
+        targetUnitRate: 500,
+        description: "Túi lọc PP, vải lọc khung bản, hóa chất tẩy rửa",
+        note: "Thay túi lọc định kỳ sau mỗi 5 tấn dầu"
+      },
+      {
+        id: "4",
+        code: "CP_MAINT",
+        name: "Bảo dưỡng & Sửa chữa máy ép",
+        category: "PROCESSING",
+        actualAmount: Math.round(effectiveProcessingCost * 0.20),
+        targetAmount: Math.round(totalCrudeOilKgProduced * 350),
+        unitRate: totalCrudeOilKgProduced > 0 ? Math.round((effectiveProcessingCost * 0.20) / totalCrudeOilKgProduced) : 350,
+        targetUnitRate: 400,
+        description: "Hàn đắp trục vít ép, mài dao băm vỏ, mỡ bôi trơn máy",
+        note: "Bảo trì định kỳ hàng tháng"
+      },
+      {
+        id: "5",
+        code: "CP_OVERHEAD",
+        name: "Chi phí Vận hành chung & Thuê xưởng",
+        category: "OVERHEAD",
+        actualAmount: effectiveOverheadCost,
+        targetAmount: Math.round(totalCrudeOilKgProduced * 500),
+        unitRate: totalCrudeOilKgProduced > 0 ? Math.round(effectiveOverheadCost / totalCrudeOilKgProduced) : 500,
+        targetUnitRate: 550,
+        description: "Thuê mặt bằng xưởng ép, nước, quản lý và khấu hao",
+        note: "Phân bổ đều theo sản lượng lít dầu xuất kỳ"
+      },
+      {
+        id: "6",
+        code: "CP_BYPRODUCT",
+        name: "Giảm trừ: Doanh thu bán bã dừa",
+        category: "CREDIT_REDUCTION",
+        actualAmount: -effectiveByproductRecovery,
+        targetAmount: -Math.round(totalByproductKgProduced * 1200),
+        unitRate: totalCrudeOilKgProduced > 0 ? -Math.round(effectiveByproductRecovery / totalCrudeOilKgProduced) : -1700,
+        targetUnitRate: -1600,
+        description: "Thu hồi phụ phẩm bã dừa ép bán cho trại thức ăn gia súc",
+        note: `Giá bán ~1,200 đ/kg (${totalByproductKgProduced.toLocaleString("vi-VN")} kg)`
+      }
+    ];
+
+    return {
+      kpis: {
+        totalNetCost: totalNetProductionCost,
+        totalCrudeOilKg: totalCrudeOilKgProduced,
+        totalCrudeOilLiters: totalCrudeOilLitersProduced,
+        totalRawKg: totalRawKgProcessed,
+        totalByproductKg: totalByproductKgProduced,
+        unitCostPerKg,
+        unitCostPerLiter,
+        targetUnitCost,
+        unitCostVariance,
+        varianceStatus,
+        rawMaterialCostTotal: effectiveRawCost,
+        processingCostTotal: effectiveProcessingCost,
+        overheadCostTotal: effectiveOverheadCost,
+        byproductRecoveryTotal: effectiveByproductRecovery,
+        oilYieldRateAvg: avgYieldRate,
+        batchCount: batches.length
+      },
+      costElements,
+      recentBatches: batches.slice(0, 10).map((b) => ({
+        id: b.id,
+        batchCode: b.batchCode,
+        batchDate: b.batchDate.toISOString().slice(0, 10),
+        supplierName: b.supplierName || "Thương lái lẻ",
+        rawMaterialKg: Number(b.rawMaterialKg),
+        crudeOilKg: Number(b.crudeOilKg),
+        crudeOilLiters: Number(b.crudeOilLiters),
+        oilYieldRate: Number(b.oilYieldRate),
+        rawMaterialCost: Number(b.rawMaterialCost || 0),
+        processingCost: Number(b.processingCost || 0),
+        totalCost: Number(b.totalCost || 0),
+        unitCostPerKg: Number(b.unitCostPerKg || 0)
+      }))
+    };
+  }
+
+  async exportCostReportPackage() {
+    const summary = await this.getCostAccountingSummary();
+    const purchasing = await this.listPurchasingInvoices();
+    const sales = await this.listSalesInvoices();
+    const suppliers = await this.getSupplierYieldPerformance();
+
+    return {
+      exportTimestamp: new Date().toISOString(),
+      workshop: {
+        name: "Xưởng Thu mua & Ép Dầu dừa NetViet Bến Tre",
+        taxCode: "0318999888",
+        address: "Cụm Công nghiệp Long Định, Châu Thành, Bến Tre",
+        manager: "Nguyễn Văn Đạt - Quản đốc Xưởng",
+        currency: "VND"
+      },
+      summary: summary.kpis,
+      costElements: summary.costElements,
+      productionBatches: summary.recentBatches,
+      supplierRankings: suppliers,
+      purchasingInvoices: purchasing,
+      salesInvoices: sales
+    };
+  }
+
+  async listSalesInvoices(query?: {
+    q?: string;
+    status?: string;
+    paymentStatus?: string;
+    productType?: string;
+  }) {
+    const context = await this.ensureDefaultContext();
+    const search = query?.q?.trim();
+
+    const vouchers = await this.prisma.voucher.findMany({
+      where: {
+        organizationId: context.organization.id,
+        voucherType: "HDB",
+        ...(search
+          ? {
+              OR: [
+                { voucherNo: { contains: search } },
+                { description: { contains: search } },
+                { tax_code: { contains: search } }
+              ]
+            }
+          : {})
+      },
+      include: {
+        lines: true
+      },
+      orderBy: { voucherDate: "desc" }
+    });
+
+    const results = [];
+    for (const v of vouchers) {
+      const payments = await this.prisma.voucher.findMany({
+        where: {
+          organizationId: context.organization.id,
+          reference_invoice_no: v.voucherNo,
+          voucherType: { in: ["PT", "BC"] }
+        },
+        select: {
+          voucherNo: true,
+          voucherType: true,
+          total_debit: true,
+          voucherDate: true
+        }
+      });
+
+      const paidAmount = payments.reduce((sum, p) => sum + Number(p.total_debit || 0), 0);
+      const isPaid = paidAmount >= Number(v.total_debit || 0);
+
+      const firstLine = v.lines.find((l) => l.quantity && Number(l.quantity) > 0) || v.lines[0];
+      const quantity = firstLine?.quantity ? Number(firstLine.quantity) : 0;
+      const unitPrice = firstLine?.unit_price ? Number(firstLine.unit_price) : 0;
+      const vatRate = (v.lines.find((l) => l.tax_rate && Number(l.tax_rate) > 0)?.tax_rate)
+        ? Number(v.lines.find((l) => l.tax_rate && Number(l.tax_rate) > 0)?.tax_rate)
+        : (firstLine?.tax_rate ? Number(firstLine.tax_rate) : 0);
+
+      const productType = (v.cost_category || firstLine?.cost_category || "CRUDE_OIL") as "CRUDE_OIL" | "BYPRODUCT";
+      const productName = productType === "CRUDE_OIL" ? "Dầu dừa thô xuất xưởng" : "Bã dừa ép phụ phẩm";
+      const unit = productType === "CRUDE_OIL" ? "Kg" : "Kg";
+
+      const subtotal = Math.round(quantity * unitPrice);
+      const vatAmount = Math.round((subtotal * vatRate) / 100);
+      const totalAmount = Number(v.total_debit || subtotal + vatAmount);
+      const customerName = v.supplier_name || (v.description?.split("cho khách ")[1]?.split(" (")[0]) || "Khách mua dầu";
+
+      const item = {
+        id: v.id,
+        voucherNo: v.voucherNo,
+        voucherDate: v.voucherDate.toISOString().slice(0, 10),
+        customerName,
+        taxCode: v.tax_code || undefined,
+        invoiceSeries: v.invoice_series || undefined,
+        invoiceTemplate: v.invoice_template || undefined,
+        docType: (v.doc_type || "VAT_INVOICE") as "VAT_INVOICE" | "SALES_RECEIPT",
+        productType,
+        productName,
+        unit,
+        quantity,
+        unitPrice,
+        subtotal,
+        vatRate,
+        vatAmount,
+        totalAmount,
+        batchId: v.batch_id || undefined,
+        description: v.description || undefined,
+        paymentStatus: isPaid ? ("PAID" as const) : ("UNPAID" as const),
+        paidAmount,
+        paymentVouchers: payments.map((p) => ({
+          voucherNo: p.voucherNo,
+          voucherType: p.voucherType,
+          amount: Number(p.total_debit || 0),
+          date: p.voucherDate.toISOString().slice(0, 10)
+        }))
+      };
+
+      if (query?.paymentStatus && item.paymentStatus !== query.paymentStatus) continue;
+      if (query?.productType && item.productType !== query.productType) continue;
+
+      results.push(item);
+    }
+
+    return results;
+  }
+
+  async createSalesInvoice(input: CreateSalesInvoiceInput) {
+    const context = await this.ensureDefaultContext();
+
+    const voucher = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.voucher.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          voucherType: "HDB",
+          voucherNo: input.voucherNo
+        }
+      });
+
+      if (existing) {
+        throw new ConflictException(`Số hóa đơn ${input.voucherNo} đã tồn tại trong hệ thống`);
+      }
+
+      const customerId = await this.ensureCustomer(
+        tx,
+        context.organization.id,
+        input.customerName,
+        input.taxCode,
+        input.customerCode
+      );
+
+      const arAccountId = await this.ensureAccount(tx, context.organization.id, "131");
+      const revenueAccountId = await this.ensureAccount(tx, context.organization.id, "511");
+
+      const desc = input.description || (input.productType === "CRUDE_OIL"
+        ? `Xuất bán dầu dừa thô cho khách ${input.customerName} (${input.quantity} ${input.unit || "kg"})`
+        : `Xuất bán bã dừa ép phụ phẩm cho khách ${input.customerName} (${input.quantity} ${input.unit || "kg"})`);
+
+      const created = await tx.voucher.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          voucherType: "HDB",
+          voucherNo: input.voucherNo,
+          voucherDate: new Date(input.voucherDate),
+          posting_date: new Date(input.voucherDate),
+          currencyCode: "VND",
+          exchange_rate: 1,
+          status: "approved",
+          approval_status: "approved",
+          description: desc,
+          counterparty_type: CounterpartyType.customer,
+          reference_invoice_no: input.voucherNo,
+          batch_id: input.batchId || null,
+          doc_type: input.docType,
+          cost_category: input.productType,
+          invoice_series: input.invoiceSeries || null,
+          invoice_template: input.invoiceTemplate || null,
+          tax_code: input.taxCode || null,
+          supplier_name: input.customerName,
+          total_debit: input.totalAmount,
+          total_credit: input.totalAmount,
+          createdBy: context.user.id,
+          updated_by: context.user.id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: created.id,
+          lineNo: 1,
+          account_id: arAccountId,
+          customer_id: customerId,
+          debit_amount: input.totalAmount,
+          credit_amount: 0,
+          quantity: input.quantity,
+          unit_price: input.unitPrice,
+          tax_rate: input.vatRate || null,
+          cost_category: input.productType,
+          memo: desc,
+          created_at: new Date()
+        }
+      });
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: created.id,
+          lineNo: 2,
+          account_id: revenueAccountId,
+          customer_id: customerId,
+          debit_amount: 0,
+          credit_amount: input.subtotal,
+          quantity: input.quantity,
+          unit_price: input.unitPrice,
+          tax_rate: input.vatRate || null,
+          cost_category: input.productType,
+          memo: `Doanh thu xuất bán ${input.productType === "CRUDE_OIL" ? "dầu dừa thô" : "bã dừa"}`,
+          created_at: new Date()
+        }
+      });
+
+      if (input.vatAmount && input.vatAmount > 0) {
+        const vatAccountId = await this.ensureAccount(tx, context.organization.id, "3331");
+        await tx.voucherLine.create({
+          data: {
+            id: randomUUID(),
+            voucherId: created.id,
+            lineNo: 3,
+            account_id: vatAccountId,
+            customer_id: customerId,
+            debit_amount: 0,
+            credit_amount: input.vatAmount,
+            tax_rate: input.vatRate || null,
+            cost_category: input.productType,
+            memo: `Thuế GTGT đầu ra HĐ ${input.voucherNo}`,
+            created_at: new Date()
+          }
+        });
+      }
+
+      await this.createAuditEvent(tx, {
+        organizationId: context.organization.id,
+        actorUserId: context.user.id,
+        entityName: "sales_invoice",
+        entityId: created.id,
+        action: "sales_invoice_created",
+        afterPayload: {
+          voucherNo: created.voucherNo,
+          docType: input.docType,
+          totalAmount: input.totalAmount,
+          customerName: input.customerName
+        }
+      });
+
+      return created;
+    });
+
+    return voucher;
+  }
+
+  async createPaymentForSalesInvoice(
+    voucherId: string,
+    input: {
+      paymentChannel: "cash" | "bank";
+      cashBookCode?: string;
+      bankAccountCode?: string;
+      description?: string;
+    }
+  ) {
+    const context = await this.ensureDefaultContext();
+
+    return this.prisma.$transaction(async (tx) => {
+      const invoice = await tx.voucher.findUnique({
+        where: { id: voucherId },
+        include: { lines: true }
+      });
+
+      if (!invoice) {
+        throw new NotFoundException("Không tìm thấy hóa đơn bán hàng");
+      }
+
+      const receiptVoucherType = input.paymentChannel === "cash" ? "PT" : "BC";
+      const totalAmount = Number(invoice.total_debit || 0);
+
+      const existingReceipts = await tx.voucher.count({
+        where: {
+          organizationId: context.organization.id,
+          voucherType: receiptVoucherType
+        }
+      });
+      const voucherNo = `${receiptVoucherType}-${String(existingReceipts + 1).padStart(4, "0")}`;
+
+      const arAccountId = await this.ensureAccount(tx, context.organization.id, "131");
+      let assetAccountId: string;
+
+      if (input.paymentChannel === "cash") {
+        assetAccountId = await this.ensureAccount(tx, context.organization.id, "1111");
+      } else {
+        assetAccountId = await this.ensureAccount(tx, context.organization.id, "1121");
+      }
+
+      const desc = input.description || `Thu tiền bán hàng theo hóa đơn ${invoice.voucherNo} từ khách ${invoice.supplier_name || ""}`;
+
+      const paymentVoucher = await tx.voucher.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          voucherType: receiptVoucherType,
+          voucherNo,
+          voucherDate: new Date(),
+          posting_date: new Date(),
+          currencyCode: "VND",
+          exchange_rate: 1,
+          status: "approved",
+          approval_status: "approved",
+          description: desc,
+          payment_channel: input.paymentChannel === "cash" ? PaymentChannel.cash : PaymentChannel.bank,
+          counterparty_type: CounterpartyType.customer,
+          reference_invoice_no: invoice.voucherNo,
+          total_debit: totalAmount,
+          total_credit: totalAmount,
+          supplier_name: invoice.supplier_name,
+          tax_code: invoice.tax_code,
+          createdBy: context.user.id,
+          updated_by: context.user.id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: paymentVoucher.id,
+          lineNo: 1,
+          account_id: assetAccountId,
+          debit_amount: totalAmount,
+          credit_amount: 0,
+          memo: desc,
+          created_at: new Date()
+        }
+      });
+
+      await tx.voucherLine.create({
+        data: {
+          id: randomUUID(),
+          voucherId: paymentVoucher.id,
+          lineNo: 2,
+          account_id: arAccountId,
+          debit_amount: 0,
+          credit_amount: totalAmount,
+          memo: `Cấn trừ công nợ phải thu HĐ ${invoice.voucherNo}`,
+          created_at: new Date()
+        }
+      });
+
+      return paymentVoucher;
+    });
+  }
 }
 
 type BaseLineInput = {
@@ -1303,4 +2472,70 @@ type MatchReconciliationInput = {
   bankStatementLineId: string;
   matchedAmount: number;
   note?: string;
+};
+
+export type CreatePurchasingInvoiceInput = {
+  docType: "PURCHASE_SLIP" | "VAT_INVOICE";
+  voucherNo: string;
+  voucherDate: string;
+  supplierName: string;
+  supplierCode?: string;
+  taxCode?: string;
+  invoiceSeries?: string;
+  invoiceTemplate?: string;
+  costCategory: "RAW_MATERIAL" | "PROCESSING" | "OVERHEAD";
+  processStage?: "EP" | "LOC" | "DONG_PHUY";
+  allocationMode: "BATCH" | "PERIOD";
+  batchId?: string;
+  vehiclePlate?: string;
+  grossWeightKg?: number;
+  tareWeightKg?: number;
+  netWeightKg?: number;
+  unitPrice?: number;
+  handlingFee?: number;
+  subtotal: number;
+  vatRate?: number;
+  vatAmount?: number;
+  totalAmount: number;
+  description?: string;
+  createdBy?: string;
+};
+
+export type CreateProductionBatchInput = {
+  batchCode: string;
+  batchDate: string;
+  supplierName?: string;
+  supplierId?: string;
+  rawMaterialKg: number;
+  crudeOilKg: number;
+  byproductKg?: number;
+  rawMaterialCost?: number;
+  processingCost?: number;
+  overheadCost?: number;
+  byproductRecovery?: number;
+  status?: "IN_PROGRESS" | "COMPLETED";
+  notes?: string;
+  createdBy?: string;
+};
+
+export type CreateSalesInvoiceInput = {
+  docType: "VAT_INVOICE" | "SALES_RECEIPT";
+  voucherNo: string;
+  voucherDate: string;
+  customerName: string;
+  customerCode?: string;
+  taxCode?: string;
+  invoiceSeries?: string;
+  invoiceTemplate?: string;
+  productType: "CRUDE_OIL" | "BYPRODUCT";
+  batchId?: string;
+  quantity: number;
+  unit?: string;
+  unitPrice: number;
+  subtotal: number;
+  vatRate?: number;
+  vatAmount?: number;
+  totalAmount: number;
+  description?: string;
+  createdBy?: string;
 };

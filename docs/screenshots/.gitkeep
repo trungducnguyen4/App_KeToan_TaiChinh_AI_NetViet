@@ -1,0 +1,4 @@
+# Visual Proof Screenshots Directory
+Place all Tier 3 & Tier 4 PNG screenshots and animated GIF walkthroughs here.
+Embed directly into GitHub PR descriptions using:
+`![Visual Proof](https://raw.githubusercontent.com/trungducnguyen4/App_KeToan_TaiChinh_AI_NetViet/<branch>/docs/screenshots/<filename>.gif)`

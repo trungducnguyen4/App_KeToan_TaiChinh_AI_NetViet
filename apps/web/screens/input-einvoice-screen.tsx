@@ -34,22 +34,22 @@ export default function InputEInvoiceScreen() {
             <div className="eyebrow">Hóa đơn điện tử</div>
             <h2 className="hero-title">{inputEInvoiceScreen.title}</h2>
             <p className="hero-copy">
-              Màn này dùng layout gọn hơn Workit: một thanh công cụ ngắn phía trên, một menu hành động nhỏ, và bảng nhập liệu nằm dưới.
+              Nhập nhanh hóa đơn GTGT đầu vào, phiếu cân mua vỏ dừa từ thương lái và hóa đơn chi phí sản xuất (điện, màng lọc, bảo trì).
             </p>
             <div className="hero-actions">
               <button className="button primary" type="button">
                 <AppIcon name="FileText" />
-                Nhập HĐĐT đầu vào
+                Thêm hóa đơn / Phiếu cân
               </button>
               <button className="button" type="button">
                 <AppIcon name="Search" />
-                HĐĐT chờ duyệt
+                Hóa đơn chờ duyệt
               </button>
             </div>
           </div>
           <div className="sync-panel">
-            <strong>HĐĐT</strong>
-            <span>Các hành động được gom thành chip gọn, không dùng dropdown nặng như ảnh gốc.</span>
+            <strong style={{ background: "#c77d14", color: "#fff" }}>Đầu vào</strong>
+            <span>Tự động phân loại chi phí (Nguyên liệu, Ép/Lọc, Vận hành) và chống nhập trùng hóa đơn.</span>
           </div>
         </section>
 
