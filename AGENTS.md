@@ -4,49 +4,55 @@
 
 ---
 
-## 1. Modular Engineering Rules
+## 1. Language Policy & Token Optimization
 
-All engineering rules, workflows, and invariants are organized under `.agents/rules/`:
+To maximize token efficiency, eliminate prompt drift, and preserve model context capacity:
+- **Rules, Skills, Harness Guidelines, Code Comments & Prompts**: MUST be authored in **English**.
+- **Pull Request Output (PR Description & Review Notes)**: MUST be generated in **Vietnamese** for human reviewers.
+- **Application User Interface (UI)**: Accented **Vietnamese** (100% tiếng Việt có dấu) with localized formats (VND, kg/tấn, `tabular-nums`).
+
+---
+
+## 2. Modular Engineering Rules (`.agents/rules/`)
 
 | Rule Module | Scope & Purpose | Link |
 | :--- | :--- | :--- |
-| **Core Principles** | SSOT, standard language policy (EN tech specs / VI user UI), minimal invasive changes | [`.agents/rules/core.md`](.agents/rules/core.md) |
-| **Git Flow & Boundaries** | Branching model (`NV-xxx`), SemVer, PR specification template, safe autonomous boundaries | [`.agents/rules/git-workflow.md`](.agents/rules/git-workflow.md) |
+| **Core Principles** | SSOT, standard language policy, minimal invasive code modifications | [`.agents/rules/core.md`](.agents/rules/core.md) |
+| **Git Flow & Boundaries** | Branching model (`NV-xxx`), Conventional Commits, PR protocol, agent safety boundaries | [`.agents/rules/git-workflow.md`](.agents/rules/git-workflow.md) |
 | **Risk-Based Verification** | 4-Tier verification protocol (Tier 1 Trivial ➔ Tier 4 Full Flow/Perf), visual proofs | [`.agents/rules/verification.md`](.agents/rules/verification.md) |
 
 ---
 
-## 2. Risk-Based Verification Protocol (4 Trụ Cột)
+## 3. Risk-Based Verification Protocol Summary (4 Pillars)
 
-Mọi thay đổi code hoặc tính năng mới bắt buộc phải chứng minh bằng **bằng chứng cụ thể** tương ứng với 4 Tier:
+Every code change must be proven with tangible evidence proportional to its risk tier:
 
-- **Tier 1 (Trivial / Docs / Typo)**: Syntax & type check (`npm run typecheck`), clean `git diff`. Visual proof không bắt buộc.
+- **Tier 1 (Trivial / Docs / Typo)**: Syntax & type check (`npm run typecheck`), clean `git diff`. Visual proof optional.
 - **Tier 2 (Backend / Logic / DB / Security)**: Tier 1 + Build pass 100% (`npm run api:build`) + Live API runtime verification (`HTTP status 200/201/400`).
-- **Tier 3 (Static UI / Layout)**: Tier 2 + Live Dev Server screenshot có đầy đủ Layout Shell (Sidebar 280px, Header). CẤM tạo file HTML mock preview tĩnh.
-- **Tier 4 (Complex User Flow / Latency / Cost Engine)**: Tier 3 + Animated GIF hoặc Screen Recording (`.mp4`) mô phỏng trọn vẹn thao tác người dùng, nhúng trực tiếp bằng Markdown Image vào PR description trên GitHub.
+- **Tier 3 (Static UI / Layout)**: Tier 2 + Live Dev Server screenshot with full Layout Shell (Sidebar 280px + Topbar). Prohibited: mock HTML preview files.
+- **Tier 4 (Complex User Flow / Latency / Cost Engine)**: Tier 3 + Animated GIF or Screen Recording (`.mp4`) simulating the complete interaction journey, embedded directly via raw Markdown Image into the PR description on GitHub.
 
 ---
 
-## 3. Skills Directory (`.agents/skills/`)
+## 4. Skills Directory (`.agents/skills/`)
 
-Các bộ kỹ năng chuyên biệt sẵn sàng cho Agent thực thi:
-- **`pull-request`**: Quy chuẩn 5 bước mở Pull Request, kiểm tra ranh giới Git an toàn, tự động điền template [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md).
-- **`verification-visual-proof`**: Tiêu chuẩn chụp ảnh và quay màn hình từ Dev Server thật, cấm mock HTML tĩnh, đóng gói Animated GIF qua `scripts/create_visual_gif.py` và nhúng link trực tiếp vào PR.
+- **`pull-request`**: 5-step PR workflow, Git safety boundaries, automated filling of [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) in Vietnamese.
+- **`verification-visual-proof`**: Standards for live dev server captures, ban on mock HTML files, packaging animated GIFs via `scripts/create_visual_gif.py`, and direct PR embedding.
 
 ---
 
-## 4. ERP Domain Invariants & UX/UI Standards
+## 5. ERP Domain Invariants & UX/UI Standards
 
-1. **Chuẩn Icon Hệ thống: Đồng bộ theo Sidebar (`AppIcon`)**:
-   - **CẤM DÙNG CARTOON EMOJI** (`🥥`, `🌾`, `⚙️`, `🏆`, `📦`, `🧮`, `⚡`, `💰`, `💵`, `🏦`, `⚖️`, `🧾`, `🏢`, `🛢️`...) trên toàn bộ nút, tab, header, modal và badge.
-   - Bắt buộc dùng component `<AppIcon name="..." />` lấy icon từ thư viện Lucide React đồng nhất với Sidebar, nét vẽ `strokeWidth: 2.1`.
-2. **Chuẩn Mật độ Dữ liệu Doanh nghiệp (Data Density)**:
-   - Font bảng số liệu bắt buộc áp dụng CSS `tabular-nums` (`font-variant-numeric: tabular-nums`).
-   - Mọi cột tiền tệ (VND) và khối lượng (kg, Tấn, Lít) bắt buộc **căn lề phải** (`.text-right`).
-3. **Tiếng Việt Có Dấu 100%**:
-   - Tất cả các nhãn, tiêu đề, trạng thái, modal, bảng dữ liệu đều phải là tiếng Việt có dấu chuẩn nghiệp vụ kế toán/sản xuất.
-4. **Công thức Giá thành Dầu Dừa Thô (Realtime)**:
-   $$\text{Giá thành 1 kg dầu thô} = \frac{\sum \text{CP Nguyên liệu} + \sum \text{CP Ép/Lọc} + \sum \text{CP Chung} - \sum \text{Thu hồi Bã dừa}}{\text{Tổng sản lượng kg Dầu dừa thô}}$$
-5. **Liên kết 1-click Thu Chi (Voucher Engine)**:
-   - Mua hàng (phiếu cân vỏ dừa, chi phí VAT) ➔ Sinh Phiếu chi tiền mặt (PC) hoặc Báo nợ ngân hàng (BN).
-   - Bán hàng (dầu dừa thô, bã dừa) ➔ Sinh Phiếu thu tiền mặt (PT) hoặc Báo có ngân hàng (BC).
+1. **System Icon Standard: Aligned with Sidebar (`AppIcon`)**:
+   - **STRICT BAN ON CARTOON EMOJIS** (`🥥`, `🌾`, `⚙️`, `🏆`, `📦`, `🧮`, `⚡`, `💰`, `💵`, `🏦`, `⚖️`, `🧾`, `🏢`, `🛢️`...) across all buttons, tabs, headers, modals, and badges.
+   - Use `<AppIcon name="..." />` based on Lucide React (`strokeWidth: 2.1`) consistently across all screens.
+2. **Enterprise Data Density**:
+   - Data table numbers must apply CSS `tabular-nums` (`font-variant-numeric: tabular-nums`).
+   - All currency (VND) and quantity columns (kg, Tấn, Lít) must be strictly **right-aligned** (`.text-right`).
+3. **100% Accented Vietnamese in UI**:
+   - All user-facing labels, titles, status pills, dialogs, and table headers must use standard accented Vietnamese.
+4. **Crude Coconut Oil Realtime Cost Accounting**:
+   $$\text{Unit Cost per kg Oil} = \frac{\sum \text{Raw Materials} + \sum \text{Processing (Press/Filter)} + \sum \text{Overhead} - \sum \text{Byproduct Recovery}}{\text{Total Crude Coconut Oil Output (kg)}}$$
+5. **1-Click Cash / Bank Voucher Linking**:
+   - Purchasing (weight slips, VAT expenses) ➔ 1-click Payment Voucher (PC) or Bank Debit Advice (BN).
+   - Sales (crude oil, coconut meal byproduct) ➔ 1-click Receipt Voucher (PT) or Bank Credit Advice (BC).
