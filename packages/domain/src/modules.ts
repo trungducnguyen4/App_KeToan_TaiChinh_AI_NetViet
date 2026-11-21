@@ -2,121 +2,117 @@ import type { CashDashboardMetric, CashVoucherScreenSpec, KpiCard, ScreenSpec, W
 
 export const workitModules: WorkitModule[] = [
   {
+    key: "purchasing",
+    code: "60",
+    name: "Hóa đơn Vào & Thu mua",
+    description: "Bảng kê thu mua vỏ dừa từ thương lái (phiếu cân), hóa đơn chi phí sản xuất và quản lý tệp đính kèm.",
+    icon: "ShoppingCart",
+    accent: "#c77d14",
+    status: "ready",
+    route: "/modules/purchasing",
+    primaryScreens: ["Phiếu cân thu mua vỏ dừa", "Hóa đơn chi phí VAT", "Bảng kê thu mua thương lái"]
+  },
+  {
+    key: "sales",
+    code: "40",
+    name: "Hóa đơn Đầu ra",
+    description: "Hóa đơn xuất bán dầu dừa thô, bán phụ phẩm bã dừa, quản lý hóa đơn GTGT điện tử.",
+    icon: "TrendingUp",
+    accent: "#e05d38",
+    status: "ready",
+    route: "/modules/sales",
+    primaryScreens: ["Hóa đơn bán dầu dừa thô", "Hóa đơn bán bã dừa phụ phẩm", "Bảng kê bán hàng"]
+  },
+  {
+    key: "inventory",
+    code: "62",
+    name: "Kho & Công đoạn Ép/Lọc",
+    description: "Nhập vỏ dừa thô, chuyển công đoạn ép/lọc, nhập kho dầu dừa thô và đo lường tỷ lệ thu hồi.",
+    icon: "Warehouse",
+    accent: "#0d9488",
+    status: "ready",
+    route: "/modules/inventory",
+    primaryScreens: ["Mẻ ép & Lọc dầu", "Kho vỏ dừa", "Kho dầu dừa thô", "Kho bã dừa"]
+  },
+  {
+    key: "cash",
+    code: "32",
+    name: "Thu chi & Thanh toán",
+    description: "Phiếu chi thanh toán thương lái, phiếu thu tiền bán dầu, tạm ứng và ủy nhiệm chi.",
+    icon: "WalletCards",
+    accent: "#0f7bbf",
+    status: "ready",
+    route: "/modules/cash",
+    primaryScreens: ["Phiếu chi tiền mặt", "Phiếu thu tiền mặt", "Báo nợ ngân hàng", "Báo có ngân hàng"]
+  },
+  {
+    key: "receivables",
+    code: "38",
+    name: "Công nợ Thương lái & KH",
+    description: "Công nợ phải trả thương lái thu mua vỏ dừa và công nợ phải thu khách mua dầu dừa.",
+    icon: "ReceiptText",
+    accent: "#5967d8",
+    status: "ready",
+    route: "/modules/receivables",
+    primaryScreens: ["Công nợ phải trả thương lái", "Công nợ phải thu khách hàng", "Cấn trừ công nợ"]
+  },
+  {
     key: "accounting",
     code: "50",
-    name: "Kế toán",
-    description: "Sổ cái, phiếu hạch toán, kết chuyển, báo cáo tài chính.",
+    name: "Tổng hợp Chi phí & Báo cáo",
+    description: "Tính giá thành 1 kg/lít dầu thô, tổng hợp chi phí sản xuất, đóng gói bộ chứng từ gửi công ty.",
     icon: "Calculator",
     accent: "#15936b",
     status: "ready",
     route: "/modules/accounting",
     primaryScreens: [
-      "Phiếu hạch toán",
-      "Quản lý khế ước",
-      "Thông báo thuế",
-      "Quản lý HĐĐT đầu vào",
-      "Kết chuyển cuối kỳ",
-      "Bút toán kết chuyển cuối kỳ",
-      "Khai báo số dư TK ban đầu",
-      "Khai báo bút toán kết chuyển"
+      "Bảng tính Giá thành Dầu thô",
+      "Tổng hợp Chi phí Sản xuất",
+      "Đóng gói Kỳ báo cáo (Export)",
+      "Phiếu hạch toán"
     ]
-  },
-  {
-    key: "cash",
-    code: "32",
-    name: "Thu chi",
-    description: "Đề nghị thanh toán, tạm ứng, phiếu thu chi và ngân hàng.",
-    icon: "WalletCards",
-    accent: "#0f7bbf",
-    status: "ready",
-    route: "/modules/cash",
-    primaryScreens: ["Phiếu thu", "Phiếu chi", "Báo nợ ngân hàng", "Báo có ngân hàng", "Sao kê", "Đối chiếu"]
-  },
-  {
-    key: "receivables",
-    code: "38",
-    name: "Công nợ",
-    description: "Phải thu, phải trả, tuổi nợ, hạn mức và kế hoạch dòng tiền.",
-    icon: "ReceiptText",
-    accent: "#5967d8",
-    status: "scaffold",
-    route: "/modules/receivables",
-    primaryScreens: ["Công nợ phải thu", "Công nợ phải trả", "Cấn trừ công nợ"]
-  },
-  {
-    key: "inventory",
-    code: "62",
-    name: "Tồn kho",
-    description: "Nhập xuất tồn, điều chuyển kho và cảnh báo tồn min/max.",
-    icon: "Warehouse",
-    accent: "#0d9488",
-    status: "scaffold",
-    route: "/modules/inventory",
-    primaryScreens: ["Đề nghị nhập kho", "Đề nghị xuất kho", "Điều chuyển kho"]
-  },
-  {
-    key: "sales",
-    code: "40",
-    name: "Bán hàng",
-    description: "Báo giá, đơn hàng, hợp đồng, giao hàng và hóa đơn bán.",
-    icon: "TrendingUp",
-    accent: "#e05d38",
-    status: "scaffold",
-    route: "/modules/sales",
-    primaryScreens: ["Đơn hàng bán", "Hợp đồng bán", "Hóa đơn bán hàng"]
-  },
-  {
-    key: "purchasing",
-    code: "60",
-    name: "Mua hàng",
-    description: "Đề nghị mua sắm, NCC báo giá, đơn hàng và hóa đơn mua.",
-    icon: "ShoppingCart",
-    accent: "#c77d14",
-    status: "scaffold",
-    route: "/modules/purchasing",
-    primaryScreens: ["Đề nghị mua sắm", "Đơn hàng mua", "Hóa đơn mua hàng"]
   },
   {
     key: "masterData",
     code: "90",
     name: "Danh mục",
-    description: "Tài khoản, khách hàng, NCC, hàng hóa, kho và nhân viên.",
+    description: "Thương lái thu mua, khách hàng mua dầu, vật tư màng lọc, kho bãi và tài khoản.",
     icon: "Database",
     accent: "#276749",
-    status: "syncing",
+    status: "ready",
     route: "/modules/master-data",
-    primaryScreens: ["Tài khoản", "Khách hàng", "Nhà cung cấp", "Hàng hóa"]
+    primaryScreens: ["Thương lái", "Khách hàng", "Vật tư & Hàng hóa", "Kho bãi", "Tài khoản ngân hàng"]
   },
   {
     key: "system",
     code: "95",
     name: "Hệ thống",
-    description: "Người dùng, vai trò, cấu hình đồng bộ, audit và AI jobs.",
+    description: "Người dùng, phân quyền, cấu hình xưởng, audit log và sao lưu.",
     icon: "ShieldCheck",
     accent: "#334155",
-    status: "scaffold",
+    status: "ready",
     route: "/modules/system",
-    primaryScreens: ["Người dùng", "Vai trò", "Đồng bộ Workit", "Nhật ký audit"]
+    primaryScreens: ["Người dùng", "Vai trò", "Cấu hình xưởng", "Nhật ký audit"]
   }
 ];
 
 export const accountingKpis: KpiCard[] = [
-  { label: "ROA", value: "0.0%", delta: "Theo số liệu demo", tone: "green" },
-  { label: "ROE", value: "0.0%", delta: "Chờ đồng bộ Workit", tone: "blue" },
-  { label: "Biên lợi nhuận dòng", value: "0.0%", delta: "Tháng hiện tại", tone: "blue" },
-  { label: "Biên lợi nhuận gộp", value: "0.0%", delta: "Theo kết quả kinh doanh", tone: "green" },
-  { label: "Tỷ lệ nợ trên vốn chủ", value: "0.0", delta: "Theo dõi rủi ro tài chính", tone: "red" },
-  { label: "Tỷ lệ nợ trên tổng tài sản", value: "0.0", delta: "Cân đối theo báo cáo", tone: "amber" },
-  { label: "Dòng tiền thuần từ HĐKD", value: "0", delta: "Luồng tiền từ hệ thống", tone: "blue" },
-  { label: "Hệ số thanh toán hiện hành", value: "1.00", delta: "Ngưỡng an toàn", tone: "green" },
-  { label: "Hệ số thanh toán nhanh", value: "1.00", delta: "Đang theo dõi", tone: "gray" }
+  { label: "Sản lượng vỏ dừa ép", value: "125.4 Tấn", delta: "Trong kỳ hiện tại", tone: "blue" },
+  { label: "Sản lượng dầu dừa thô", value: "26.8 Tấn", delta: "~29,500 Lít thu hồi", tone: "green" },
+  { label: "Tỷ lệ thu hồi dầu", value: "21.37%", delta: "Định mức chuẩn: 20-23%", tone: "green" },
+  { label: "Chi phí nguyên liệu", value: "4,200 đ/kg", delta: "Bình quân vỏ dừa", tone: "amber" },
+  { label: "Chi phí ép & lọc", value: "1,850 đ/kg", delta: "Điện + màng lọc + máy", tone: "blue" },
+  { label: "Giá thành 1 kg dầu thô", value: "21,450 đ", delta: "Tính theo thời gian thực", tone: "green" },
+  { label: "Doanh thu xuất bán", value: "804.0 Tr", delta: "Dầu dừa thô xuất xưởng", tone: "blue" },
+  { label: "Thu hồi phụ phẩm", value: "38.2 Tr", delta: "Bã dừa ép làm thức ăn/phân", tone: "green" },
+  { label: "Biên lợi nhuận gộp", value: "18.5%", delta: "Ước tính theo mẻ sản xuất", tone: "green" }
 ];
 
 export const cashDashboardMetrics: CashDashboardMetric[] = [
-  { label: "So du quy tien mat", value: "2.48B", hint: "Tong hop PT/PC trong ky", tone: "green" },
-  { label: "So du tien gui", value: "8.14B", hint: "Tong hop BN/BC va sao ke", tone: "blue" },
-  { label: "Dong can doi cho doi chieu", value: "12", hint: "Statement line chua khop", tone: "amber" },
-  { label: "Chung tu cho duyet", value: "9", hint: "M2 can xu ly trong ngay", tone: "red" }
+  { label: "Quỹ tiền mặt xưởng", value: "345.5 Tr", hint: "Chi trả tiền xe vỏ dừa tại xưởng", tone: "green" },
+  { label: "Tài khoản ngân hàng", value: "1.82 Tỷ", hint: "Chuyển khoản thương lái & nhận tiền dầu", tone: "blue" },
+  { label: "Công nợ thương lái đến hạn", value: "68.0 Tr", hint: "2 chuyến vỏ dừa đang chờ cân", tone: "amber" },
+  { label: "Chứng từ chờ duyệt", value: "4", hint: "Hóa đơn tiền điện & 3 phiếu cân", tone: "red" }
 ];
 
 export const journalVoucherScreen: ScreenSpec = {
@@ -259,81 +255,81 @@ export const inputEInvoiceScreen: ScreenSpec = {
 };
 
 const cashCommonFields = [
-  { key: "voucherDate", label: "Ngay CT", type: "date", required: true, width: "sm" },
-  { key: "voucherNo", label: "So CT", type: "text", required: true, width: "md" },
-  { key: "currency", label: "Loai tien", type: "currency", required: true, width: "sm" },
-  { key: "counterpartyCode", label: "Ma doi tuong", type: "lookup", width: "sm" },
-  { key: "counterpartyName", label: "Ten doi tuong", type: "text", width: "lg" },
-  { key: "referenceInvoiceNo", label: "Hoa don tham chieu", type: "text", width: "md" },
-  { key: "content", label: "Noi dung", type: "textarea", required: true, width: "xl" }
+  { key: "voucherDate", label: "Ngày CT", type: "date", required: true, width: "sm" },
+  { key: "voucherNo", label: "Số CT", type: "text", required: true, width: "md" },
+  { key: "currency", label: "Loại tiền", type: "currency", required: true, width: "sm" },
+  { key: "counterpartyCode", label: "Mã đối tượng", type: "lookup", width: "sm" },
+  { key: "counterpartyName", label: "Tên đối tượng", type: "text", width: "lg" },
+  { key: "referenceInvoiceNo", label: "Hóa đơn tham chiếu", type: "text", width: "md" },
+  { key: "content", label: "Nội dung", type: "textarea", required: true, width: "xl" }
 ] as const;
 
 export const cashVoucherScreens: CashVoucherScreenSpec[] = [
   {
     key: "cash-receipts",
-    title: "Phieu thu tien mat",
+    title: "Phiếu thu tiền mặt",
     moduleKey: "cash",
     route: "/modules/cash/receipts",
-    description: "Quan ly PT, thu tien mat, doi tuong cong no va thu tien theo hoa don.",
+    description: "Quản lý PT, thu tiền mặt, đối tượng công nợ và thu tiền theo hóa đơn.",
     voucherType: "PT",
     paymentChannel: "cash",
-    counterpartyLabel: "Nguoi nop / khach hang",
-    amountLabel: "So tien thu",
-    listColumns: ["Ma CT", "So", "Ngay", "Quy", "Doi tuong", "Noi dung", "So tien", "Trang thai"],
+    counterpartyLabel: "Người nộp / Khách hàng",
+    amountLabel: "Số tiền thu",
+    listColumns: ["Mã CT", "Số", "Ngày", "Quỹ", "Đối tượng", "Nội dung", "Số tiền", "Trạng thái"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "cashBookCode", label: "So quy", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "cashBookCode", label: "Sổ quỹ", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   },
   {
     key: "cash-payments",
-    title: "Phieu chi tien mat",
+    title: "Phiếu chi tiền mặt",
     moduleKey: "cash",
     route: "/modules/cash/payments",
-    description: "Quan ly PC, chi tien mat cho NCC, tam ung va hoan ung.",
+    description: "Quản lý PC, chi tiền mặt cho thương lái/NCC, tạm ứng và hoàn ứng.",
     voucherType: "PC",
     paymentChannel: "cash",
-    counterpartyLabel: "Nguoi nhan / nha cung cap",
-    amountLabel: "So tien chi",
-    listColumns: ["Ma CT", "So", "Ngay", "Quy", "Doi tuong", "Noi dung", "So tien", "Trang thai"],
+    counterpartyLabel: "Người nhận / Nhà cung cấp",
+    amountLabel: "Số tiền chi",
+    listColumns: ["Mã CT", "Số", "Ngày", "Quỹ", "Đối tượng", "Nội dung", "Số tiền", "Trạng thái"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "cashBookCode", label: "So quy", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "cashBookCode", label: "Sổ quỹ", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   },
   {
     key: "bank-debits",
-    title: "Bao no ngan hang",
+    title: "Báo nợ ngân hàng",
     moduleKey: "cash",
     route: "/modules/cash/bank-debits",
-    description: "Quan ly BN, chi tien qua ngan hang va doi chieu voi sao ke.",
+    description: "Quản lý BN, chi tiền qua ngân hàng và đối chiếu với sao kê.",
     voucherType: "BN",
     paymentChannel: "bank",
-    counterpartyLabel: "Nha cung cap / doi tuong chi",
-    amountLabel: "So tien chi",
-    listColumns: ["Ma CT", "So", "Ngay", "Tai khoan NH", "Doi tuong", "Noi dung", "So tien", "Doi chieu"],
+    counterpartyLabel: "Thương lái / Nhà cung cấp",
+    amountLabel: "Số tiền chi",
+    listColumns: ["Mã CT", "Số", "Ngày", "Tài khoản NH", "Đối tượng", "Nội dung", "Số tiền", "Đối chiếu"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   },
   {
     key: "bank-credits",
-    title: "Bao co ngan hang",
+    title: "Báo có ngân hàng",
     moduleKey: "cash",
     route: "/modules/cash/bank-credits",
-    description: "Quan ly BC, thu tien qua ngan hang va doi chieu voi sao ke.",
+    description: "Quản lý BC, thu tiền qua ngân hàng và đối chiếu với sao kê.",
     voucherType: "BC",
     paymentChannel: "bank",
-    counterpartyLabel: "Khach hang / doi tuong thu",
-    amountLabel: "So tien thu",
-    listColumns: ["Ma CT", "So", "Ngay", "Tai khoan NH", "Doi tuong", "Noi dung", "So tien", "Doi chieu"],
+    counterpartyLabel: "Khách hàng / Đối tượng thu",
+    amountLabel: "Số tiền thu",
+    listColumns: ["Mã CT", "Số", "Ngày", "Tài khoản NH", "Đối tượng", "Nội dung", "Số tiền", "Đối chiếu"],
     fields: [
-      { key: "voucherType", label: "Ma CT", type: "text", required: true, width: "sm" },
-      { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
+      { key: "voucherType", label: "Mã CT", type: "text", required: true, width: "sm" },
+      { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
       ...cashCommonFields
     ]
   }
@@ -341,28 +337,28 @@ export const cashVoucherScreens: CashVoucherScreenSpec[] = [
 
 export const bankStatementScreen: ScreenSpec = {
   key: "bank-statements",
-  title: "Sao ke ngan hang",
+  title: "Sao kê ngân hàng",
   moduleKey: "cash",
   route: "/modules/cash/bank-statements",
-  description: "Import sao ke, xem line giao dich va danh dau trang thai doi chieu.",
-  listColumns: ["So sao ke", "Tai khoan NH", "Ngay sao ke", "So dong", "So du dau", "So du cuoi", "Nguon"],
+  description: "Import sao kê, xem dòng giao dịch và đánh dấu trạng thái đối chiếu.",
+  listColumns: ["Số sao kê", "Tài khoản NH", "Ngày sao kê", "Số dòng", "Số dư đầu", "Số dư cuối", "Nguồn"],
   fields: [
-    { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
-    { key: "statementDate", label: "Ngay sao ke", type: "date", required: true, width: "sm" },
-    { key: "sourceName", label: "Nguon import", type: "text", width: "md" }
+    { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
+    { key: "statementDate", label: "Ngày sao kê", type: "date", required: true, width: "sm" },
+    { key: "sourceName", label: "Nguồn import", type: "text", width: "md" }
   ]
 };
 
 export const reconciliationScreen: ScreenSpec = {
   key: "bank-reconciliation",
-  title: "Doi chieu ngan hang",
+  title: "Đối chiếu ngân hàng",
   moduleKey: "cash",
   route: "/modules/cash/reconciliation",
-  description: "Doi chieu BN/BC voi sao ke ngan hang theo so tien, ngay va tham chieu.",
-  listColumns: ["Loai", "So chung tu", "Ngay", "Doi tuong", "Noi dung", "So tien", "Trang thai"],
+  description: "Đối chiếu BN/BC với sao kê ngân hàng theo số tiền, ngày và tham chiếu.",
+  listColumns: ["Loại", "Số chứng từ", "Ngày", "Đối tượng", "Nội dung", "Số tiền", "Trạng thái"],
   fields: [
-    { key: "bankAccountCode", label: "Tai khoan NH", type: "lookup", required: true, width: "sm" },
-    { key: "statementDate", label: "Ngay sao ke", type: "date", width: "sm" },
-    { key: "matchingStatus", label: "Trang thai doi chieu", type: "text", width: "sm" }
+    { key: "bankAccountCode", label: "Tài khoản NH", type: "lookup", required: true, width: "sm" },
+    { key: "statementDate", label: "Ngày sao kê", type: "date", width: "sm" },
+    { key: "matchingStatus", label: "Trạng thái đối chiếu", type: "text", width: "sm" }
   ]
 };

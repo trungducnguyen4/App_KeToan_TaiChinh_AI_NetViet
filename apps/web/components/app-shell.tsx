@@ -5,16 +5,18 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a href="/modules/accounting" className="brand">
-          <span className="brand-mark">W</span>
+        <a href="/modules/purchasing" className="brand">
+          <span className="brand-mark" style={{ background: "linear-gradient(135deg, #15936b 0%, #087f5b 100%)", color: "#fff", boxShadow: "0 4px 12px rgba(21, 147, 107, 0.35)", borderRadius: "10px", display: "grid", placeItems: "center" }}>
+            <AppIcon name="Droplet" size={20} />
+          </span>
           <span>
-            <span className="brand-title">Workit Ops</span>
-            <span className="brand-subtitle">Accounting intelligence</span>
+            <span className="brand-title">Dầu Dừa NetViet</span>
+            <span className="brand-subtitle">Quản trị Xưởng &amp; Giá thành</span>
           </span>
         </a>
 
         <nav className="nav-section" aria-label="Phân hệ nghiệp vụ">
-          <p className="nav-section-title">Quản trị doanh nghiệp</p>
+          <p className="nav-section-title">Quy trình Vận hành Xưởng</p>
           {workitModules.slice(0, 6).map((module) => (
             <a
               key={module.key}
@@ -33,7 +35,7 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
         </nav>
 
         <nav className="nav-section" aria-label="Hệ thống và danh mục">
-          <p className="nav-section-title">Nền tảng</p>
+          <p className="nav-section-title">Hệ thống & Danh mục</p>
           {workitModules.slice(6).map((module) => (
             <a
               key={module.key}
@@ -45,7 +47,7 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
               </span>
               <span className="module-copy">
                 <span className="module-name">{module.name}</span>
-                <span className="module-meta">{module.status}</span>
+                <span className="module-meta">{module.status === "ready" ? "Sẵn sàng" : module.status}</span>
               </span>
             </a>
           ))}
@@ -54,10 +56,13 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
 
       <main className="content">
         <header className="topbar">
-          <h1>Nền tảng quản trị và chuyển đổi số</h1>
+          <h1>Hệ thống Quản lý Thu mua & Ép lọc Dầu dừa thô</h1>
           <div className="topbar-actions">
-            <span>Đồng bộ Workit chỉ đọc</span>
-            <span className="avatar">TG</span>
+            <span style={{ fontSize: "12px", background: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0", padding: "4px 10px", borderRadius: "12px", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#059669", display: "inline-block" }} />
+              Nhập liệu trực tiếp (Direct CRUD)
+            </span>
+            <span className="avatar" title="NetViet Workshop Admin">NV</span>
           </div>
         </header>
         {children}

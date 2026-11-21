@@ -60,42 +60,42 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
   return (
     <div className="workspace">
       <div className="breadcrumb">
-        <a className="breadcrumb-link" href="/">Trang chu</a>
+        <a className="breadcrumb-link" href="/">Trang chủ</a>
         <span>/</span>
         <span>{current.name}</span>
       </div>
 
       <section className="hero-panel">
         <div>
-          <div className="eyebrow">Enterprise workspace</div>
+          <div className="eyebrow">Quản trị Xưởng Dầu Dừa</div>
           <h2 className="hero-title">{current.name}</h2>
           <p className="hero-copy">{current.description}</p>
           <div className="hero-actions">
             {isAccounting ? (
               <a className="button primary" href={journalVoucherScreen.route}>
                 <AppIcon name="FileText" />
-                Mo phieu hach toan
+                Mở phiếu hạch toán
               </a>
             ) : isCash ? (
               <a className="button primary" href={cashVoucherScreens[0].route}>
                 <AppIcon name="WalletCards" />
-                Mo PT/PC/BN/BC
+                Mở PT/PC/BN/BC
               </a>
             ) : (
               <button className="button primary" type="button">
                 <AppIcon name={current.icon} />
-                Mo danh sach
+                Mở danh sách
               </button>
             )}
             <button className="button" type="button">
               <AppIcon name="Bot" />
-              AI doi chieu
+              AI đối chiếu
             </button>
           </div>
         </div>
         <div className="sync-panel">
-          <strong>GD1</strong>
-          <span>Workit la nguon goc read-only. App moi tap trung chuan hoa, doi chieu, phan tich va bao cao.</span>
+          <strong>Sản xuất</strong>
+          <span>Hệ thống nhập liệu trực tiếp: Hóa đơn Vào/Ra → Công đoạn Ép/Lọc → Tính chi phí &amp; Giá thành dầu dừa thô.</span>
         </div>
       </section>
 

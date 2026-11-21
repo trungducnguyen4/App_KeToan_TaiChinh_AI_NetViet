@@ -69,6 +69,7 @@ model Organization {
   units_of_measure        units_of_measure[]
   users                   User[]
   vouchers                Voucher[]
+  productionBatches       ProductionBatch[]
   warehouses              warehouses[]
 
   @@map("organizations")
@@ -377,6 +378,15 @@ model Voucher {
   bank_account_id                  String?                   @db.Char(36)
   counterparty_type                CounterpartyType?
   reference_invoice_no             String?                   @db.VarChar(128)
+  batch_id                         String?                   @db.Char(36)
+  doc_type                         String?                   @db.VarChar(32) // VAT_INVOICE, PURCHASE_SLIP
+  cost_category                    String?                   @db.VarChar(32) // RAW_MATERIAL, PROCESSING, OVERHEAD
+  process_stage                    String?                   @db.VarChar(32) // EP, LOC, DONG_PHUY
+  allocation_mode                  String?                   @db.VarChar(32) // BATCH, PERIOD
+  invoice_series                   String?                   @db.VarChar(32)
+  invoice_template                 String?                   @db.VarChar(32)
+  tax_code                         String?                   @db.VarChar(32)
+  supplier_name                    String?                   @db.VarChar(255)
   matched_amount                   Decimal                   @default(0.00) @db.Decimal(18, 2)
   reconciliation_status            MatchingStatus            @default(unmatched)
   total_debit                      Decimal                   @default(0.00) @db.Decimal(18, 2)
@@ -386,6 +396,7 @@ model Voucher {
   createdAt                        DateTime                  @map("created_at")
   updatedAt                        DateTime                  @updatedAt @map("updated_at")
   cashBook                         CashBook?                 @relation(fields: [cash_book_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_cash_book")
+  batch                            ProductionBatch?          @relation(fields: [batch_id], references: [id], onDelete: SetNull, onUpdate: Restrict, map: "fk_vouchers_batch")
   bank_accounts                    bank_accounts?            @relation(fields: [bank_account_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_vouchers_bank_account")
   reconciliationMatches            BankReconciliationMatch[]
   inventory_documents              inventory_documents[]
@@ -404,6 +415,7 @@ model Voucher {
   @@index([organizationId, cash_book_id, voucherDate], map: "idx_vouchers_org_cash_book_date")
   @@index([bank_account_id], map: "fk_vouchers_bank_account")
   @@index([cash_book_id], map: "fk_vouchers_cash_book")
+  @@index([batch_id], map: "idx_vouchers_batch")
   @@index([source_system_id, source_record_id], map: "idx_vouchers_source")
   @@map("vouchers")
 }
@@ -426,6 +438,8 @@ model VoucherLine {
   quantity        Decimal?       @db.Decimal(18, 4)
   unit_price      Decimal?       @db.Decimal(18, 4)
   tax_rate        Decimal?       @db.Decimal(5, 2)
+  cost_category   String?        @db.VarChar(32)
+  process_stage   String?        @db.VarChar(32)
   memo            String?        @db.VarChar(500)
   created_at      DateTime
   accounts        Account        @relation(fields: [account_id], references: [id], onUpdate: Restrict, map: "fk_voucher_lines_account")
@@ -450,6 +464,36 @@ model VoucherLine {
   @@index([supplier_id], map: "idx_voucher_lines_supplier")
   @@index([warehouse_id], map: "idx_voucher_lines_warehouse")
   @@map("voucher_lines")
+}
+
+model ProductionBatch {
+  id                String       @id @default(uuid()) @db.Char(36)
+  organizationId    String       @map("organization_id") @db.Char(36)
+  batchCode         String       @unique(map: "uq_production_batches_code") @map("batch_code") @db.VarChar(64)
+  batchDate         DateTime     @map("batch_date") @db.Date
+  supplierId        String?      @map("supplier_id") @db.Char(36)
+  supplierName      String?      @map("supplier_name") @db.VarChar(255)
+  rawMaterialKg     Decimal      @default(0.00) @map("raw_material_kg") @db.Decimal(18, 2)
+  crudeOilKg        Decimal      @default(0.00) @map("crude_oil_kg") @db.Decimal(18, 2)
+  crudeOilLiters    Decimal      @default(0.00) @map("crude_oil_liters") @db.Decimal(18, 2)
+  byproductKg       Decimal      @default(0.00) @map("byproduct_kg") @db.Decimal(18, 2)
+  oilYieldRate      Decimal      @default(0.00) @map("oil_yield_rate") @db.Decimal(5, 2)
+  lossRate          Decimal      @default(0.00) @map("loss_rate") @db.Decimal(5, 2)
+  rawMaterialCost   Decimal      @default(0.00) @map("raw_material_cost") @db.Decimal(18, 2)
+  processingCost    Decimal      @default(0.00) @map("processing_cost") @db.Decimal(18, 2)
+  overheadCost      Decimal      @default(0.00) @map("overhead_cost") @db.Decimal(18, 2)
+  byproductRecovery Decimal      @default(0.00) @map("byproduct_recovery") @db.Decimal(18, 2)
+  totalCost         Decimal      @default(0.00) @map("total_cost") @db.Decimal(18, 2)
+  unitCostPerKg     Decimal      @default(0.00) @map("unit_cost_per_kg") @db.Decimal(18, 2)
+  status            String       @default("COMPLETED") @db.VarChar(32)
+  notes             String?      @db.VarChar(1000)
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  organization      Organization @relation(fields: [organizationId], references: [id], onUpdate: Restrict, map: "fk_production_batches_org")
+  vouchers          Voucher[]
+
+  @@index([organizationId, batchDate], map: "idx_production_batches_org_date")
+  @@map("production_batches")
 }
 
 model ApprovalInstance {
