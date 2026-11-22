@@ -73,6 +73,21 @@ export const workitModules: WorkitModule[] = [
     ]
   },
   {
+    key: "capital",
+    code: "70",
+    name: "Vốn Đầu tư & Hiệu quả",
+    description: "Quản lý vốn đầu tư ban đầu, máy móc xưởng ép, khấu hao, cổ đông góp vốn và bài toán hoàn vốn kinh doanh thực tế.",
+    icon: "PieChart",
+    accent: "#0891b2",
+    status: "ready",
+    route: "/modules/capital-investment",
+    primaryScreens: [
+      "Bài toán Kinh doanh & Hoàn vốn",
+      "Tài sản Máy móc & Khấu hao",
+      "Cơ cấu Cổ đông & Rót vốn"
+    ]
+  },
+  {
     key: "masterData",
     code: "90",
     name: "Danh mục",

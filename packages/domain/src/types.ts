@@ -5,6 +5,7 @@ export type ModuleKey =
   | "inventory"
   | "sales"
   | "purchasing"
+  | "capital"
   | "masterData"
   | "system";
 
@@ -229,3 +230,100 @@ export interface SupplierYieldPerformance {
   rating: "EXCELLENT" | "GOOD" | "AVERAGE" | "POOR";
   recommendation: string;
 }
+
+// ==========================================
+// CAPEX, EQUITY & BUSINESS FEASIBILITY TYPES
+// ==========================================
+
+export type AssetCategory =
+  | "MACHINERY"      // Dây chuyền máy móc ép dầu (máy ép, sấy, lọc, ly tâm)
+  | "INFRASTRUCTURE" // Nhà xưởng, nền bê tông, mái che, bể lắng, hố nước thải
+  | "STORAGE_TANK"   // Bồn chứa inox, téc dầu, hệ thống đường ống
+  | "VEHICLE_SCALE"  // Trạm cân xe tải, xe nâng, bốc dỡ
+  | "OFFICE_TECH";   // Thiết bị vi tính, camera giám sát xưởng
+
+export interface CapitalAsset {
+  id: string;
+  assetCode: string;
+  assetName: string;
+  category: AssetCategory;
+  acquisitionDate: string;
+  originalCost: number;       // Nguyên giá (VNĐ)
+  residualValue: number;      // Giá trị thanh lý ước tính
+  usefulLifeMonths: number;   // Số tháng khấu hao (ví dụ: 60 tháng = 5 năm)
+  monthlyDepreciation: number;// Mức khấu hao mỗi tháng (VNĐ/tháng)
+  accumulatedDepreciation: number; // Khấu hao lũy kế đến hiện tại
+  currentBookValue: number;   // Giá trị còn lại trên sổ sách
+  supplierOrBrand?: string;   // Nhà cung cấp / Xuất xứ máy
+  status: "ACTIVE" | "MAINTENANCE" | "DISPOSED";
+  notes?: string;
+}
+
+export type ContributorRole = "FOUNDER" | "INVESTOR" | "OPERATOR";
+
+export interface Shareholder {
+  id: string;
+  shareholderCode: string;
+  name: string;
+  role: ContributorRole;
+  ownershipPercentage: number; // Tỷ lệ sở hữu (%)
+  committedCapital: number;    // Vốn cam kết góp (VNĐ)
+  contributedCapital: number;  // Vốn thực tế đã góp (VNĐ)
+  remainingCapital: number;    // Vốn còn phải góp
+  phoneNumber?: string;
+  joinDate: string;
+  notes?: string;
+}
+
+export type CapitalType =
+  | "INITIAL_CAPEX"     // Vốn đầu tư ban đầu (máy móc, xưởng)
+  | "WORKING_CAPITAL"   // Vốn lưu động (tiền mua dừa, trả lương)
+  | "EXPANSION_CAPEX";  // Vốn mở rộng công suất / nâng cấp
+
+export interface CapitalContribution {
+  id: string;
+  contributionNo: string;
+  contributionDate: string;
+  shareholderId: string;
+  shareholderName: string;
+  amount: number;
+  capitalType: CapitalType;
+  paymentMethod: "BANK" | "CASH" | "ASSET";
+  bankAccount?: string;
+  purpose: string;
+  verifiedBy: string;
+  status: "COMPLETED" | "PENDING";
+}
+
+export interface BusinessFeasibilityMetrics {
+  // 1. Tổng mức đầu tư
+  totalCapexInvested: number;          // Tổng nguyên giá máy móc & nhà xưởng
+  totalWorkingCapitalInjected: number; // Tổng vốn lưu động đã rót
+  totalCapitalContributed: number;     // Tổng vốn các cổ đông đã góp thực tế
+  totalCapitalCommitted: number;       // Tổng vốn cam kết
+
+  // 2. Khấu hao hàng tháng
+  monthlyDepreciationTotal: number;     // Tổng khấu hao máy móc xưởng / tháng
+  depreciationPerKgCrudeOil: number;   // Chi phí khấu hao phân bổ trên 1 kg dầu ép ra
+
+  // 3. Kết quả kinh doanh & Dòng tiền
+  totalRevenue: number;                // Tổng doanh thu bán dầu + bã
+  totalOperatingExpense: number;       // Chi phí dừa + điện + nhân công + vận hành
+  grossProfit: number;                 // Lợi nhuận gộp
+  operatingProfit: number;             // Lợi nhuận trước khấu hao (EBITDA)
+  netProfit: number;                   // Lợi nhuận ròng sau khấu hao máy móc
+
+  // 4. Chỉ số kinh doanh & Điểm hòa vốn
+  roiPercentage: number;               // Tỷ suất sinh lời trên tổng vốn đầu tư (ROI %)
+  breakEvenMonthlyKgRaw: number;       // Sản lượng dừa cần ép/tháng để hòa vốn
+  breakEvenMonthlyKgOil: number;       // Sản lượng dầu cần bán/tháng để hòa vốn
+  breakEvenMonthlyRevenue: number;     // Doanh thu tối thiểu cần đạt/tháng
+  currentMonthlyCapacityRate: number;  // Tỷ lệ công suất hiện tại so với hòa vốn (%)
+
+  // 5. Dự phóng thời gian hoàn vốn
+  estimatedPaybackMonths: number;      // Thời gian hoàn vốn dự kiến (Số tháng)
+  estimatedPaybackYears: number;       // Số năm hoàn vốn
+  capitalRecoveredToDate: number;      // Số tiền đã thu hồi được đến hiện tại
+  capitalRecoveryRate: number;         // Tỷ lệ hoàn vốn đã đạt (% vốn)
+}
+

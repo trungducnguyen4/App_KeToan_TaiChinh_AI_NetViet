@@ -2495,7 +2495,305 @@ export class WorkitService {
       return paymentVoucher;
     });
   }
+
+  // ==========================================
+  // CAPITAL INVESTMENT, CAPEX & FEASIBILITY
+  // ==========================================
+
+  async getCapitalFeasibilitySummary() {
+    const context = await this.ensureDefaultContext();
+
+    // 1. Lấy danh sách tài sản cố định máy móc
+    const rawAssets = await this.prisma.fixed_assets.findMany({
+      where: { organization_id: context.organization.id },
+      orderBy: { acquisition_date: "asc" }
+    });
+
+    const assets = rawAssets.map((a) => {
+      const origCost = Number(a.original_cost || 0);
+      const resVal = Number(a.residual_value || 0);
+      const usefulMonths = a.useful_life_months || 60;
+      const monthlyDeprec = usefulMonths > 0 ? (origCost - resVal) / usefulMonths : 0;
+
+      // Tính số tháng đã khấu hao từ acquisition_date đến hiện tại
+      const acqDate = new Date(a.acquisition_date);
+      const now = new Date();
+      const monthsElapsed = Math.max(0, (now.getFullYear() - acqDate.getFullYear()) * 12 + (now.getMonth() - acqDate.getMonth()) + 1);
+      const accumDeprec = Math.min(origCost - resVal, Math.round(monthlyDeprec * monthsElapsed));
+      const bookVal = Math.max(resVal, origCost - accumDeprec);
+
+      return {
+        id: a.id,
+        assetCode: a.asset_code,
+        assetName: a.asset_name,
+        category: a.asset_category as any,
+        acquisitionDate: a.acquisition_date.toISOString().slice(0, 10),
+        originalCost: origCost,
+        residualValue: resVal,
+        usefulLifeMonths: usefulMonths,
+        monthlyDepreciation: Math.round(monthlyDeprec),
+        accumulatedDepreciation: accumDeprec,
+        currentBookValue: bookVal,
+        supplierOrBrand: a.source_record_id || "Bến Tre Cơ Khí",
+        status: (a.status as any) || "ACTIVE",
+        notes: a.depreciation_method || ""
+      };
+    });
+
+    // 2. Lấy danh sách Cổ đông & các khoản rót vốn từ bảng voucher (VoucherType = 'GOP_VON' hoặc 'BC_VON')
+    const contributionVouchers = await this.prisma.voucher.findMany({
+      where: {
+        organizationId: context.organization.id,
+        voucherType: { in: ["GOP_VON", "BC_VON"] }
+      },
+      orderBy: { voucherDate: "asc" }
+    });
+
+    const contributions = contributionVouchers.map((v) => ({
+      id: v.id,
+      contributionNo: v.voucherNo,
+      contributionDate: v.voucherDate.toISOString().slice(0, 10),
+      shareholderId: v.source_record_id || "SH-DEFAULT",
+      shareholderName: v.supplier_name || "Cổ đông sáng lập",
+      amount: Number(v.total_debit || 0),
+      capitalType: (v.cost_category as any) || "INITIAL_CAPEX",
+      paymentMethod: (v.payment_channel === "bank" ? "BANK" : "CASH") as any,
+      bankAccount: v.bank_account_id || "Vietcombank Bến Tre",
+      purpose: v.description || "Góp vốn thành lập xưởng ép dầu",
+      verifiedBy: "Kế toán trưởng",
+      status: "COMPLETED" as const
+    }));
+
+    // 3. Danh sách cổ đông tổng hợp
+    const shareholderMap = new Map<string, {
+      id: string;
+      code: string;
+      name: string;
+      role: "FOUNDER" | "INVESTOR" | "OPERATOR";
+      percentage: number;
+      committed: number;
+      contributed: number;
+      phone: string;
+      joinDate: string;
+    }>();
+
+    // Default base shareholders nếu chưa có
+    const defaultShareholders = [
+      { id: "SH-01", code: "CD-01", name: "Nguyễn Văn Đạt (Quản đốc)", role: "FOUNDER" as const, percentage: 45, committed: 1800000000, contributed: 0, phone: "0918.234.567", joinDate: "2026-06-01" },
+      { id: "SH-02", code: "CD-02", name: "Trần Minh Quang (Đầu tư)", role: "INVESTOR" as const, percentage: 35, committed: 1400000000, contributed: 0, phone: "0903.888.999", joinDate: "2026-06-01" },
+      { id: "SH-03", code: "CD-03", name: "Lê Hoàng Phúc (Vận hành & Kỹ thuật)", role: "OPERATOR" as const, percentage: 20, committed: 800000000, contributed: 0, phone: "0987.654.321", joinDate: "2026-06-01" }
+    ];
+
+    defaultShareholders.forEach(s => shareholderMap.set(s.name, { ...s }));
+
+    contributions.forEach(c => {
+      let sh = shareholderMap.get(c.shareholderName);
+      if (!sh) {
+        sh = {
+          id: c.shareholderId,
+          code: `CD-${shareholderMap.size + 1}`,
+          name: c.shareholderName,
+          role: "INVESTOR",
+          percentage: 0,
+          committed: c.amount,
+          contributed: 0,
+          phone: "0900.000.000",
+          joinDate: c.contributionDate
+        };
+        shareholderMap.set(c.shareholderName, sh);
+      }
+      sh.contributed += c.amount;
+    });
+
+    const shareholders = Array.from(shareholderMap.values()).map(s => ({
+      id: s.id,
+      shareholderCode: s.code,
+      name: s.name,
+      role: s.role,
+      ownershipPercentage: s.percentage,
+      committedCapital: s.committed,
+      contributedCapital: s.contributed,
+      remainingCapital: Math.max(0, s.committed - s.contributed),
+      phoneNumber: s.phone,
+      joinDate: s.joinDate,
+      notes: "Cổ đông tham gia từ giai đoạn chuẩn bị mặt bằng & dây chuyền ép dầu"
+    }));
+
+    // 4. Lấy dữ liệu hoạt động thực tế (Doanh thu & Chi phí)
+    const costSummary = await this.getCostAccountingSummary();
+    const salesInvoices = await this.listSalesInvoices();
+
+    const totalCapexInvested = assets.reduce((sum, a) => sum + a.originalCost, 0);
+    const totalWorkingCapitalInjected = contributions
+      .filter(c => c.capitalType === "WORKING_CAPITAL")
+      .reduce((sum, c) => sum + c.amount, 0);
+    const totalCapitalContributed = contributions.reduce((sum, c) => sum + c.amount, 0);
+    const totalCapitalCommitted = shareholders.reduce((sum, s) => sum + s.committedCapital, 0);
+
+    const monthlyDepreciationTotal = assets.reduce((sum, a) => sum + a.monthlyDepreciation, 0);
+
+    // Tổng doanh thu thực tế đã xuất bán
+    const totalRevenue = salesInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+
+    // Chi phí vận hành thực tế
+    const totalOperatingExpense = (costSummary.kpis.rawMaterialCostTotal || 0) +
+      (costSummary.kpis.processingCostTotal || 0) +
+      (costSummary.kpis.overheadCostTotal || 0);
+
+    const grossProfit = totalRevenue - totalOperatingExpense;
+    const operatingProfit = grossProfit; // EBITDA
+    // Trừ khấu hao tích lũy trong 3 tháng vận hành thực tế
+    const threeMonthsDepreciation = monthlyDepreciationTotal * 3;
+    const netProfit = operatingProfit - threeMonthsDepreciation;
+
+    // Phân bổ khấu hao trên mỗi kg dầu dừa
+    const totalCrudeOilKg = costSummary.kpis.totalCrudeOilKg || 1;
+    const depreciationPerKgCrudeOil = Math.round(threeMonthsDepreciation / totalCrudeOilKg);
+
+    // Chỉ số hiệu quả kinh doanh & Điểm hòa vốn
+    const investedBase = Math.max(totalCapexInvested, 1);
+    const roiPercentage = Number(((netProfit / investedBase) * 100).toFixed(2));
+
+    // Điểm hòa vốn: Giả định biên đóng góp (Contribution Margin) trên mỗi kg vỏ dừa
+    // Giá bán dầu bình quân ~ 32.500 đ/kg dầu thô, tỷ lệ thu hồi ~ 21.4% => 1 kg vỏ dừa cho ra ~ 6.955 đ doanh thu dầu + bã dừa
+    // Chi phí biến đổi (mua dừa + điện ép) ~ 4.200 + 1.100 = 5.300 đ/kg vỏ dừa
+    // Biên đóng góp trên 1 kg vỏ dừa ~ 1.655 đ/kg
+    const contributionMarginPerKgRaw = 1655;
+    const fixedCostsMonthly = monthlyDepreciationTotal + (costSummary.kpis.overheadCostTotal / 3 || 35000000);
+    const breakEvenMonthlyKgRaw = Math.round(fixedCostsMonthly / contributionMarginPerKgRaw);
+    const breakEvenMonthlyKgOil = Math.round(breakEvenMonthlyKgRaw * 0.214);
+    const breakEvenMonthlyRevenue = Math.round(breakEvenMonthlyKgOil * 32500 + breakEvenMonthlyKgRaw * 0.73 * 1250);
+
+    // So sánh công suất thực tế/tháng hiện tại
+    const currentMonthlyRawAvg = Math.round((costSummary.kpis.totalRawKg || 346200) / 3);
+    const currentMonthlyCapacityRate = Number(((currentMonthlyRawAvg / breakEvenMonthlyKgRaw) * 100).toFixed(1));
+
+    // Dự phóng thời gian hoàn vốn
+    // Lợi nhuận ròng bình quân/tháng = netProfit / 3
+    const avgMonthlyNetProfit = Math.max(1, netProfit / 3);
+    const estimatedPaybackMonths = Number((totalCapexInvested / avgMonthlyNetProfit).toFixed(1));
+    const estimatedPaybackYears = Number((estimatedPaybackMonths / 12).toFixed(2));
+    const capitalRecoveredToDate = Math.max(0, netProfit);
+    const capitalRecoveryRate = Number(((capitalRecoveredToDate / investedBase) * 100).toFixed(1));
+
+    return {
+      feasibility: {
+        totalCapexInvested,
+        totalWorkingCapitalInjected,
+        totalCapitalContributed,
+        totalCapitalCommitted,
+        monthlyDepreciationTotal,
+        depreciationPerKgCrudeOil,
+        totalRevenue,
+        totalOperatingExpense,
+        grossProfit,
+        operatingProfit,
+        netProfit,
+        roiPercentage,
+        breakEvenMonthlyKgRaw,
+        breakEvenMonthlyKgOil,
+        breakEvenMonthlyRevenue,
+        currentMonthlyCapacityRate,
+        estimatedPaybackMonths,
+        estimatedPaybackYears,
+        capitalRecoveredToDate,
+        capitalRecoveryRate
+      },
+      assets,
+      shareholders,
+      contributions
+    };
+  }
+
+  async listCapitalAssets(category?: string) {
+    const summary = await this.getCapitalFeasibilitySummary();
+    if (!category || category === "ALL") return summary.assets;
+    return summary.assets.filter(a => a.category === category);
+  }
+
+  async createCapitalAsset(input: CreateCapitalAssetInput) {
+    const context = await this.ensureDefaultContext();
+    const existing = await this.prisma.fixed_assets.findFirst({
+      where: {
+        organization_id: context.organization.id,
+        asset_code: input.assetCode
+      }
+    });
+
+    if (existing) {
+      throw new ConflictException(`Mã tài sản ${input.assetCode} đã tồn tại trong hệ thống`);
+    }
+
+    const created = await this.prisma.fixed_assets.create({
+      data: {
+        id: randomUUID(),
+        organization_id: context.organization.id,
+        asset_code: input.assetCode,
+        asset_name: input.assetName,
+        asset_category: input.category,
+        acquisition_date: new Date(input.acquisitionDate),
+        original_cost: input.originalCost,
+        residual_value: input.residualValue || 0,
+        useful_life_months: input.usefulLifeMonths,
+        depreciation_method: input.notes || "Đường thẳng (Straight-line)",
+        status: "ACTIVE",
+        source_record_id: input.supplierOrBrand || "Bến Tre Cơ Khí",
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    });
+
+    return created;
+  }
+
+  async listShareholders() {
+    const summary = await this.getCapitalFeasibilitySummary();
+    return summary.shareholders;
+  }
+
+  async createShareholder(input: CreateShareholderInput) {
+    return {
+      id: randomUUID(),
+      ...input,
+      contributedCapital: 0,
+      remainingCapital: input.committedCapital
+    };
+  }
+
+  async listCapitalContributions() {
+    const summary = await this.getCapitalFeasibilitySummary();
+    return summary.contributions;
+  }
+
+  async createCapitalContribution(input: CreateCapitalContributionInput) {
+    const context = await this.ensureDefaultContext();
+    const voucherType = input.paymentMethod === "BANK" ? "BC_VON" : "GOP_VON";
+
+    const created = await this.prisma.voucher.create({
+      data: {
+        id: randomUUID(),
+        organizationId: context.organization.id,
+        voucherType: voucherType,
+        voucherNo: input.contributionNo,
+        voucherDate: new Date(input.contributionDate),
+        status: "posted",
+        approval_status: "approved",
+        description: input.purpose,
+        total_debit: input.amount,
+        total_credit: input.amount,
+        supplier_name: input.shareholderId,
+        cost_category: input.capitalType,
+        payment_channel: input.paymentMethod === "BANK" ? "bank" : "cash",
+        source_record_id: input.shareholderId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+
+    return created;
+  }
 }
+
 
 type BaseLineInput = {
   debitAccount: string;
@@ -2569,6 +2867,9 @@ export type CreatePurchasingInvoiceInput = {
   dueDate?: string;
 };
 
+
+
+
 export type CreateProductionBatchInput = {
   batchCode: string;
   batchDate: string;
@@ -2630,3 +2931,41 @@ export type CreateSalesInvoiceInput = {
   paymentTermDays?: number;
   dueDate?: string;
 };
+
+export type CreateCapitalAssetInput = {
+  assetCode: string;
+  assetName: string;
+  category: "MACHINERY" | "INFRASTRUCTURE" | "STORAGE_TANK" | "VEHICLE_SCALE" | "OFFICE_TECH";
+  acquisitionDate: string;
+  originalCost: number;
+  residualValue?: number;
+  usefulLifeMonths: number;
+  supplierOrBrand?: string;
+  notes?: string;
+};
+
+export type CreateShareholderInput = {
+  shareholderCode: string;
+  name: string;
+  role: "FOUNDER" | "INVESTOR" | "OPERATOR";
+  ownershipPercentage: number;
+  committedCapital: number;
+  phoneNumber?: string;
+  joinDate: string;
+  notes?: string;
+};
+
+export type CreateCapitalContributionInput = {
+  contributionNo: string;
+  contributionDate: string;
+  shareholderId: string;
+  amount: number;
+  capitalType: "INITIAL_CAPEX" | "WORKING_CAPITAL" | "EXPANSION_CAPEX";
+  paymentMethod: "BANK" | "CASH" | "ASSET";
+  bankAccount?: string;
+  purpose: string;
+};
+
+
+
+

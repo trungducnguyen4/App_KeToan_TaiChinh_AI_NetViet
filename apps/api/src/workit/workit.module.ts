@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ApprovalsController } from "./approvals.controller";
+import { CapitalController } from "./capital.controller";
 import { CashController } from "./cash.controller";
 import { CostAccountingController } from "./cost-accounting.controller";
 import { JobsController } from "./jobs.controller";
@@ -20,6 +21,7 @@ import { WorkitService } from "./workit.service";
     SalesController,
     CostAccountingController,
     CashController,
+    CapitalController,
     ApprovalsController,
     SyncController,
     JobsController
