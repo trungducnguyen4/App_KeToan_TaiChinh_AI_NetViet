@@ -64,8 +64,15 @@ Validate against the live API and database:
   git push origin <branch-name>
   ```
 
-### Step 5: Author PR Body (in Vietnamese) & Open PR (Pillar 4: Confidence)
-Fill out the PR description using the template format from [`.github/PULL_REQUEST_TEMPLATE.md`](file:///.github/PULL_REQUEST_TEMPLATE.md). **The PR description MUST be written in Vietnamese**:
+### Step 5: Author PR Body (in Vietnamese) & Open/Update PR (Pillar 4: Confidence)
+Fill out the PR description using the template format from [`.github/PULL_REQUEST_TEMPLATE.md`](file:///.github/PULL_REQUEST_TEMPLATE.md). **The PR description MUST be written in Vietnamese**.
+
+> ⚠️ **CRITICAL ANTI-PATTERN & MANDATORY ENFORCEMENT**:
+> - **NEVER** leave the main PR description (`body`) empty, unpopulated, or containing only placeholder comments.
+> - **NEVER** post the 4-Pillar report as an Issue Comment (`add_issue_comment`) while leaving the top PR description blank.
+> - **ALWAYS** set or update the PR `body` directly using `create_pull_request` (when opening) or `update_issue` / `update_pull_request` (when modifying an existing PR).
+> - **MANDATORY POST-PR VERIFICATION**: Immediately after creating or updating a PR, fetch the PR using `get_pull_request` and assert that `body` is NOT empty, contains the 4-Pillar headers, and has live raw asset links.
+> - **ALWAYS** return the clickable Markdown PR URL `[PR #<number>](<html_url>)` directly to the user in the final response.
 
 ```markdown
 ## 📌 Overview
