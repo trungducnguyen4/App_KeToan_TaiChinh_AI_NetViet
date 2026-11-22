@@ -4,6 +4,7 @@ import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
 import { Pagination } from "../components/pagination";
 import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
+import { CompactDonutCard } from "../components/compact-donut-card";
 
 export type SalesProductType =
   | "CRUDE_OIL"
@@ -80,6 +81,9 @@ export default function SalesInvoiceScreen() {
   const [invoiceSeries, setInvoiceSeries] = useState("1C26TNV");
   const [customerName, setCustomerName] = useState("");
   const [taxCode, setTaxCode] = useState("");
+  const [taxLookupLoading, setTaxLookupLoading] = useState(false);
+  const [taxLookupError, setTaxLookupError] = useState<string | null>(null);
+  const [taxLookupSuccess, setTaxLookupSuccess] = useState<string | null>(null);
   const [productType, setProductType] = useState<SalesProductType>("CRUDE_OIL");
   const [quantity, setQuantity] = useState<number>(3000);
   const [unit, setUnit] = useState<string>("kg");
@@ -128,6 +132,44 @@ export default function SalesInvoiceScreen() {
   const totalAmount = subtotal + vatAmount;
 
   // Handle product type switch defaults
+  // Auto lookup tax code via public API
+  const handleLookupTaxCode = async (codeToLookup?: string) => {
+    const rawCode = (codeToLookup !== undefined ? codeToLookup : taxCode).trim().replace(/[^0-9-]/g, "");
+    if (!rawCode || rawCode.length < 8) {
+      setTaxLookupError("Mã số thuế cần ít nhất 8-10 chữ số.");
+      setTaxLookupSuccess(null);
+      return;
+    }
+
+    try {
+      setTaxLookupLoading(true);
+      setTaxLookupError(null);
+      setTaxLookupSuccess(null);
+
+      const res = await fetch(`http://localhost:4000/api/tax-lookup/${rawCode}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || "Không tìm thấy thông tin mã số thuế này.");
+      }
+
+      const data = await res.json();
+      if (data && data.name) {
+        setCustomerName(data.name);
+        setTaxLookupSuccess(`Đã nhận diện: ${data.name}${data.address ? " - " + data.address : ""}`);
+        if (data.taxCode) {
+          setTaxCode(data.taxCode);
+        }
+      } else {
+        throw new Error("Không tìm thấy tên doanh nghiệp.");
+      }
+    } catch (err: any) {
+      setTaxLookupError(err.message || "Lỗi tra cứu mã số thuế.");
+      setTaxLookupSuccess(null);
+    } finally {
+      setTaxLookupLoading(false);
+    }
+  };
+
   const handleProductChange = (type: SalesProductType) => {
     setProductType(type);
     const def = PRODUCT_DEFINITIONS[type] || PRODUCT_DEFINITIONS.CRUDE_OIL;
@@ -257,7 +299,32 @@ export default function SalesInvoiceScreen() {
   });
 
   // Paged invoices
+  // Rich metrics for Box 1 & Box 4
+  const totalInvoicesCount = periodInvoices.length;
+  const paidInvoicesCount = periodInvoices.filter((i) => i.paymentStatus === "PAID").length;
+  const totalCollected = periodInvoices.reduce((s, i) => s + (i.paidAmount || 0), 0);
+  const collectionRate = totalRevenue > 0 ? ((totalCollected / totalRevenue) * 100).toFixed(0) : "0";
+  const unpaidCount = periodInvoices.filter((i) => i.paymentStatus !== "PAID").length;
+
   const pagedInvoices = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Segments calculation for Donut Chart
+  const oilInvoices = periodInvoices.filter((i) => isOil(i.productType));
+  const mealInvoices = periodInvoices.filter((i) => isMeal(i.productType));
+  const oilQuantity = oilInvoices.reduce((s, i) => s + i.quantity, 0);
+  const mealQuantity = mealInvoices.reduce((s, i) => s + i.quantity, 0);
+
+  const crudeOilAmount = periodInvoices.filter((i) => i.productType === "CRUDE_OIL").reduce((s, i) => s + i.totalAmount, 0);
+  const crudeOilQty = periodInvoices.filter((i) => i.productType === "CRUDE_OIL").reduce((s, i) => s + i.quantity, 0);
+  const filteredOilAmount = periodInvoices.filter((i) => i.productType === "FILTERED_OIL").reduce((s, i) => s + i.totalAmount, 0);
+  const filteredOilQty = periodInvoices.filter((i) => i.productType === "FILTERED_OIL").reduce((s, i) => s + i.quantity, 0);
+
+  const mealBrownAmount = periodInvoices.filter((i) => i.productType === "MEAL_BROWN").reduce((s, i) => s + i.totalAmount, 0);
+  const mealBrownQty = periodInvoices.filter((i) => i.productType === "MEAL_BROWN").reduce((s, i) => s + i.quantity, 0);
+  const mealWhiteAmount = periodInvoices.filter((i) => i.productType === "MEAL_WHITE").reduce((s, i) => s + i.totalAmount, 0);
+  const mealWhiteQty = periodInvoices.filter((i) => i.productType === "MEAL_WHITE").reduce((s, i) => s + i.quantity, 0);
+  const mealWholeAmount = periodInvoices.filter((i) => i.productType === "MEAL_WHOLE" || i.productType === "BYPRODUCT").reduce((s, i) => s + i.totalAmount, 0);
+  const mealWholeQty = periodInvoices.filter((i) => i.productType === "MEAL_WHOLE" || i.productType === "BYPRODUCT").reduce((s, i) => s + i.quantity, 0);
+
 
   return (
     <AppShell activeModule="sales">
@@ -281,47 +348,99 @@ export default function SalesInvoiceScreen() {
           />
         </div>
 
-        {/* Compact KPI Row - 80px according to erp-ux-ui skill */}
-        <div className="kpi-row-compact">
-          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #15936b" }}>
-            <span className="kpi-label">Tổng doanh thu xuất bán</span>
-            <span className="kpi-value text-right" style={{ color: "#15936b" }}>
-              {(totalRevenue / 1000000).toFixed(1)} Tr
-            </span>
-            <span className="kpi-sub">Gồm VAT: {(totalRevenue).toLocaleString("vi-VN")} đ</span>
+        {/* 3 Box ngang hàng (33.33% mỗi box): Box Tài chính Doanh thu & Công nợ gộp + 2 Box Biểu đồ tròn Dầu Dừa & Cám Dừa */}
+        <div className="kpi-row-compact" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 16 }}>
+          {/* Box 1 (33.33%): Gộp Tổng doanh thu xuất bán & Công nợ chưa thu */}
+          <div
+            className="kpi-card-compact"
+            style={{
+              borderLeft: "4px solid #15936b",
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              minHeight: "84px"
+            }}
+          >
+            {/* 2 Cột chỉ số chính: Doanh thu (Trái) & Công nợ (Phải) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "baseline" }}>
+              <div>
+                <span className="kpi-label" style={{ fontSize: "11px" }}>Tổng doanh thu xuất bán</span>
+                <div style={{ fontSize: "17px", fontWeight: 800, color: "#15936b", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+                  {(totalRevenue / 1000000).toFixed(1)} Tr
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span className="kpi-label" style={{ fontSize: "11px", color: overdueInvoices.length > 0 ? "#be123c" : "var(--muted)" }}>
+                  Công nợ chưa thu
+                </span>
+                <div style={{ fontSize: "17px", fontWeight: 800, color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+                  {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ"}
+                </div>
+              </div>
+            </div>
+
+            {/* Progress bar: Tỷ lệ thực thu & Nợ quá hạn */}
+            <div style={{ marginTop: 6, marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--muted)", marginBottom: 2 }}>
+                <span>Đã thu {collectionRate}% ({(totalCollected / 1000000).toFixed(1)} Tr)</span>
+                {overdueInvoices.length > 0 ? (
+                  <span style={{ color: "#be123c", fontWeight: 700 }}>⚠️ Quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr</span>
+                ) : (
+                  <span style={{ color: "#15936b", fontWeight: 600 }}>Trong hạn</span>
+                )}
+              </div>
+              <div style={{ width: "100%", height: 5, background: "#e2e8f0", borderRadius: 3, overflow: "hidden", display: "flex" }}>
+                <div style={{ width: `${Math.min(100, Number(collectionRate))}%`, height: "100%", background: "#15936b", transition: "width 0.3s ease" }} />
+                {unpaidTotal > 0 && (
+                  <div style={{ width: `${Math.min(100 - Number(collectionRate), ((unpaidTotal / (totalRevenue || 1)) * 100))}%`, height: "100%", background: overdueInvoices.length > 0 ? "#f43f5e" : "#fbbf24" }} />
+                )}
+              </div>
+            </div>
+
+            {/* Subtext footer */}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--muted)", marginTop: 2 }}>
+              <span>{totalInvoicesCount} HĐ ({paidInvoicesCount} đã tất toán)</span>
+              <span style={{ color: overdueInvoices.length > 0 ? "#be123c" : "var(--muted)", fontWeight: overdueInvoices.length > 0 ? 600 : 400 }}>
+                {unpaidCount > 0 ? `${unpaidCount} HĐ còn nợ` : "Đã thu đủ 100%"}
+              </span>
+            </div>
           </div>
 
-          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #0d9488" }}>
-            <span className="kpi-label">Doanh thu Dầu Dừa (Thô &amp; Lọc)</span>
-            <span className="kpi-value text-right" style={{ color: "#0d9488" }}>
-              {(oilRevenue / 1000000).toFixed(1)} Tr
-            </span>
-            <span className="kpi-sub">
-              {invoices.filter((i) => isOil(i.productType)).reduce((s, i) => s + i.quantity, 0).toLocaleString("vi-VN")} kg xuất xưởng
-            </span>
-          </div>
+          {/* Box 2 (33.33%): Biểu đồ tròn Dầu Dừa */}
+          <CompactDonutCard
+            title="Doanh thu Dầu Dừa"
+            totalAmount={oilRevenue}
+            totalQuantity={oilQuantity}
+            unit="kg"
+            themeColor="#d97706"
+            slices={[
+              { name: "Dầu dừa thô", amount: crudeOilAmount, quantity: crudeOilQty, unit: "kg", color: "#d97706", filterValue: "CRUDE_OIL" },
+              { name: "Dầu dừa lọc", amount: filteredOilAmount, quantity: filteredOilQty, unit: "kg", color: "#059669", filterValue: "FILTERED_OIL" }
+            ]}
+            onFilterProduct={(val) => {
+              setFilterProduct(val);
+              setCurrentPage(1);
+            }}
+          />
 
-          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #0f7bbf" }}>
-            <span className="kpi-label">Doanh thu Cám Dừa (3 loại)</span>
-            <span className="kpi-value text-right" style={{ color: "#0f7bbf" }}>
-              {(mealRevenue / 1000000).toFixed(1)} Tr
-            </span>
-            <span className="kpi-sub">
-              {invoices.filter((i) => isMeal(i.productType)).reduce((s, i) => s + i.quantity, 0).toLocaleString("vi-VN")} kg thành phẩm
-            </span>
-          </div>
-
-          <div className="kpi-card-compact" style={{ borderLeft: `4px solid ${overdueInvoices.length > 0 ? "#e11d48" : "#c77d14"}` }}>
-            <span className="kpi-label">Công nợ khách hàng chưa thu</span>
-            <span className="kpi-value text-right" style={{ color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b" }}>
-              {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ (Đã thu đủ)"}
-            </span>
-            <span className="kpi-sub" style={{ color: overdueInvoices.length > 0 ? "#be123c" : undefined, fontWeight: overdueInvoices.length > 0 ? 700 : undefined }}>
-              {overdueInvoices.length > 0
-                ? `⚠️ ${overdueInvoices.length} HĐ quá hạn (${(overdueTotal / 1000000).toFixed(1)} Tr) • ${partialCount} đợt dở dang`
-                : `${invoices.filter((i) => i.paymentStatus !== "PAID").length} HĐ còn nợ • ${partialCount} đợt dở dang`}
-            </span>
-          </div>
+          {/* Box 3 (33.33%): Biểu đồ tròn Cám Dừa */}
+          <CompactDonutCard
+            title="Doanh thu Cám Dừa"
+            totalAmount={mealRevenue}
+            totalQuantity={mealQuantity}
+            unit="kg"
+            themeColor="#854d0e"
+            slices={[
+              { name: "Cám nâu", amount: mealBrownAmount, quantity: mealBrownQty, unit: "kg", color: "#854d0e", filterValue: "MEAL_BROWN" },
+              { name: "Cám trắng", amount: mealWhiteAmount, quantity: mealWhiteQty, unit: "kg", color: "#0ea5e9", filterValue: "MEAL_WHITE" },
+              { name: "Cám nguyên", amount: mealWholeAmount, quantity: mealWholeQty, unit: "kg", color: "#f59e0b", filterValue: "MEAL_WHOLE" }
+            ]}
+            onFilterProduct={(val) => {
+              setFilterProduct(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
 
         {/* Toolbar & Filter */}
@@ -354,11 +473,10 @@ export default function SalesInvoiceScreen() {
               <option value="ALL_OIL">💧 Nhóm Dầu Dừa (Thô &amp; Lọc)</option>
               <option value="CRUDE_OIL">-- Dầu dừa thô</option>
               <option value="FILTERED_OIL">-- Dầu dừa lọc</option>
-              <option value="ALL_MEAL">🌾 Nhóm Cám Dừa (Thành phẩm)</option>
-              <option value="MEAL_BROWN">-- Cám dừa nâu</option>
-              <option value="MEAL_WHITE">-- Cám dừa trắng</option>
-              <option value="MEAL_WHOLE">-- Cám dừa nguyên</option>
-              <option value="BYPRODUCT">-- Cám dừa chung</option>
+              <option value="ALL_MEAL">🌾 Nhóm Cám Dừa (3 loại)</option>
+              <option value="MEAL_BROWN">-- Cám nâu</option>
+              <option value="MEAL_WHITE">-- Cám trắng</option>
+              <option value="MEAL_WHOLE">-- Cám nguyên</option>
             </select>
           </div>
 
@@ -731,26 +849,81 @@ export default function SalesInvoiceScreen() {
 
                 <div className="modal-grid-2">
                   <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
+                        Mã số thuế (nếu có)
+                      </label>
+                      <span style={{ fontSize: 11, color: "var(--brand)", fontWeight: 600 }}>
+                        ⚡ Auto-fill tên DN
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        type="text"
+                        placeholder="Nhập MST (VD: 0300588569, 1300994511)..."
+                        value={taxCode}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setTaxCode(val);
+                          setTaxLookupError(null);
+                          setTaxLookupSuccess(null);
+                          const clean = val.trim().replace(/[^0-9-]/g, "");
+                          if (clean.length === 10 || clean.length === 13 || clean.length === 14) {
+                            handleLookupTaxCode(clean);
+                          }
+                        }}
+                        onBlur={() => {
+                          const clean = taxCode.trim().replace(/[^0-9-]/g, "");
+                          if (clean.length >= 8 && !taxLookupSuccess && !customerName) {
+                            handleLookupTaxCode(clean);
+                          }
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleLookupTaxCode()}
+                        disabled={taxLookupLoading || !taxCode.trim()}
+                        style={{
+                          padding: "0 12px",
+                          background: taxLookupLoading ? "#94a3b8" : "var(--brand)",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: taxLookupLoading ? "not-allowed" : "pointer",
+                          whiteSpace: "nowrap",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4
+                        }}
+                        title="Tra cứu API để tự động điền Tên doanh nghiệp"
+                      >
+                        {taxLookupLoading ? "Đang tìm..." : "Tra cứu MST"}
+                      </button>
+                    </div>
+                    {taxLookupError && (
+                      <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
+                        ⚠️ {taxLookupError}
+                      </div>
+                    )}
+                    {taxLookupSuccess && (
+                      <div style={{ fontSize: 11, color: "#059669", marginTop: 4, fontWeight: 500 }}>
+                        ✓ {taxLookupSuccess}
+                      </div>
+                    )}
+                  </div>
+                  <div>
                     <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>
                       Tên Khách hàng / Doanh nghiệp thu mua *
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="VD: Công ty TNHH Dầu Thực Vật Miền Tây..."
+                      placeholder="VD: Công ty Cổ phần Sữa Việt Nam..."
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>
-                      Mã số thuế (nếu có)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="031..."
-                      value={taxCode}
-                      onChange={(e) => setTaxCode(e.target.value)}
                     />
                   </div>
                 </div>
@@ -769,11 +942,10 @@ export default function SalesInvoiceScreen() {
                         <option value="CRUDE_OIL">Dầu dừa thô xuất xưởng</option>
                         <option value="FILTERED_OIL">Dầu dừa lọc sạch (khung bản / ly tâm)</option>
                       </optgroup>
-                      <optgroup label="🌾 Nhóm Cám Dừa Thành Phẩm">
-                        <option value="MEAL_BROWN">Cám dừa nâu (ép nguyên vỏ/lụa đậm)</option>
-                        <option value="MEAL_WHITE">Cám dừa trắng (gọt vỏ lụa, giá trị cao)</option>
-                        <option value="MEAL_WHOLE">Cám dừa nguyên (hỗn hợp tiêu chuẩn)</option>
-                        <option value="BYPRODUCT">Cám dừa chung (tiêu chuẩn xuất bán)</option>
+                      <optgroup label="🌾 Nhóm Cám Dừa (3 loại chuẩn xưởng)">
+                        <option value="MEAL_BROWN">Cám nâu (ép nguyên vỏ/lụa đậm)</option>
+                        <option value="MEAL_WHITE">Cám trắng (gọt vỏ lụa, giá trị cao)</option>
+                        <option value="MEAL_WHOLE">Cám nguyên (hỗn hợp tiêu chuẩn)</option>
                       </optgroup>
                     </select>
                   </div>

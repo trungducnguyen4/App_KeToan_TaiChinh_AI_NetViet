@@ -9,6 +9,7 @@ import { ProductionController } from "./production.controller";
 import { PurchasingController } from "./purchasing.controller";
 import { SalesController } from "./sales.controller";
 import { SyncController } from "./sync.controller";
+import { TaxLookupController } from "./tax-lookup.controller";
 import { VouchersController } from "./vouchers.controller";
 import { WorkitService } from "./workit.service";
 
@@ -24,6 +25,7 @@ import { WorkitService } from "./workit.service";
     CapitalController,
     ApprovalsController,
     SyncController,
+    TaxLookupController,
     JobsController
   ],
   providers: [WorkitService],

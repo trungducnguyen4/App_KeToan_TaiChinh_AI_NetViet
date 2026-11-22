@@ -67,6 +67,9 @@ const INITIAL_FORM: FormState = {
 
 export default function PurchasingScreen() {
   const [invoices, setInvoices] = useState<PurchasingInvoiceItem[]>([]);
+  const [taxLookupLoading, setTaxLookupLoading] = useState(false);
+  const [taxLookupError, setTaxLookupError] = useState<string | null>(null);
+  const [taxLookupSuccess, setTaxLookupSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,6 +155,40 @@ export default function PurchasingScreen() {
   }, [form.voucherNo, form.invoiceSeries, form.taxCode, form.docType]);
 
   // Recalculate weights & amounts when form changes
+  const handleLookupSupplierTaxCode = async (codeToLookup?: string) => {
+    const rawCode = (codeToLookup !== undefined ? codeToLookup : form.taxCode || "").trim().replace(/[^0-9-]/g, "");
+    if (!rawCode || rawCode.length < 8) {
+      setTaxLookupError("Mã số thuế cần ít nhất 8-10 chữ số.");
+      setTaxLookupSuccess(null);
+      return;
+    }
+
+    try {
+      setTaxLookupLoading(true);
+      setTaxLookupError(null);
+      setTaxLookupSuccess(null);
+
+      const res = await fetch(`http://localhost:4000/api/tax-lookup/${rawCode}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || "Không tìm thấy thông tin mã số thuế này.");
+      }
+
+      const data = await res.json();
+      if (data && data.name) {
+        handleFormChange({ supplierName: data.name, taxCode: data.taxCode || rawCode });
+        setTaxLookupSuccess(`Đã nhận diện: ${data.name}`);
+      } else {
+        throw new Error("Không tìm thấy tên doanh nghiệp.");
+      }
+    } catch (err: any) {
+      setTaxLookupError(err.message || "Lỗi tra cứu mã số thuế.");
+      setTaxLookupSuccess(null);
+    } finally {
+      setTaxLookupLoading(false);
+    }
+  };
+
   function handleFormChange(patch: Partial<FormState>) {
     setForm((prev) => {
       const next = { ...prev, ...patch };
@@ -633,13 +670,56 @@ export default function PurchasingScreen() {
                     />
                   </div>
                   <div className="form-field span-3">
-                    <label>Mã số thuế (MST) NCC</label>
-                    <input
-                      type="text"
-                      value={form.taxCode}
-                      onChange={(e) => handleFormChange({ taxCode: e.target.value })}
-                      placeholder="1300123456"
-                    />
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <label style={{ margin: 0 }}>Mã số thuế (MST) NCC</label>
+                      <span style={{ fontSize: 10, color: "var(--brand)", fontWeight: 600 }}>⚡ Auto-fill</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+                      <input
+                        type="text"
+                        value={form.taxCode}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleFormChange({ taxCode: val });
+                          setTaxLookupError(null);
+                          setTaxLookupSuccess(null);
+                          const clean = val.trim().replace(/[^0-9-]/g, "");
+                          if (clean.length === 10 || clean.length === 13 || clean.length === 14) {
+                            handleLookupSupplierTaxCode(clean);
+                          }
+                        }}
+                        placeholder="1300123456"
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleLookupSupplierTaxCode()}
+                        disabled={taxLookupLoading || !form.taxCode?.trim()}
+                        style={{
+                          padding: "0 8px",
+                          background: taxLookupLoading ? "#94a3b8" : "var(--brand)",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: taxLookupLoading ? "not-allowed" : "pointer"
+                        }}
+                        title="Tra cứu MST nhà cung cấp"
+                      >
+                        {taxLookupLoading ? "..." : "Tra cứu"}
+                      </button>
+                    </div>
+                    {taxLookupError && (
+                      <div style={{ fontSize: 10, color: "#dc2626", marginTop: 2 }}>
+                        ⚠️ {taxLookupError}
+                      </div>
+                    )}
+                    {taxLookupSuccess && (
+                      <div style={{ fontSize: 10, color: "#059669", marginTop: 2, fontWeight: 500 }}>
+                        ✓ {taxLookupSuccess}
+                      </div>
+                    )}
                   </div>
                 </>
               )}
