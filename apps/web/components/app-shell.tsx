@@ -5,7 +5,7 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a href="/modules/purchasing" className="brand">
+        <a href="/dashboard" className="brand">
           <span className="brand-mark" style={{ background: "linear-gradient(135deg, #15936b 0%, #087f5b 100%)", color: "#fff", boxShadow: "0 4px 12px rgba(21, 147, 107, 0.35)", borderRadius: "10px", display: "grid", placeItems: "center" }}>
             <AppIcon name="Droplet" size={20} />
           </span>
@@ -14,6 +14,21 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
             <span className="brand-subtitle">Quản trị Xưởng &amp; Giá thành</span>
           </span>
         </a>
+
+        <nav className="nav-section" aria-label="Tổng quan điều hành">
+          <p className="nav-section-title">Trung tâm Điều hành</p>
+          <a
+            href="/dashboard"
+            className={`module-link ${activeModule === "dashboard" ? "is-active" : ""}`}
+          >
+            <span className="module-icon">
+              <AppIcon name="LayoutGrid" />
+            </span>
+            <span className="module-copy">
+              <span className="module-name">Dashboard Insights</span>
+            </span>
+          </a>
+        </nav>
 
         <nav className="nav-section" aria-label="Quy trình nghiệp vụ">
           <p className="nav-section-title">Quy trình Vận hành Xưởng</p>
@@ -60,7 +75,26 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#059669", display: "inline-block" }} />
               Nhập liệu trực tiếp (Direct CRUD)
             </span>
-            <span className="avatar" title="Quản trị Xưởng">AD</span>
+            <span className="avatar" title="Quản trị Xưởng (admin1)">AD</span>
+            <a
+              href="/login"
+              title="Đăng xuất / Chuyển tài khoản"
+              style={{
+                fontSize: "12px",
+                color: "#64748b",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "4px 8px",
+                borderRadius: "6px",
+                border: "1px solid #e2e8f0",
+                background: "#ffffff"
+              }}
+            >
+              <AppIcon name="X" size={13} />
+              Thoát
+            </a>
           </div>
         </header>
         {children}

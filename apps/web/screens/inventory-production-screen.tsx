@@ -3,6 +3,8 @@ import type { ProductionBatchRecord, SupplierYieldPerformance } from "@domain/ty
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
+import { Pagination } from "../components/pagination";
+import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -49,6 +51,9 @@ export default function InventoryProductionScreen() {
 
   // Search & Filters
   const [filterQuery, setFilterQuery] = useState("");
+  const [period, setPeriod] = useState<PeriodFilterValue>("3M");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   async function loadData() {
     try {
@@ -144,17 +149,20 @@ export default function InventoryProductionScreen() {
     }
   }
 
-  // Aggregate metrics
-  const totalRawTons = batches.reduce((sum, b) => sum + b.rawMaterialKg, 0) / 1000;
-  const totalOilTons = batches.reduce((sum, b) => sum + b.crudeOilKg, 0) / 1000;
-  const totalLiters = batches.reduce((sum, b) => sum + b.crudeOilLiters, 0);
-  const totalByproductTons = batches.reduce((sum, b) => sum + b.byproductKg, 0) / 1000;
+  // Filter batches by period first
+  const periodBatches = filterByPeriod(batches, (b) => b.batchDate, period);
+
+  // Aggregate metrics based on selected period
+  const totalRawTons = periodBatches.reduce((sum, b) => sum + b.rawMaterialKg, 0) / 1000;
+  const totalOilTons = periodBatches.reduce((sum, b) => sum + b.crudeOilKg, 0) / 1000;
+  const totalLiters = periodBatches.reduce((sum, b) => sum + b.crudeOilLiters, 0);
+  const totalByproductTons = periodBatches.reduce((sum, b) => sum + b.byproductKg, 0) / 1000;
   const avgYieldRate = totalRawTons > 0 ? ((totalOilTons / totalRawTons) * 100).toFixed(2) : "0.00";
-  const avgUnitCost = batches.length > 0
-    ? Math.round(batches.reduce((sum, b) => sum + b.unitCostPerKg, 0) / batches.length)
+  const avgUnitCost = periodBatches.length > 0
+    ? Math.round(periodBatches.reduce((sum, b) => sum + b.unitCostPerKg, 0) / periodBatches.length)
     : 0;
 
-  const filteredBatches = batches.filter((b) => {
+  const filteredBatches = periodBatches.filter((b) => {
     if (!filterQuery.trim()) return true;
     const q = filterQuery.toLowerCase();
     return (
@@ -164,13 +172,27 @@ export default function InventoryProductionScreen() {
     );
   });
 
+  // Paged batches
+  const pagedBatches = filteredBatches.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <AppShell activeModule="inventory">
       <div className="workspace">
-        <div className="breadcrumb">
-          <span>Trang chủ</span>
-          <span>/</span>
-          <span>Kho & Công đoạn Ép/Lọc</span>
+        {/* Breadcrumb & Period Filter */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div className="breadcrumb" style={{ margin: 0 }}>
+            <span>Trang chủ</span>
+            <span>/</span>
+            <span>Kho &amp; Công đoạn Ép/Lọc</span>
+          </div>
+
+          <PeriodFilter
+            value={period}
+            onChange={(val) => {
+              setPeriod(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
 
         {/* Hero Section */}
@@ -503,7 +525,7 @@ export default function InventoryProductionScreen() {
                       </td>
                     </tr>
                   ) : (
-                    filteredBatches.map((b) => (
+                    pagedBatches.map((b) => (
                       <tr key={b.id}>
                         <td>
                           <strong>{b.batchCode}</strong>
@@ -560,6 +582,15 @@ export default function InventoryProductionScreen() {
                   )}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredBatches.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+              />
             </section>
           </>
         )}

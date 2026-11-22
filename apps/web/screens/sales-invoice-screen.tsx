@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
+import { Pagination } from "../components/pagination";
+import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
 
 type SalesInvoiceItem = {
   id: string;
@@ -38,6 +40,11 @@ export default function SalesInvoiceScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPayment, setFilterPayment] = useState<string>("ALL");
   const [filterProduct, setFilterProduct] = useState<string>("ALL");
+
+  // Period and Pagination state
+  const [period, setPeriod] = useState<PeriodFilterValue>("3M");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Form State
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -167,13 +174,17 @@ export default function SalesInvoiceScreen() {
   };
 
   // KPIs
-  const totalRevenue = invoices.reduce((s, i) => s + i.totalAmount, 0);
-  const crudeOilRevenue = invoices.filter((i) => i.productType === "CRUDE_OIL").reduce((s, i) => s + i.totalAmount, 0);
-  const byproductRevenue = invoices.filter((i) => i.productType === "BYPRODUCT").reduce((s, i) => s + i.totalAmount, 0);
-  const unpaidTotal = invoices.filter((i) => i.paymentStatus === "UNPAID").reduce((s, i) => s + i.totalAmount, 0);
+  // Filter by period first
+  const periodInvoices = filterByPeriod(invoices, (i) => i.voucherDate, period);
+
+  // Compute metrics based on selected period
+  const totalRevenue = periodInvoices.reduce((s, i) => s + i.totalAmount, 0);
+  const crudeOilRevenue = periodInvoices.filter((i) => i.productType === "CRUDE_OIL").reduce((s, i) => s + i.totalAmount, 0);
+  const byproductRevenue = periodInvoices.filter((i) => i.productType === "BYPRODUCT").reduce((s, i) => s + i.totalAmount, 0);
+  const unpaidTotal = periodInvoices.filter((i) => i.paymentStatus === "UNPAID").reduce((s, i) => s + i.totalAmount, 0);
 
   // Filtered invoices
-  const filtered = invoices.filter((inv) => {
+  const filtered = periodInvoices.filter((inv) => {
     const matchSearch =
       searchTerm === "" ||
       inv.voucherNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -184,16 +195,29 @@ export default function SalesInvoiceScreen() {
     return matchSearch && matchPayment && matchProduct;
   });
 
+  // Paged invoices
+  const pagedInvoices = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <AppShell activeModule="sales">
       <div className="workspace">
-        {/* Breadcrumb */}
-        <div className="breadcrumb">
-          <a className="breadcrumb-link" href="/">Trang chủ</a>
-          <span>/</span>
-          <a className="breadcrumb-link" href="/modules/sales">Hóa đơn Đầu ra</a>
-          <span>/</span>
-          <span>Xuất Bán Dầu Dừa & Bã Dừa</span>
+        {/* Breadcrumb & Period Filter */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div className="breadcrumb" style={{ margin: 0 }}>
+            <a className="breadcrumb-link" href="/">Trang chủ</a>
+            <span>/</span>
+            <a className="breadcrumb-link" href="/modules/sales">Hóa đơn Đầu ra</a>
+            <span>/</span>
+            <span>Xuất Bán Dầu Dừa &amp; Bã Dừa</span>
+          </div>
+
+          <PeriodFilter
+            value={period}
+            onChange={(val) => {
+              setPeriod(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
 
         {/* Compact KPI Row - 80px according to erp-ux-ui skill */}
@@ -298,7 +322,7 @@ export default function SalesInvoiceScreen() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((inv) => (
+                {pagedInvoices.map((inv) => (
                   <tr key={inv.id}>
                     <td className="font-mono" style={{ fontWeight: 700, color: "#0f7bbf" }}>
                       {inv.voucherNo}
@@ -411,6 +435,15 @@ export default function SalesInvoiceScreen() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filtered.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
 
         {/* Modal: Lập Hóa Đơn Bán Hàng */}

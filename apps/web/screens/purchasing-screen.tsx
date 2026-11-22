@@ -3,6 +3,8 @@ import type { CostCategory, DocType, ProcessStage, AllocationMode, PurchasingInv
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
+import { Pagination } from "../components/pagination";
+import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -74,6 +76,11 @@ export default function PurchasingScreen() {
   // Duplicate check state
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+  // Period and Pagination state
+  const [period, setPeriod] = useState<PeriodFilterValue>("3M");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Filters
   const [filterQuery, setFilterQuery] = useState("");
@@ -289,20 +296,23 @@ export default function PurchasingScreen() {
     }
   }
 
-  // Compute metrics
-  const totalAmount = invoices.reduce((sum, item) => sum + item.totalAmount, 0);
-  const totalRawWeightTons = invoices
+  // Filter by period first
+  const periodInvoices = filterByPeriod(invoices, (item) => item.voucherDate, period);
+
+  // Compute metrics based on selected period
+  const totalAmount = periodInvoices.reduce((sum, item) => sum + item.totalAmount, 0);
+  const totalRawWeightTons = periodInvoices
     .filter((item) => item.costCategory === "RAW_MATERIAL")
     .reduce((sum, item) => sum + (item.netWeightKg || 0), 0) / 1000;
-  const unpaidAmount = invoices
+  const unpaidAmount = periodInvoices
     .filter((item) => item.paymentStatus === "UNPAID")
     .reduce((sum, item) => sum + item.totalAmount, 0);
-  const paidAmount = invoices
+  const paidAmount = periodInvoices
     .filter((item) => item.paymentStatus === "PAID")
     .reduce((sum, item) => sum + item.totalAmount, 0);
 
   // Filter invoices
-  const filteredInvoices = invoices.filter((item) => {
+  const filteredInvoices = periodInvoices.filter((item) => {
     if (filterDocType !== "ALL" && item.docType !== filterDocType) return false;
     if (filterCostCategory !== "ALL" && item.costCategory !== filterCostCategory) return false;
     if (filterPaymentStatus !== "ALL" && item.paymentStatus !== filterPaymentStatus) return false;
@@ -317,13 +327,27 @@ export default function PurchasingScreen() {
     return true;
   });
 
+  // Paged invoices
+  const pagedInvoices = filteredInvoices.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <AppShell activeModule="purchasing">
       <div className="workspace">
-        <div className="breadcrumb">
-          <span>Trang chủ</span>
-          <span>/</span>
-          <span>Hóa đơn Vào & Thu mua</span>
+        {/* Breadcrumb & Period Filter */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div className="breadcrumb" style={{ margin: 0 }}>
+            <span>Trang chủ</span>
+            <span>/</span>
+            <span>Hóa đơn Vào &amp; Thu mua</span>
+          </div>
+
+          <PeriodFilter
+            value={period}
+            onChange={(val) => {
+              setPeriod(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
 
         {/* Hero Section */}
@@ -336,9 +360,9 @@ export default function PurchasingScreen() {
             </p>
           </div>
           <div className="sync-panel" style={{ background: "#134e4a" }}>
-            <strong style={{ color: "#34d399" }}>{invoices.length} chứng từ</strong>
+            <strong style={{ color: "#34d399" }}>{filteredInvoices.length} chứng từ</strong>
             <span>
-              Đã ghi nhận {totalRawWeightTons.toFixed(1)} tấn vỏ dừa nguyên liệu. Sẵn sàng tính chi phí tự động.
+              Đã ghi nhận {totalRawWeightTons.toFixed(1)} tấn vỏ dừa nguyên liệu trong kỳ ({period}).
             </span>
           </div>
         </section>
@@ -726,9 +750,11 @@ export default function PurchasingScreen() {
           <div className="subsection" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
             <div>
               <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0 }}>
-                Danh sách Hóa đơn & Bảng kê thu mua ({filteredInvoices.length})
+                Danh sách Hóa đơn &amp; Bảng kê thu mua ({filteredInvoices.length})
               </h3>
-              <span className="module-meta">Dữ liệu thời gian thực từ CSDL nội bộ</span>
+              <span className="module-meta">
+                Dữ liệu thời gian thực từ CSDL nội bộ • Trang {currentPage} / {Math.max(1, Math.ceil(filteredInvoices.length / pageSize))}
+              </span>
             </div>
 
             {/* Filter controls */}
@@ -807,7 +833,7 @@ export default function PurchasingScreen() {
                   </td>
                 </tr>
               ) : (
-                filteredInvoices.map((inv) => (
+                pagedInvoices.map((inv) => (
                   <tr key={inv.id}>
                     <td>
                       <span
@@ -919,6 +945,15 @@ export default function PurchasingScreen() {
               )}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredInvoices.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </div>
     </AppShell>
