@@ -4,6 +4,7 @@ import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
 import { Pagination } from "../components/pagination";
 import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
+import { SalesRevenueDonutChart } from "../components/sales-revenue-donut-chart";
 
 export type SalesProductType =
   | "CRUDE_OIL"
@@ -299,6 +300,24 @@ export default function SalesInvoiceScreen() {
 
   // Paged invoices
   const pagedInvoices = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Segments calculation for Donut Chart
+  const oilInvoices = periodInvoices.filter((i) => isOil(i.productType));
+  const mealInvoices = periodInvoices.filter((i) => isMeal(i.productType));
+  const oilQuantity = oilInvoices.reduce((s, i) => s + i.quantity, 0);
+  const mealQuantity = mealInvoices.reduce((s, i) => s + i.quantity, 0);
+
+  const crudeOilAmount = periodInvoices.filter((i) => i.productType === "CRUDE_OIL").reduce((s, i) => s + i.totalAmount, 0);
+  const crudeOilQty = periodInvoices.filter((i) => i.productType === "CRUDE_OIL").reduce((s, i) => s + i.quantity, 0);
+  const filteredOilAmount = periodInvoices.filter((i) => i.productType === "FILTERED_OIL").reduce((s, i) => s + i.totalAmount, 0);
+  const filteredOilQty = periodInvoices.filter((i) => i.productType === "FILTERED_OIL").reduce((s, i) => s + i.quantity, 0);
+
+  const mealBrownAmount = periodInvoices.filter((i) => i.productType === "MEAL_BROWN").reduce((s, i) => s + i.totalAmount, 0);
+  const mealBrownQty = periodInvoices.filter((i) => i.productType === "MEAL_BROWN").reduce((s, i) => s + i.quantity, 0);
+  const mealWhiteAmount = periodInvoices.filter((i) => i.productType === "MEAL_WHITE").reduce((s, i) => s + i.totalAmount, 0);
+  const mealWhiteQty = periodInvoices.filter((i) => i.productType === "MEAL_WHITE").reduce((s, i) => s + i.quantity, 0);
+  const mealWholeAmount = periodInvoices.filter((i) => i.productType === "MEAL_WHOLE" || i.productType === "BYPRODUCT").reduce((s, i) => s + i.totalAmount, 0);
+  const mealWholeQty = periodInvoices.filter((i) => i.productType === "MEAL_WHOLE" || i.productType === "BYPRODUCT").reduce((s, i) => s + i.quantity, 0);
+
 
   return (
     <AppShell activeModule="sales">
@@ -364,6 +383,28 @@ export default function SalesInvoiceScreen() {
             </span>
           </div>
         </div>
+
+        {/* Biểu đồ tròn Cơ cấu Doanh thu Xuất bán (Dầu Dừa & Cám Dừa) */}
+        <SalesRevenueDonutChart
+          oilRevenue={oilRevenue}
+          mealRevenue={mealRevenue}
+          oilQuantity={oilQuantity}
+          mealQuantity={mealQuantity}
+          totalRevenue={totalRevenue}
+          oilSegments={{
+            crudeOil: { amount: crudeOilAmount, quantity: crudeOilQty },
+            filteredOil: { amount: filteredOilAmount, quantity: filteredOilQty }
+          }}
+          mealSegments={{
+            mealBrown: { amount: mealBrownAmount, quantity: mealBrownQty },
+            mealWhite: { amount: mealWhiteAmount, quantity: mealWhiteQty },
+            mealWhole: { amount: mealWholeAmount, quantity: mealWholeQty }
+          }}
+          onFilterProduct={(val) => {
+            setFilterProduct(val);
+            setCurrentPage(1);
+          }}
+        />
 
         {/* Toolbar & Filter */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
