@@ -71,29 +71,29 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
         <header className="topbar">
           <h1>Hệ thống Quản lý Thu mua & Ép lọc Dầu dừa thô</h1>
           <div className="topbar-actions">
-            <span style={{ fontSize: "12px", background: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0", padding: "4px 10px", borderRadius: "12px", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#059669", display: "inline-block" }} />
-              Nhập liệu trực tiếp (Direct CRUD)
-            </span>
             <span className="avatar" title="Quản trị Xưởng (admin1)">AD</span>
             <a
               href="/login"
-              title="Đăng xuất / Chuyển tài khoản"
+              title="Đăng xuất khỏi hệ thống"
               style={{
                 fontSize: "12px",
-                color: "#64748b",
+                fontWeight: 600,
+                color: "#ffffff",
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 4,
-                padding: "4px 8px",
+                gap: 5,
+                padding: "6px 12px",
                 borderRadius: "6px",
-                border: "1px solid #e2e8f0",
-                background: "#ffffff"
+                background: "#dc2626",
+                border: "1px solid #b91c1c",
+                boxShadow: "0 1px 2px rgba(220, 38, 38, 0.2)",
+                cursor: "pointer",
+                transition: "background 0.15s ease"
               }}
             >
-              <AppIcon name="X" size={13} />
-              Thoát
+              <AppIcon name="LogOut" size={13} />
+              Đăng xuất
             </a>
           </div>
         </header>
