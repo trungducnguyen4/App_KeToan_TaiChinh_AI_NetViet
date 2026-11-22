@@ -105,7 +105,7 @@ export default function DashboardPage() {
           <div className="breadcrumb" style={{ margin: 0 }}>
             <span>Trang chủ</span>
             <span>/</span>
-            <span>Trung tâm Điều hành (Dashboard Insights)</span>
+            <span>Trung tâm Điều hành</span>
           </div>
 
           <PeriodFilter value={period} onChange={setPeriod} />
@@ -180,7 +180,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 3 INSIGHT PANELS GRID */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 18, marginTop: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: 18, marginTop: 20 }}>
           {/* INSIGHT 1: QUY TRÌNH NGUYÊN LIỆU & ÉP LỌC */}
           <div className="panel" style={{ padding: 18 }}>
             <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
@@ -197,20 +197,20 @@ export default function DashboardPage() {
                 <strong className="tabular-nums">{(totalRawMaterialProcessedKg / 1000).toFixed(2)} Tấn</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Dầu dừa thô thành phẩm thu được:</span>
+                <span style={{ color: "var(--muted)" }}>Dầu dừa thu hồi (Thô &amp; Lọc):</span>
                 <strong className="tabular-nums" style={{ color: "#059669" }}>{(totalCrudeOilKg / 1000).toFixed(2)} Tấn</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Phụ phẩm bã/xác dừa ép:</span>
-                <strong className="tabular-nums">{(totalByproductKg / 1000).toFixed(2)} Tấn</strong>
+                <span style={{ color: "var(--muted)" }}>Cám dừa thành phẩm (nâu, trắng, nguyên):</span>
+                <strong className="tabular-nums" style={{ color: "#b45309" }}>{(totalByproductKg / 1000).toFixed(2)} Tấn</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Dầu thô đã xuất bán giao khách:</span>
+                <span style={{ color: "var(--muted)" }}>Dầu dừa đã xuất bán giao khách:</span>
                 <strong className="tabular-nums" style={{ color: "#0369a1" }}>{(totalCrudeOilSoldKg / 1000).toFixed(2)} Tấn</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
-                <span style={{ color: "var(--muted)" }}>Bã dừa đã bán cho HTX thức ăn:</span>
-                <strong className="tabular-nums">{(totalByproductSoldKg / 1000).toFixed(2)} Tấn</strong>
+                <span style={{ color: "var(--muted)" }}>Cám dừa đã xuất bán tiêu thụ:</span>
+                <strong className="tabular-nums" style={{ color: "#92400e" }}>{(totalByproductSoldKg / 1000).toFixed(2)} Tấn</strong>
               </div>
             </div>
             <div style={{ marginTop: 16 }}>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
         </div>
 
         {/* RECENT BATCHES & SALES ACTIVITY STREAM */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(480px, 1fr))", gap: 18, marginTop: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 18, marginTop: 20 }}>
           {/* MẺ ÉP GẦN ĐÂY */}
           <div className="panel table-scroll">
             <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -358,7 +358,7 @@ export default function DashboardPage() {
           {/* HÓA ĐƠN XUẤT BÁN GẦN ĐÂY */}
           <div className="panel table-scroll">
             <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Hóa đơn xuất bán dầu &amp; phụ phẩm mới nhất</h3>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Hóa đơn xuất bán dầu dừa &amp; cám dừa mới nhất</h3>
               <span style={{ fontSize: 12, color: "var(--muted)" }}>{filteredSales.length} hóa đơn</span>
             </div>
             <table className="data-table">
@@ -373,31 +373,46 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredSales.slice(0, 6).map((s) => (
-                  <tr key={s.id || s.voucherNo}>
-                    <td className="font-mono" style={{ fontWeight: 700, color: "#0369a1" }}>{s.voucherNo}</td>
-                    <td>{new Date(s.voucherDate).toLocaleDateString("vi-VN")}</td>
-                    <td style={{ fontWeight: 600 }}>{s.customerName}</td>
-                    <td>
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: 6,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background: s.productType === "CRUDE_OIL" ? "#e0f2fe" : "#fef3c7",
-                          color: s.productType === "CRUDE_OIL" ? "#0369a1" : "#92400e"
-                        }}
-                      >
-                        {s.productType === "CRUDE_OIL" ? "Dầu thô" : "Bã dừa"}
-                      </span>
-                    </td>
-                    <td className="text-right tabular-nums">{Number(s.quantity).toLocaleString("vi-VN")} {s.unit}</td>
-                    <td className="text-right tabular-nums" style={{ fontWeight: 700, color: "#059669" }}>
-                      {Number(s.totalAmount).toLocaleString("vi-VN")} đ
-                    </td>
-                  </tr>
-                ))}
+                {filteredSales.slice(0, 6).map((s) => {
+                  const isOilProduct = s.productType === "CRUDE_OIL" || s.productType === "FILTERED_OIL";
+                  const label =
+                    s.productType === "CRUDE_OIL"
+                      ? "Dầu thô"
+                      : s.productType === "FILTERED_OIL"
+                      ? "Dầu lọc"
+                      : s.productType === "MEAL_BROWN"
+                      ? "Cám dừa nâu"
+                      : s.productType === "MEAL_WHITE"
+                      ? "Cám dừa trắng"
+                      : s.productType === "MEAL_WHOLE"
+                      ? "Cám dừa nguyên"
+                      : "Cám dừa";
+                  return (
+                    <tr key={s.id || s.voucherNo}>
+                      <td className="font-mono" style={{ fontWeight: 700, color: "#0369a1" }}>{s.voucherNo}</td>
+                      <td>{new Date(s.voucherDate).toLocaleDateString("vi-VN")}</td>
+                      <td style={{ fontWeight: 600 }}>{s.customerName}</td>
+                      <td>
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: isOilProduct ? "#e0f2fe" : "#fef3c7",
+                            color: isOilProduct ? "#0369a1" : "#92400e"
+                          }}
+                        >
+                          {label}
+                        </span>
+                      </td>
+                      <td className="text-right tabular-nums">{Number(s.quantity).toLocaleString("vi-VN")} {s.unit}</td>
+                      <td className="text-right tabular-nums" style={{ fontWeight: 700, color: "#059669" }}>
+                        {Number(s.totalAmount).toLocaleString("vi-VN")} đ
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
