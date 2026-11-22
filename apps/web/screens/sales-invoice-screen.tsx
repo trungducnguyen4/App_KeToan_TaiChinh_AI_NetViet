@@ -4,7 +4,7 @@ import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
 import { Pagination } from "../components/pagination";
 import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
-import { SalesRevenueDonutChart } from "../components/sales-revenue-donut-chart";
+import { TwoSalesDonutCharts } from "../components/two-sales-donut-charts";
 
 export type SalesProductType =
   | "CRUDE_OIL"
@@ -384,22 +384,22 @@ export default function SalesInvoiceScreen() {
           </div>
         </div>
 
-        {/* Biểu đồ tròn Cơ cấu Doanh thu Xuất bán (Dầu Dừa & Cám Dừa) */}
-        <SalesRevenueDonutChart
+        {/* 2 Biểu đồ tròn tách biệt: Doanh thu Dầu Dừa & Doanh thu Cám Dừa */}
+        <TwoSalesDonutCharts
           oilRevenue={oilRevenue}
           mealRevenue={mealRevenue}
           oilQuantity={oilQuantity}
           mealQuantity={mealQuantity}
-          totalRevenue={totalRevenue}
-          oilSegments={{
-            crudeOil: { amount: crudeOilAmount, quantity: crudeOilQty },
-            filteredOil: { amount: filteredOilAmount, quantity: filteredOilQty }
-          }}
-          mealSegments={{
-            mealBrown: { amount: mealBrownAmount, quantity: mealBrownQty },
-            mealWhite: { amount: mealWhiteAmount, quantity: mealWhiteQty },
-            mealWhole: { amount: mealWholeAmount, quantity: mealWholeQty }
-          }}
+          crudeOilAmount={crudeOilAmount}
+          crudeOilQty={crudeOilQty}
+          filteredOilAmount={filteredOilAmount}
+          filteredOilQty={filteredOilQty}
+          mealBrownAmount={mealBrownAmount}
+          mealBrownQty={mealBrownQty}
+          mealWhiteAmount={mealWhiteAmount}
+          mealWhiteQty={mealWhiteQty}
+          mealWholeAmount={mealWholeAmount}
+          mealWholeQty={mealWholeQty}
           onFilterProduct={(val) => {
             setFilterProduct(val);
             setCurrentPage(1);
