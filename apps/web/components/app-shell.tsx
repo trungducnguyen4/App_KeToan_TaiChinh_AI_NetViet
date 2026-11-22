@@ -54,7 +54,7 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
 
         <nav className="nav-section" aria-label="Quy trình nghiệp vụ">
           <p className="nav-section-title">Quy trình Vận hành Xưởng</p>
-          {workitModules.slice(0, 6).map((module) => (
+          {workitModules.slice(0, 7).map((module) => (
             <a
               key={module.key}
               href={module.route}
@@ -73,7 +73,7 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
 
         <nav className="nav-section" aria-label="Hệ thống và danh mục">
           <p className="nav-section-title">Hệ thống & Danh mục</p>
-          {workitModules.slice(6).map((module) => (
+          {workitModules.slice(7).map((module) => (
             <a
               key={module.key}
               href={module.route}
