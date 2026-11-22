@@ -746,8 +746,8 @@ export default function PurchasingScreen() {
         </section>
 
         {/* Invoices List Table */}
-        <section className="panel table-scroll" style={{ marginTop: "24px" }}>
-          <div className="subsection" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+        <section className="panel" style={{ marginTop: "24px", padding: 0, overflow: "hidden" }}>
+          <div className="subsection" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", padding: "16px 20px" }}>
             <div>
               <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0 }}>
                 Danh sách Hóa đơn &amp; Bảng kê thu mua ({filteredInvoices.length})
@@ -810,21 +810,22 @@ export default function PurchasingScreen() {
             </div>
           </div>
 
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Loại CT</th>
-                <th>Số CT / Số HĐ</th>
-                <th>Ngày</th>
-                <th>Thương lái / Nhà cung cấp</th>
-                <th>Nhóm chi phí</th>
-                <th>Phân bổ</th>
-                <th style={{ textAlign: "right" }}>KL Tịnh (kg)</th>
-                <th style={{ textAlign: "right" }}>Tổng tiền (VNĐ)</th>
-                <th style={{ textAlign: "center" }}>Trạng thái TT</th>
-                <th style={{ textAlign: "center" }}>Hành động</th>
-              </tr>
-            </thead>
+          <div style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
+            <table className="data-table">
+              <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>
+                <tr>
+                  <th>Loại CT</th>
+                  <th>Số CT / Số HĐ</th>
+                  <th>Ngày</th>
+                  <th>Thương lái / Nhà cung cấp</th>
+                  <th>Nhóm chi phí</th>
+                  <th>Phân bổ</th>
+                  <th style={{ textAlign: "right" }}>KL Tịnh (kg)</th>
+                  <th style={{ textAlign: "right" }}>Tổng tiền (VNĐ)</th>
+                  <th style={{ textAlign: "center" }}>Trạng thái TT</th>
+                  <th style={{ textAlign: "center" }}>Hành động</th>
+                </tr>
+              </thead>
             <tbody>
               {filteredInvoices.length === 0 ? (
                 <tr>
@@ -945,16 +946,17 @@ export default function PurchasingScreen() {
               )}
             </tbody>
           </table>
+        </div>
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={filteredInvoices.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-          />
-        </section>
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredInvoices.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
+      </section>
       </div>
     </AppShell>
   );

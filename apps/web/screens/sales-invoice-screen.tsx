@@ -301,10 +301,10 @@ export default function SalesInvoiceScreen() {
         </div>
 
         {/* Invoices Data Table */}
-        <div className="table-card">
-          <div className="table-scroll">
+        <div className="table-card" style={{ background: "#ffffff", borderRadius: "8px", border: "1px solid var(--line)", overflow: "hidden" }}>
+          <div className="table-scroll" style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
             <table className="data-table compact tabular-nums" style={{ width: "100%" }}>
-              <thead>
+              <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>
                 <tr>
                   <th style={{ width: 110 }}>Số HĐ</th>
                   <th style={{ width: 85 }}>Ký hiệu</th>
