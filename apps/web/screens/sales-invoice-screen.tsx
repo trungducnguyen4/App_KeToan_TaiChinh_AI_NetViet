@@ -395,10 +395,10 @@ export default function SalesInvoiceScreen() {
             totalAmount={oilRevenue}
             totalQuantity={oilQuantity}
             unit="kg"
-            themeColor="#059669"
+            themeColor="#d97706"
             slices={[
-              { name: "Dầu dừa thô", amount: crudeOilAmount, quantity: crudeOilQty, unit: "kg", color: "#059669", filterValue: "CRUDE_OIL" },
-              { name: "Dầu dừa lọc", amount: filteredOilAmount, quantity: filteredOilQty, unit: "kg", color: "#10b981", filterValue: "FILTERED_OIL" }
+              { name: "Dầu dừa thô", amount: crudeOilAmount, quantity: crudeOilQty, unit: "kg", color: "#d97706", filterValue: "CRUDE_OIL" },
+              { name: "Dầu dừa lọc", amount: filteredOilAmount, quantity: filteredOilQty, unit: "kg", color: "#059669", filterValue: "FILTERED_OIL" }
             ]}
             onFilterProduct={(val) => {
               setFilterProduct(val);
@@ -406,17 +406,17 @@ export default function SalesInvoiceScreen() {
             }}
           />
 
-          {/* Box 3: Biểu đồ tròn Cám Dừa */}
+          {/* Box 3: Biểu đồ tròn Cám Dừa (Màu sắc thực tế thành phẩm: Nâu đậm, Trắng ngà, Vàng rơm nguyên) */}
           <CompactDonutCard
             title="Doanh thu Cám Dừa"
             totalAmount={mealRevenue}
             totalQuantity={mealQuantity}
             unit="kg"
-            themeColor="#0284c7"
+            themeColor="#854d0e"
             slices={[
-              { name: "Cám nâu", amount: mealBrownAmount, quantity: mealBrownQty, unit: "kg", color: "#0284c7", filterValue: "MEAL_BROWN" },
-              { name: "Cám trắng", amount: mealWhiteAmount, quantity: mealWhiteQty, unit: "kg", color: "#38bdf8", filterValue: "MEAL_WHITE" },
-              { name: "Cám nguyên", amount: mealWholeAmount, quantity: mealWholeQty, unit: "kg", color: "#6366f1", filterValue: "MEAL_WHOLE" }
+              { name: "Cám nâu", amount: mealBrownAmount, quantity: mealBrownQty, unit: "kg", color: "#854d0e", filterValue: "MEAL_BROWN" },
+              { name: "Cám trắng", amount: mealWhiteAmount, quantity: mealWhiteQty, unit: "kg", color: "#0ea5e9", filterValue: "MEAL_WHITE" },
+              { name: "Cám nguyên", amount: mealWholeAmount, quantity: mealWholeQty, unit: "kg", color: "#f59e0b", filterValue: "MEAL_WHOLE" }
             ]}
             onFilterProduct={(val) => {
               setFilterProduct(val);
