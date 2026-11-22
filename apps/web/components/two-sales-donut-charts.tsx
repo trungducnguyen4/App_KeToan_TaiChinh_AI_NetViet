@@ -11,7 +11,7 @@ interface DonutSlice {
 
 interface MiniDonutProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   totalAmount: number;
   totalQuantity: number;
   unit: string;
@@ -91,12 +91,14 @@ const SingleDonut: React.FC<MiniDonutProps> = ({
       }}
     >
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            {subtitle}
-          </div>
-          <h4 style={{ margin: "2px 0 0", fontSize: "15px", fontWeight: 800, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+          {subtitle && (
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              {subtitle}
+            </div>
+          )}
+          <h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: themeColor }} />
             {title}
           </h4>
@@ -264,7 +266,7 @@ export const TwoSalesDonutCharts: React.FC<TwoDonutChartsProps> = ({
 }) => {
   const oilSlices: DonutSlice[] = [
     {
-      name: "Dầu dừa thô xuất xưởng",
+      name: "Dầu dừa thô",
       amount: crudeOilAmount,
       quantity: crudeOilQty,
       unit: "kg",
@@ -272,7 +274,7 @@ export const TwoSalesDonutCharts: React.FC<TwoDonutChartsProps> = ({
       filterValue: "CRUDE_OIL"
     },
     {
-      name: "Dầu dừa lọc sạch (khung bản/ly tâm)",
+      name: "Dầu dừa lọc",
       amount: filteredOilAmount,
       quantity: filteredOilQty,
       unit: "kg",
@@ -283,7 +285,7 @@ export const TwoSalesDonutCharts: React.FC<TwoDonutChartsProps> = ({
 
   const mealSlices: DonutSlice[] = [
     {
-      name: "Cám dừa nâu đậm",
+      name: "Cám nâu",
       amount: mealBrownAmount,
       quantity: mealBrownQty,
       unit: "kg",
@@ -291,7 +293,7 @@ export const TwoSalesDonutCharts: React.FC<TwoDonutChartsProps> = ({
       filterValue: "MEAL_BROWN"
     },
     {
-      name: "Cám dừa trắng thượng hạng",
+      name: "Cám trắng",
       amount: mealWhiteAmount,
       quantity: mealWhiteQty,
       unit: "kg",
@@ -299,7 +301,7 @@ export const TwoSalesDonutCharts: React.FC<TwoDonutChartsProps> = ({
       filterValue: "MEAL_WHITE"
     },
     {
-      name: "Cám dừa nguyên hỗn hợp",
+      name: "Cám nguyên",
       amount: mealWholeAmount,
       quantity: mealWholeQty,
       unit: "kg",
@@ -317,10 +319,9 @@ export const TwoSalesDonutCharts: React.FC<TwoDonutChartsProps> = ({
         marginBottom: "16px"
       }}
     >
-      {/* CHART 1: DOANH THU DẦU DỪA (THÔ & LỌC) */}
+      {/* CHART 1: DOANH THU DẦU DỪA */}
       <SingleDonut
         title="Cơ cấu Doanh thu Dầu Dừa"
-        subtitle="Sản phẩm chính • Dầu Dừa (Thô & Lọc)"
         totalAmount={oilRevenue}
         totalQuantity={oilQuantity}
         unit="kg"
@@ -329,10 +330,9 @@ export const TwoSalesDonutCharts: React.FC<TwoDonutChartsProps> = ({
         onFilterProduct={onFilterProduct}
       />
 
-      {/* CHART 2: DOANH THU CÁM DỪA (3 LOẠI) */}
+      {/* CHART 2: DOANH THU CÁM DỪA */}
       <SingleDonut
         title="Cơ cấu Doanh thu Cám Dừa"
-        subtitle="Phụ phẩm giá trị gia tăng • Cám Dừa (3 loại)"
         totalAmount={mealRevenue}
         totalQuantity={mealQuantity}
         unit="kg"
