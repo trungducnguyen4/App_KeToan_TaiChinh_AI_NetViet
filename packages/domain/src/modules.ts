@@ -101,7 +101,7 @@ export const accountingKpis: KpiCard[] = [
   { label: "Sản lượng dầu dừa thô", value: "26.8 Tấn", delta: "~29,500 Lít thu hồi", tone: "green" },
   { label: "Tỷ lệ thu hồi dầu", value: "21.37%", delta: "Định mức chuẩn: 20-23%", tone: "green" },
   { label: "Chi phí nguyên liệu", value: "4,200 đ/kg", delta: "Bình quân vỏ dừa", tone: "amber" },
-  { label: "Chi phí ép & lọc", value: "1,850 đ/kg", delta: "Điện + màng lọc + máy", tone: "blue" },
+  { label: "Chi phí vận hành xưởng", value: "1,850 đ/kg", delta: "Điện, nước, nhân công, máy", tone: "blue" },
   { label: "Giá thành 1 kg dầu thô", value: "21,450 đ", delta: "Tính theo thời gian thực", tone: "green" },
   { label: "Doanh thu xuất bán", value: "804.0 Tr", delta: "Dầu dừa thô xuất xưởng", tone: "blue" },
   { label: "Thu hồi phụ phẩm", value: "38.2 Tr", delta: "Bã dừa ép làm thức ăn/phân", tone: "green" },

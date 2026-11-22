@@ -32,8 +32,21 @@ class CreateSalesInvoiceDto implements CreateSalesInvoiceInput {
   @IsString()
   invoiceTemplate?: string;
 
-  @IsIn(["CRUDE_OIL", "BYPRODUCT"])
-  productType!: "CRUDE_OIL" | "BYPRODUCT";
+  @IsIn([
+    "CRUDE_OIL",
+    "FILTERED_OIL",
+    "BYPRODUCT",
+    "MEAL_BROWN",
+    "MEAL_WHITE",
+    "MEAL_WHOLE"
+  ])
+  productType!:
+    | "CRUDE_OIL"
+    | "FILTERED_OIL"
+    | "BYPRODUCT"
+    | "MEAL_BROWN"
+    | "MEAL_WHITE"
+    | "MEAL_WHOLE";
 
   @IsOptional()
   @IsString()
@@ -70,11 +83,27 @@ class CreateSalesInvoiceDto implements CreateSalesInvoiceInput {
   @IsOptional()
   @IsString()
   createdBy?: string;
+
+  @IsOptional()
+  @IsNumber()
+  paymentTermDays?: number;
+
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
 }
 
 class CreateSalesPaymentDto {
   @IsIn(["cash", "bank"])
   paymentChannel!: "cash" | "bank";
+
+  @IsOptional()
+  @IsNumber()
+  amount?: number;
+
+  @IsOptional()
+  @IsDateString()
+  paymentDate?: string;
 
   @IsOptional()
   @IsString()

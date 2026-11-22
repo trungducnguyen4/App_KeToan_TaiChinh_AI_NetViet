@@ -42,60 +42,14 @@ export function Pagination({
   };
 
   return (
-    <div
-      style={{
-        position: "sticky",
-        bottom: 0,
-        zIndex: 5,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "12px",
-        padding: "10px 16px",
-        background: "rgba(255, 255, 255, 0.96)",
-        backdropFilter: "blur(8px)",
-        borderTop: "1px solid var(--line, #e2e8f0)",
-        boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.05)",
-        fontSize: "13px",
-        color: "var(--muted, #64748b)"
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <div className="pagination-container">
+      <div className="pagination-info">
         <span>
           Hiển thị <strong>{startItem}</strong> - <strong>{endItem}</strong> trong tổng số <strong>{totalItems}</strong> dòng
         </span>
-        {onPageSizeChange && (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "12px" }}>
-            <span>/ trang:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                onPageSizeChange(Number(e.target.value));
-                onPageChange(1);
-              }}
-              style={{
-                padding: "3px 8px",
-                borderRadius: "6px",
-                border: "1px solid #cbd5e1",
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#1e293b",
-                background: "#f8fafc",
-                cursor: "pointer"
-              }}
-            >
-              {pageSizeOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
-      <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+      <div className="pagination-controls">
         <button
           type="button"
           disabled={safePage <= 1}
@@ -173,6 +127,27 @@ export function Pagination({
           Sau
           <AppIcon name="ChevronDown" size={14} style={{ transform: "rotate(-90deg)" }} />
         </button>
+      </div>
+
+      <div className="pagination-size">
+        {onPageSizeChange && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ whiteSpace: "nowrap" }}>Số dòng / trang:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                onPageSizeChange(Number(e.target.value));
+                onPageChange(1);
+              }}
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
     </div>
   );

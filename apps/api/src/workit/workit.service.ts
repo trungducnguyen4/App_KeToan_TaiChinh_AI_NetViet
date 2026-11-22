@@ -2018,14 +2018,14 @@ export class WorkitService {
       {
         id: "6",
         code: "CP_BYPRODUCT",
-        name: "Giảm trừ: Doanh thu bán bã dừa",
+        name: "Giảm trừ: Doanh thu bán cám dừa (thành phẩm)",
         category: "CREDIT_REDUCTION",
         actualAmount: -effectiveByproductRecovery,
         targetAmount: -Math.round(totalByproductKgProduced * 1200),
         unitRate: totalCrudeOilKgProduced > 0 ? -Math.round(effectiveByproductRecovery / totalCrudeOilKgProduced) : -1700,
         targetUnitRate: -1600,
-        description: "Thu hồi phụ phẩm bã dừa ép bán cho trại thức ăn gia súc",
-        note: `Giá bán ~1,200 đ/kg (${totalByproductKgProduced.toLocaleString("vi-VN")} kg)`
+        description: "Thu hồi cám dừa thành phẩm (cám nâu, cám trắng, cám nguyên) bán cho trại thức ăn gia súc & phân bón",
+        note: `Giá bán ~1,200 - 1,800 đ/kg (${totalByproductKgProduced.toLocaleString("vi-VN")} kg)`
       }
     ];
 
@@ -2136,7 +2136,6 @@ export class WorkitService {
       });
 
       const paidAmount = payments.reduce((sum, p) => sum + Number(p.total_debit || 0), 0);
-      const isPaid = paidAmount >= Number(v.total_debit || 0);
 
       const firstLine = v.lines.find((l) => l.quantity && Number(l.quantity) > 0) || v.lines[0];
       const quantity = firstLine?.quantity ? Number(firstLine.quantity) : 0;
@@ -2145,19 +2144,48 @@ export class WorkitService {
         ? Number(v.lines.find((l) => l.tax_rate && Number(l.tax_rate) > 0)?.tax_rate)
         : (firstLine?.tax_rate ? Number(firstLine.tax_rate) : 0);
 
-      const productType = (v.cost_category || firstLine?.cost_category || "CRUDE_OIL") as "CRUDE_OIL" | "BYPRODUCT";
-      const productName = productType === "CRUDE_OIL" ? "Dầu dừa thô xuất xưởng" : "Bã dừa ép phụ phẩm";
-      const unit = productType === "CRUDE_OIL" ? "Kg" : "Kg";
+      const productType = (v.cost_category || firstLine?.cost_category || "CRUDE_OIL") as SalesProductType;
+      const productName = getSalesProductName(productType);
+      const unit = "Kg";
 
       const subtotal = Math.round(quantity * unitPrice);
       const vatAmount = Math.round((subtotal * vatRate) / 100);
       const totalAmount = Number(v.total_debit || subtotal + vatAmount);
       const customerName = v.supplier_name || (v.description?.split("cho khách ")[1]?.split(" (")[0]) || "Khách mua dầu";
 
+      const remainingAmount = Math.max(0, totalAmount - paidAmount);
+      let paymentStatus: "PAID" | "PARTIAL" | "UNPAID" = "UNPAID";
+      if (paidAmount >= totalAmount) {
+        paymentStatus = "PAID";
+      } else if (paidAmount > 0) {
+        paymentStatus = "PARTIAL";
+      }
+
+      // Thời hạn công nợ (N ngày) & Hạn thanh toán (Due Date)
+      const termDays = v.payment_term_days !== null && v.payment_term_days !== undefined ? v.payment_term_days : 15;
+      const dueDateObj = v.due_date ? new Date(v.due_date) : new Date(v.voucherDate.getTime() + termDays * 86400000);
+      const dueDateStr = dueDateObj.toISOString().slice(0, 10);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueCompare = new Date(dueDateObj);
+      dueCompare.setHours(0, 0, 0, 0);
+      const diffMs = dueCompare.getTime() - today.getTime();
+      const diffDays = Math.round(diffMs / 86400000);
+
+      const isOverdue = paymentStatus !== "PAID" && diffDays < 0;
+      const overdueDays = isOverdue ? Math.abs(diffDays) : 0;
+      const daysUntilDue = diffDays;
+
       const item = {
         id: v.id,
         voucherNo: v.voucherNo,
         voucherDate: v.voucherDate.toISOString().slice(0, 10),
+        dueDate: dueDateStr,
+        paymentTermDays: termDays,
+        isOverdue,
+        overdueDays,
+        daysUntilDue,
         customerName,
         taxCode: v.tax_code || undefined,
         invoiceSeries: v.invoice_series || undefined,
@@ -2174,8 +2202,9 @@ export class WorkitService {
         totalAmount,
         batchId: v.batch_id || undefined,
         description: v.description || undefined,
-        paymentStatus: isPaid ? ("PAID" as const) : ("UNPAID" as const),
+        paymentStatus,
         paidAmount,
+        remainingAmount,
         paymentVouchers: payments.map((p) => ({
           voucherNo: p.voucherNo,
           voucherType: p.voucherType,
@@ -2184,7 +2213,14 @@ export class WorkitService {
         }))
       };
 
-      if (query?.paymentStatus && item.paymentStatus !== query.paymentStatus) continue;
+      if (query?.paymentStatus && query.paymentStatus !== "ALL") {
+        if (query.paymentStatus === "OVERDUE") {
+          if (!item.isOverdue) continue;
+        } else if (item.paymentStatus !== query.paymentStatus) {
+          continue;
+        }
+      }
+      if (query?.productType && item.productType !== query.productType) continue;
       if (query?.productType && item.productType !== query.productType) continue;
 
       results.push(item);
@@ -2220,9 +2256,11 @@ export class WorkitService {
       const arAccountId = await this.ensureAccount(tx, context.organization.id, "131");
       const revenueAccountId = await this.ensureAccount(tx, context.organization.id, "511");
 
-      const desc = input.description || (input.productType === "CRUDE_OIL"
-        ? `Xuất bán dầu dừa thô cho khách ${input.customerName} (${input.quantity} ${input.unit || "kg"})`
-        : `Xuất bán bã dừa ép phụ phẩm cho khách ${input.customerName} (${input.quantity} ${input.unit || "kg"})`);
+      const productLabel = getSalesProductName(input.productType);
+      const desc = input.description || `Xuất bán ${productLabel} cho khách ${input.customerName} (${input.quantity} ${input.unit || "kg"})`;
+
+      const termDays = input.paymentTermDays !== undefined ? input.paymentTermDays : (input.dueDate ? Math.round((new Date(input.dueDate).getTime() - new Date(input.voucherDate).getTime()) / 86400000) : 15);
+      const calculatedDueDate = input.dueDate ? new Date(input.dueDate) : new Date(new Date(input.voucherDate).getTime() + (termDays || 15) * 86400000);
 
       const created = await tx.voucher.create({
         data: {
@@ -2232,6 +2270,8 @@ export class WorkitService {
           voucherNo: input.voucherNo,
           voucherDate: new Date(input.voucherDate),
           posting_date: new Date(input.voucherDate),
+          due_date: calculatedDueDate,
+          payment_term_days: termDays,
           currencyCode: "VND",
           exchange_rate: 1,
           status: "approved",
@@ -2286,7 +2326,7 @@ export class WorkitService {
           unit_price: input.unitPrice,
           tax_rate: input.vatRate || null,
           cost_category: input.productType,
-          memo: `Doanh thu xuất bán ${input.productType === "CRUDE_OIL" ? "dầu dừa thô" : "bã dừa"}`,
+          memo: `Doanh thu xuất bán ${productLabel}`,
           created_at: new Date()
         }
       });
@@ -2334,6 +2374,8 @@ export class WorkitService {
     voucherId: string,
     input: {
       paymentChannel: "cash" | "bank";
+      amount?: number;
+      paymentDate?: string;
       cashBookCode?: string;
       bankAccountCode?: string;
       description?: string;
@@ -2351,9 +2393,28 @@ export class WorkitService {
         throw new NotFoundException("Không tìm thấy hóa đơn bán hàng");
       }
 
-      const receiptVoucherType = input.paymentChannel === "cash" ? "PT" : "BC";
-      const totalAmount = Number(invoice.total_debit || 0);
+      // 1. Tính tổng số tiền đã thanh toán trước đó
+      const existingPayments = await tx.voucher.findMany({
+        where: {
+          organizationId: context.organization.id,
+          reference_invoice_no: invoice.voucherNo,
+          voucherType: { in: ["PT", "BC"] }
+        },
+        select: { total_debit: true }
+      });
 
+      const alreadyPaid = existingPayments.reduce((sum, p) => sum + Number(p.total_debit || 0), 0);
+      const invoiceTotal = Number(invoice.total_debit || 0);
+      const remaining = Math.max(0, invoiceTotal - alreadyPaid);
+
+      if (remaining <= 0) {
+        throw new BadRequestException("Hóa đơn này đã được thanh toán đủ toàn bộ công nợ");
+      }
+
+      // Số tiền thu đợt này (mặc định thu hết phần còn lại nếu không nhập hoặc nhập lớn hơn)
+      const paymentAmount = input.amount && input.amount > 0 ? Math.min(input.amount, remaining) : remaining;
+
+      const receiptVoucherType = input.paymentChannel === "cash" ? "PT" : "BC";
       const existingReceipts = await tx.voucher.count({
         where: {
           organizationId: context.organization.id,
@@ -2371,7 +2432,12 @@ export class WorkitService {
         assetAccountId = await this.ensureAccount(tx, context.organization.id, "1121");
       }
 
-      const desc = input.description || `Thu tiền bán hàng theo hóa đơn ${invoice.voucherNo} từ khách ${invoice.supplier_name || ""}`;
+      const payDate = input.paymentDate ? new Date(input.paymentDate) : new Date();
+      const isFull = paymentAmount >= remaining;
+      const paymentSeq = existingPayments.length + 1;
+      const desc = input.description || (isFull
+        ? `Thu tiền bán hàng theo hóa đơn ${invoice.voucherNo} từ khách ${invoice.supplier_name || ""}`
+        : `Thu tiền bán hàng (Đợt ${paymentSeq}) theo hóa đơn ${invoice.voucherNo} từ khách ${invoice.supplier_name || ""}`);
 
       const paymentVoucher = await tx.voucher.create({
         data: {
@@ -2379,8 +2445,8 @@ export class WorkitService {
           organizationId: context.organization.id,
           voucherType: receiptVoucherType,
           voucherNo,
-          voucherDate: new Date(),
-          posting_date: new Date(),
+          voucherDate: payDate,
+          posting_date: payDate,
           currencyCode: "VND",
           exchange_rate: 1,
           status: "approved",
@@ -2389,8 +2455,8 @@ export class WorkitService {
           payment_channel: input.paymentChannel === "cash" ? PaymentChannel.cash : PaymentChannel.bank,
           counterparty_type: CounterpartyType.customer,
           reference_invoice_no: invoice.voucherNo,
-          total_debit: totalAmount,
-          total_credit: totalAmount,
+          total_debit: paymentAmount,
+          total_credit: paymentAmount,
           supplier_name: invoice.supplier_name,
           tax_code: invoice.tax_code,
           createdBy: context.user.id,
@@ -2406,7 +2472,7 @@ export class WorkitService {
           voucherId: paymentVoucher.id,
           lineNo: 1,
           account_id: assetAccountId,
-          debit_amount: totalAmount,
+          debit_amount: paymentAmount,
           credit_amount: 0,
           memo: desc,
           created_at: new Date()
@@ -2420,8 +2486,8 @@ export class WorkitService {
           lineNo: 2,
           account_id: arAccountId,
           debit_amount: 0,
-          credit_amount: totalAmount,
-          memo: `Cấn trừ công nợ phải thu HĐ ${invoice.voucherNo}`,
+          credit_amount: paymentAmount,
+          memo: `Cấn trừ công nợ phải thu HĐ ${invoice.voucherNo} (Đợt ${paymentSeq})`,
           created_at: new Date()
         }
       });
@@ -2499,6 +2565,8 @@ export type CreatePurchasingInvoiceInput = {
   totalAmount: number;
   description?: string;
   createdBy?: string;
+  paymentTermDays?: number;
+  dueDate?: string;
 };
 
 export type CreateProductionBatchInput = {
@@ -2518,6 +2586,27 @@ export type CreateProductionBatchInput = {
   createdBy?: string;
 };
 
+export type SalesProductType =
+  | "CRUDE_OIL"
+  | "FILTERED_OIL"
+  | "BYPRODUCT"
+  | "MEAL_BROWN"
+  | "MEAL_WHITE"
+  | "MEAL_WHOLE";
+
+export function getSalesProductName(type: SalesProductType): string {
+  switch (type) {
+    case "CRUDE_OIL": return "Dầu dừa thô";
+    case "FILTERED_OIL": return "Dầu dừa lọc";
+    case "MEAL_BROWN": return "Cám dừa nâu";
+    case "MEAL_WHITE": return "Cám dừa trắng";
+    case "MEAL_WHOLE": return "Cám dừa nguyên";
+    case "BYPRODUCT":
+    default:
+      return "Cám dừa thành phẩm";
+  }
+}
+
 export type CreateSalesInvoiceInput = {
   docType: "VAT_INVOICE" | "SALES_RECEIPT";
   voucherNo: string;
@@ -2527,7 +2616,7 @@ export type CreateSalesInvoiceInput = {
   taxCode?: string;
   invoiceSeries?: string;
   invoiceTemplate?: string;
-  productType: "CRUDE_OIL" | "BYPRODUCT";
+  productType: SalesProductType;
   batchId?: string;
   quantity: number;
   unit?: string;
@@ -2538,4 +2627,6 @@ export type CreateSalesInvoiceInput = {
   totalAmount: number;
   description?: string;
   createdBy?: string;
+  paymentTermDays?: number;
+  dueDate?: string;
 };

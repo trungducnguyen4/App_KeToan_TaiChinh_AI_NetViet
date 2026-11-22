@@ -168,7 +168,7 @@ export default function CostAccountingScreen() {
             <span className="kpi-value text-right">
               {kpis ? `${(kpis.totalNetCost / 1000000).toFixed(1)} Tr` : "..."}
             </span>
-            <span className="kpi-sub">Đã trừ {kpis ? (kpis.byproductRecoveryTotal / 1000000).toFixed(1) : 0} Tr bã dừa</span>
+            <span className="kpi-sub">Đã trừ {kpis ? (kpis.byproductRecoveryTotal / 1000000).toFixed(1) : 0} Tr cám dừa</span>
           </div>
 
           <div className="kpi-card-compact" style={{ borderLeft: "4px solid #15936b" }}>
@@ -242,7 +242,7 @@ export default function CostAccountingScreen() {
                   Công thức Giá thành 1 kg Dầu Dừa Thô Thời Gian Thực
                 </strong>
                 <p style={{ margin: "4px 0 0", color: "#14532d", fontSize: 13 }}>
-                  Giá thành = (CP Vỏ dừa thu mua + Điện, Màng lọc, Bảo trì ép/lọc + CP Quản lý xưởng - Thu hồi bán Bã dừa) ÷ Tổng kg Dầu dừa thô
+                  Giá thành = (CP Vỏ dừa thu mua + Điện, Màng lọc, Bảo trì ép/lọc + CP Quản lý xưởng - Thu hồi bán Cám dừa) ÷ Tổng kg Dầu dừa
                 </p>
               </div>
               <button
@@ -296,7 +296,7 @@ export default function CostAccountingScreen() {
                                 color: el.category === "RAW_MATERIAL" ? "#92400e" : el.category === "PROCESSING" ? "#0369a1" : el.category === "CREDIT_REDUCTION" ? "#166534" : "#475569"
                               }}
                             >
-                              {el.category === "RAW_MATERIAL" ? "Nguyên liệu" : el.category === "PROCESSING" ? "Ép / Lọc" : el.category === "CREDIT_REDUCTION" ? "Giảm trừ" : "Vận hành"}
+                              {el.category === "RAW_MATERIAL" ? "Nguyên liệu" : el.category === "PROCESSING" ? "CP Vận hành" : el.category === "CREDIT_REDUCTION" ? "Giảm trừ" : "CP Phát sinh"}
                             </span>
                           </td>
                           <td className="text-right" style={{ fontWeight: 700, color: el.actualAmount < 0 ? "#166534" : "var(--ink)" }}>
@@ -548,7 +548,7 @@ export default function CostAccountingScreen() {
                   </span>
                 </div>
                 <div style={{ padding: 16 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div className="modal-grid-2" style={{ gap: 16 }}>
                     <div>
                       <h4 style={{ margin: "0 0 8px", color: "var(--brand-strong)", fontSize: 13 }}>THÔNG TIN ĐƠN VỊ & QUẢN ĐỐC</h4>
                       <p style={{ margin: "2px 0", fontSize: 12 }}><strong>Đơn vị:</strong> {exportData.workshop.name}</p>
