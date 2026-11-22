@@ -36,19 +36,23 @@ export default function CapitalInvestmentScreen() {
 
   // Modal State
   const [showAssetModal, setShowAssetModal] = useState(false);
-  const [showEditAssetModal, setShowEditAssetModal] = useState(false);
-  const [editingAsset, setEditingAsset] = useState<{
-    id: string;
-    assetCode: string;
+  // In-line Edit State for Assets
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [inlineEditData, setInlineEditData] = useState<{
     assetName: string;
     category: string;
     acquisitionDate: string;
-    originalCost: string;
-    residualValue: string;
-    usefulLifeMonths: string;
+    originalCost: number;
+    usefulLifeMonths: number;
     supplierOrBrand: string;
-    notes: string;
-  } | null>(null);
+  }>({
+    assetName: "",
+    category: "MACHINERY",
+    acquisitionDate: "",
+    originalCost: 0,
+    usefulLifeMonths: 60,
+    supplierOrBrand: ""
+  });
   const [showContributionModal, setShowContributionModal] = useState(false);
 
   // New Asset Form
@@ -96,45 +100,40 @@ export default function CapitalInvestmentScreen() {
     loadData();
   }, []);
 
-  const handleOpenEditModal = (a: CapitalAsset) => {
-    setEditingAsset({
-      id: a.id,
-      assetCode: a.assetCode,
+  const handleStartInlineEdit = (a: CapitalAsset) => {
+    setInlineEditingId(a.id);
+    setInlineEditData({
       assetName: a.assetName,
       category: a.category,
       acquisitionDate: a.acquisitionDate,
-      originalCost: String(a.originalCost),
-      residualValue: String(a.residualValue || 0),
-      usefulLifeMonths: String(a.usefulLifeMonths || 60),
-      supplierOrBrand: a.supplierOrBrand || "",
-      notes: ""
+      originalCost: a.originalCost,
+      usefulLifeMonths: a.usefulLifeMonths,
+      supplierOrBrand: a.supplierOrBrand || ""
     });
-    setShowEditAssetModal(true);
   };
 
-  const handleUpdateAsset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingAsset) return;
+  const handleCancelInlineEdit = () => {
+    setInlineEditingId(null);
+  };
+
+  const handleSaveInlineEdit = async (id: string) => {
     try {
-      await fetch(`http://localhost:4000/api/capital/assets/${editingAsset.id}`, {
+      await fetch(`http://localhost:4000/api/capital/assets/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          assetName: editingAsset.assetName,
-          category: editingAsset.category,
-          acquisitionDate: editingAsset.acquisitionDate,
-          originalCost: Number(editingAsset.originalCost),
-          residualValue: Number(editingAsset.residualValue || 0),
-          usefulLifeMonths: Number(editingAsset.usefulLifeMonths),
-          supplierOrBrand: editingAsset.supplierOrBrand,
-          notes: editingAsset.notes
+          assetName: inlineEditData.assetName,
+          category: inlineEditData.category,
+          acquisitionDate: inlineEditData.acquisitionDate,
+          originalCost: Number(inlineEditData.originalCost),
+          usefulLifeMonths: Number(inlineEditData.usefulLifeMonths),
+          supplierOrBrand: inlineEditData.supplierOrBrand
         })
       });
-      setShowEditAssetModal(false);
-      setEditingAsset(null);
-      loadData();
+      setInlineEditingId(null);
+      await loadData();
     } catch (err) {
-      console.error("Failed to update asset:", err);
+      console.error("Failed to save inline asset edit:", err);
     }
   };
 
@@ -643,95 +642,299 @@ export default function CapitalInvestmentScreen() {
             </div>
 
             {(() => {
-              const totalOriginalCost = filteredAssets.reduce((sum, a) => sum + a.originalCost, 0);
-              const totalMonthlyDepreciation = filteredAssets.reduce((sum, a) => sum + a.monthlyDepreciation, 0);
+              const totalOriginalCost = filteredAssets.reduce((sum, a) => {
+                const cost = a.id === inlineEditingId ? Number(inlineEditData.originalCost || 0) : a.originalCost;
+                return sum + cost;
+              }, 0);
+
+              const totalMonthlyDepreciation = filteredAssets.reduce((sum, a) => {
+                if (a.id === inlineEditingId) {
+                  const liveDepr = Math.round(Number(inlineEditData.originalCost || 0) / Math.max(1, Number(inlineEditData.usefulLifeMonths || 60)));
+                  return sum + liveDepr;
+                }
+                return sum + a.monthlyDepreciation;
+              }, 0);
+
               const totalAccumulatedDepreciation = filteredAssets.reduce((sum, a) => sum + a.accumulatedDepreciation, 0);
-              const totalCurrentBookValue = filteredAssets.reduce((sum, a) => sum + a.currentBookValue, 0);
+              const totalCurrentBookValue = filteredAssets.reduce((sum, a) => {
+                if (a.id === inlineEditingId) {
+                  return sum + Math.max(0, Number(inlineEditData.originalCost || 0) - a.accumulatedDepreciation);
+                }
+                return sum + a.currentBookValue;
+              }, 0);
 
               return (
                 <div style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
-                  <table className="data-table">
+                  <table className="data-table compact" style={{ width: "100%", minWidth: "1050px" }}>
                     <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2" }}>
                       <tr>
-                        <th>Mã TS</th>
-                        <th>Tên Máy móc / Tài sản</th>
-                        <th>Phân loại</th>
-                        <th>Ngày mua</th>
-                        <th style={{ textAlign: "right" }}>Nguyên giá (VNĐ)</th>
-                        <th style={{ textAlign: "center" }}>Thời gian</th>
-                        <th style={{ textAlign: "right" }}>Khấu hao/tháng</th>
-                        <th style={{ textAlign: "right" }}>Khấu hao lũy kế</th>
-                        <th style={{ textAlign: "right" }}>Giá trị còn lại</th>
-                        <th>Nhà cung cấp / Xuất xứ</th>
-                        <th style={{ textAlign: "center", width: "90px" }}>Thao tác</th>
+                        <th style={{ width: "85px" }}>Mã TS</th>
+                        <th style={{ minWidth: "180px" }}>Tên Máy móc / Tài sản</th>
+                        <th style={{ width: "95px" }}>Phân loại</th>
+                        <th style={{ width: "95px" }}>Ngày mua</th>
+                        <th style={{ textAlign: "right", width: "115px" }}>Nguyên giá</th>
+                        <th style={{ textAlign: "center", width: "75px" }}>Thời gian</th>
+                        <th style={{ textAlign: "right", width: "115px" }}>Khấu hao/tháng</th>
+                        <th style={{ textAlign: "right", width: "110px" }}>Khấu hao lũy kế</th>
+                        <th style={{ textAlign: "right", width: "115px" }}>Giá trị còn lại</th>
+                        <th style={{ width: "140px" }}>Nhà cung cấp</th>
+                        <th style={{ textAlign: "center", width: "95px", position: "sticky", right: 0, background: "#edf5f2", zIndex: 4, boxShadow: "-2px 0 4px rgba(0,0,0,0.04)" }}>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredAssets.map((a) => (
-                        <tr key={a.id}>
-                          <td style={{ fontWeight: 700, color: "#0284c7" }}>{a.assetCode}</td>
-                          <td>
-                            <strong>{a.assetName}</strong>
-                          </td>
-                          <td>
-                            <span
-                              className="badge"
+                      {filteredAssets.map((a) => {
+                        const isEditing = inlineEditingId === a.id;
+                        const liveMonthlyDepr = isEditing
+                          ? Math.round(Number(inlineEditData.originalCost || 0) / Math.max(1, Number(inlineEditData.usefulLifeMonths || 60)))
+                          : a.monthlyDepreciation;
+
+                        if (isEditing) {
+                          return (
+                            <tr
+                              key={a.id}
                               style={{
-                                padding: "3px 8px",
-                                borderRadius: "12px",
-                                fontSize: "11px",
-                                fontWeight: 700,
-                                background: a.category === "MACHINERY" ? "#e0f2fe" : "#fef3c7",
-                                color: a.category === "MACHINERY" ? "#0369a1" : "#92400e"
+                                background: "#f0fdf4",
+                                borderTop: "2px solid #059669",
+                                borderBottom: "2px solid #059669"
                               }}
                             >
-                              {a.category === "MACHINERY"
-                                ? "Máy ép/lọc"
-                                : a.category === "INFRASTRUCTURE"
-                                ? "Nhà xưởng"
-                                : a.category === "STORAGE_TANK"
-                                ? "Bồn Inox"
-                                : "Trạm cân"}
-                            </span>
-                          </td>
-                          <td>{a.acquisitionDate}</td>
-                          <td style={{ textAlign: "right", fontWeight: 700, fontFamily: "var(--font-mono, monospace)" }}>
-                            {currency.format(a.originalCost)}
-                          </td>
-                          <td style={{ textAlign: "center" }}>{a.usefulLifeMonths} tháng</td>
-                          <td style={{ textAlign: "right", color: "#d97706", fontWeight: 600, fontFamily: "var(--font-mono, monospace)" }}>
-                            {currency.format(a.monthlyDepreciation)}
-                          </td>
-                          <td style={{ textAlign: "right", color: "#64748b", fontFamily: "var(--font-mono, monospace)" }}>
-                            {currency.format(a.accumulatedDepreciation)}
-                          </td>
-                          <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a", fontFamily: "var(--font-mono, monospace)" }}>
-                            {currency.format(a.currentBookValue)}
-                          </td>
-                          <td style={{ fontSize: "12px", color: "var(--muted)" }}>{a.supplierOrBrand}</td>
-                          <td style={{ textAlign: "center" }}>
-                            <button
-                              type="button"
-                              className="button"
-                              onClick={() => handleOpenEditModal(a)}
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "12px",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                color: "#0284c7",
-                                borderColor: "#bae6fd",
-                                background: "#f0f9ff"
-                              }}
-                              title="Chỉnh sửa thông số máy móc / tài sản"
-                            >
-                              <AppIcon name="Edit" size={13} />
-                              Sửa
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                              <td style={{ fontWeight: 700, color: "#0284c7" }}>
+                                {a.assetCode}
+                                <div style={{ fontSize: "10px", color: "#059669", fontWeight: 700 }}>[Đang sửa]</div>
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  value={inlineEditData.assetName}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, assetName: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 6px",
+                                    fontSize: "12px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                  placeholder="Tên máy móc..."
+                                />
+                              </td>
+                              <td>
+                                <select
+                                  value={inlineEditData.category}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, category: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 4px",
+                                    fontSize: "11px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                >
+                                  <option value="MACHINERY">Máy ép/lọc</option>
+                                  <option value="INFRASTRUCTURE">Nhà xưởng</option>
+                                  <option value="STORAGE_TANK">Bồn Inox</option>
+                                  <option value="VEHICLE_SCALE">Trạm cân</option>
+                                </select>
+                              </td>
+                              <td>
+                                <input
+                                  type="date"
+                                  value={inlineEditData.acquisitionDate}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, acquisitionDate: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "3px 2px",
+                                    fontSize: "11px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                />
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                <input
+                                  type="number"
+                                  value={inlineEditData.originalCost}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, originalCost: Number(e.target.value) })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 4px",
+                                    fontSize: "12px",
+                                    textAlign: "right",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff",
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontWeight: 700
+                                  }}
+                                />
+                              </td>
+                              <td style={{ textAlign: "center" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+                                  <input
+                                    type="number"
+                                    value={inlineEditData.usefulLifeMonths}
+                                    onChange={(e) => setInlineEditData({ ...inlineEditData, usefulLifeMonths: Number(e.target.value) })}
+                                    style={{
+                                      width: "40px",
+                                      boxSizing: "border-box",
+                                      padding: "3px 2px",
+                                      fontSize: "11.5px",
+                                      textAlign: "center",
+                                      borderRadius: "4px",
+                                      border: "1.5px solid #059669",
+                                      background: "#ffffff"
+                                    }}
+                                  />
+                                  <span style={{ fontSize: "10.5px", color: "var(--muted)" }}>th</span>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: "right", color: "#d97706", fontWeight: 800, fontFamily: "var(--font-mono, monospace)" }}>
+                                {currency.format(liveMonthlyDepr)}
+                              </td>
+                              <td style={{ textAlign: "right", color: "#64748b", fontFamily: "var(--font-mono, monospace)" }}>
+                                {currency.format(a.accumulatedDepreciation)}
+                              </td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a", fontFamily: "var(--font-mono, monospace)" }}>
+                                {currency.format(Math.max(0, Number(inlineEditData.originalCost || 0) - a.accumulatedDepreciation))}
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  value={inlineEditData.supplierOrBrand}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, supplierOrBrand: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 6px",
+                                    fontSize: "11px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                  placeholder="Nhà cung ứng..."
+                                />
+                              </td>
+                              <td style={{ textAlign: "center", whiteSpace: "nowrap", position: "sticky", right: 0, background: "#f0fdf4", zIndex: 3, boxShadow: "-2px 0 4px rgba(0,0,0,0.06)" }}>
+                                <div style={{ display: "flex", gap: "4px", justifyContent: "center", alignItems: "center" }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveInlineEdit(a.id)}
+                                    style={{
+                                      padding: "4px 8px",
+                                      fontSize: "11px",
+                                      background: "#059669",
+                                      color: "#ffffff",
+                                      border: "none",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 2,
+                                      fontWeight: 700
+                                    }}
+                                    title="Lưu thay đổi vào hệ thống"
+                                  >
+                                    <AppIcon name="Check" size={12} />
+                                    Lưu
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelInlineEdit}
+                                    style={{
+                                      padding: "4px 7px",
+                                      fontSize: "11px",
+                                      background: "#f1f5f9",
+                                      color: "#64748b",
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 2
+                                    }}
+                                    title="Hủy sửa"
+                                  >
+                                    <AppIcon name="X" size={11} />
+                                    Hủy
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return (
+                          <tr key={a.id}>
+                            <td style={{ fontWeight: 700, color: "#0284c7" }}>{a.assetCode}</td>
+                            <td>
+                              <strong>{a.assetName}</strong>
+                            </td>
+                            <td>
+                              <span
+                                className="badge"
+                                style={{
+                                  padding: "3px 8px",
+                                  borderRadius: "12px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  background: a.category === "MACHINERY" ? "#e0f2fe" : "#fef3c7",
+                                  color: a.category === "MACHINERY" ? "#0369a1" : "#92400e"
+                                }}
+                              >
+                                {a.category === "MACHINERY"
+                                  ? "Máy ép/lọc"
+                                  : a.category === "INFRASTRUCTURE"
+                                  ? "Nhà xưởng"
+                                  : a.category === "STORAGE_TANK"
+                                  ? "Bồn Inox"
+                                  : "Trạm cân"}
+                              </span>
+                            </td>
+                            <td>{a.acquisitionDate}</td>
+                            <td style={{ textAlign: "right", fontWeight: 700, fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.originalCost)}
+                            </td>
+                            <td style={{ textAlign: "center" }}>{a.usefulLifeMonths} tháng</td>
+                            <td style={{ textAlign: "right", color: "#d97706", fontWeight: 600, fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.monthlyDepreciation)}
+                            </td>
+                            <td style={{ textAlign: "right", color: "#64748b", fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.accumulatedDepreciation)}
+                            </td>
+                            <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a", fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.currentBookValue)}
+                            </td>
+                            <td style={{ fontSize: "12px", color: "var(--muted)" }}>{a.supplierOrBrand}</td>
+                            <td style={{ textAlign: "center", position: "sticky", right: 0, background: "#ffffff", zIndex: 2, boxShadow: "-2px 0 4px rgba(0,0,0,0.04)" }}>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => handleStartInlineEdit(a)}
+                                style={{
+                                  padding: "4px 8px",
+                                  fontSize: "12px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                  color: "#0284c7",
+                                  borderColor: "#bae6fd",
+                                  background: "#f0f9ff"
+                                }}
+                                title="Chỉnh sửa in-line trực tiếp trên bảng"
+                              >
+                                <AppIcon name="Edit" size={13} />
+                                Sửa
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                     <tfoot style={{ position: "sticky", bottom: 0, zIndex: 2 }}>
                       <tr style={{ background: "#f0fdf4", borderTop: "2px solid #059669", boxShadow: "0 -2px 6px rgba(0,0,0,0.04)" }}>
@@ -753,14 +956,13 @@ export default function CapitalInvestmentScreen() {
                           {currency.format(totalCurrentBookValue)}
                         </td>
                         <td></td>
-                        <td style={{ textAlign: "center", color: "var(--muted)" }}>—</td>
+                        <td style={{ textAlign: "center", color: "var(--muted)", position: "sticky", right: 0, background: "#f0fdf4", zIndex: 3, boxShadow: "-2px 0 4px rgba(0,0,0,0.04)" }}>—</td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
               );
-            })()}
-          </section>
+            })()}</section>
         )}
 
         {/* TAB 3: CƠ CẤU CỔ ĐÔNG SÁNG LẬP */}
@@ -1028,125 +1230,6 @@ export default function CapitalInvestmentScreen() {
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                   <button type="button" className="button" onClick={() => setShowAssetModal(false)}>Hủy</button>
                   <button type="submit" className="button primary">Lưu máy móc vào hệ thống</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL: CHỈNH SỬA TÀI SẢN MÁY MÓC */}
-        {showEditAssetModal && editingAsset && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ background: "#fff", borderRadius: "10px", width: "560px", padding: "24px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700 }}>
-                    Chỉnh Sửa Tài Sản: <span style={{ color: "#0284c7" }}>{editingAsset.assetCode}</span>
-                  </h3>
-                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>Cập nhật nguyên giá, thời gian khấu hao và thông số vận hành</span>
-                </div>
-                <button type="button" onClick={() => setShowEditAssetModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
-                  <AppIcon name="X" size={18} />
-                </button>
-              </div>
-
-              <form onSubmit={handleUpdateAsset}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600 }}>Mã tài sản</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={editingAsset.assetCode}
-                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)", marginTop: "4px", background: "#f8fafc", color: "#64748b" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600 }}>Nhóm tài sản *</label>
-                    <select
-                      value={editingAsset.category}
-                      onChange={(e) => setEditingAsset({ ...editingAsset, category: e.target.value })}
-                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)", marginTop: "4px" }}
-                    >
-                      <option value="MACHINERY">Máy móc ép / sấy / lọc</option>
-                      <option value="INFRASTRUCTURE">Nhà xưởng &amp; Hạ tầng</option>
-                      <option value="STORAGE_TANK">Bồn Inox chứa dầu</option>
-                      <option value="VEHICLE_SCALE">Trạm cân xe tải</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: "12px" }}>
-                  <label style={{ fontSize: "12px", fontWeight: 600 }}>Tên máy móc / Thiết bị *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingAsset.assetName}
-                    onChange={(e) => setEditingAsset({ ...editingAsset, assetName: e.target.value })}
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)", marginTop: "4px" }}
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600 }}>Nguyên giá đầu tư (VNĐ) *</label>
-                    <input
-                      type="number"
-                      required
-                      value={editingAsset.originalCost}
-                      onChange={(e) => setEditingAsset({ ...editingAsset, originalCost: e.target.value })}
-                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)", marginTop: "4px" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600 }}>Thời gian khấu hao (tháng) *</label>
-                    <input
-                      type="number"
-                      required
-                      value={editingAsset.usefulLifeMonths}
-                      onChange={(e) => setEditingAsset({ ...editingAsset, usefulLifeMonths: e.target.value })}
-                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)", marginTop: "4px" }}
-                    />
-                  </div>
-                </div>
-
-                {/* Live Preview Khấu hao/tháng */}
-                <div style={{ background: "#fffbeb", border: "1px solid #fef3c7", borderRadius: "6px", padding: "10px 12px", marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "12px", color: "#92400e" }}>Khấu hao ước tính 1 tháng:</span>
-                  <strong style={{ fontSize: "14px", color: "#b45309", fontFamily: "var(--font-mono, monospace)" }}>
-                    {currency.format(
-                      Math.round(
-                        (Number(editingAsset.originalCost || 0) - Number(editingAsset.residualValue || 0)) /
-                        Math.max(1, Number(editingAsset.usefulLifeMonths || 60))
-                      )
-                    )} / tháng
-                  </strong>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600 }}>Ngày đưa vào sử dụng</label>
-                    <input
-                      type="date"
-                      value={editingAsset.acquisitionDate}
-                      onChange={(e) => setEditingAsset({ ...editingAsset, acquisitionDate: e.target.value })}
-                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)", marginTop: "4px" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600 }}>Nhà sản xuất / Nhà cung ứng</label>
-                    <input
-                      type="text"
-                      value={editingAsset.supplierOrBrand}
-                      onChange={(e) => setEditingAsset({ ...editingAsset, supplierOrBrand: e.target.value })}
-                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)", marginTop: "4px" }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
-                  <button type="button" className="button" onClick={() => setShowEditAssetModal(false)}>Hủy</button>
-                  <button type="submit" className="button primary">Cập nhật thay đổi</button>
                 </div>
               </form>
             </div>
