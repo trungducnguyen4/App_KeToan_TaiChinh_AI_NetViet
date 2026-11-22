@@ -44,14 +44,19 @@ export function Pagination({
   return (
     <div
       style={{
+        position: "sticky",
+        bottom: 0,
+        zIndex: 5,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         flexWrap: "wrap",
         gap: "12px",
-        padding: "12px 16px",
-        background: "#ffffff",
+        padding: "10px 16px",
+        background: "rgba(255, 255, 255, 0.96)",
+        backdropFilter: "blur(8px)",
         borderTop: "1px solid var(--line, #e2e8f0)",
+        boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.05)",
         fontSize: "13px",
         color: "var(--muted, #64748b)"
       }}
