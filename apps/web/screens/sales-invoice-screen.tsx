@@ -80,6 +80,9 @@ export default function SalesInvoiceScreen() {
   const [invoiceSeries, setInvoiceSeries] = useState("1C26TNV");
   const [customerName, setCustomerName] = useState("");
   const [taxCode, setTaxCode] = useState("");
+  const [taxLookupLoading, setTaxLookupLoading] = useState(false);
+  const [taxLookupError, setTaxLookupError] = useState<string | null>(null);
+  const [taxLookupSuccess, setTaxLookupSuccess] = useState<string | null>(null);
   const [productType, setProductType] = useState<SalesProductType>("CRUDE_OIL");
   const [quantity, setQuantity] = useState<number>(3000);
   const [unit, setUnit] = useState<string>("kg");
@@ -128,6 +131,44 @@ export default function SalesInvoiceScreen() {
   const totalAmount = subtotal + vatAmount;
 
   // Handle product type switch defaults
+  // Auto lookup tax code via public API
+  const handleLookupTaxCode = async (codeToLookup?: string) => {
+    const rawCode = (codeToLookup !== undefined ? codeToLookup : taxCode).trim().replace(/[^0-9-]/g, "");
+    if (!rawCode || rawCode.length < 8) {
+      setTaxLookupError("Mã số thuế cần ít nhất 8-10 chữ số.");
+      setTaxLookupSuccess(null);
+      return;
+    }
+
+    try {
+      setTaxLookupLoading(true);
+      setTaxLookupError(null);
+      setTaxLookupSuccess(null);
+
+      const res = await fetch(`http://localhost:4000/api/tax-lookup/${rawCode}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || "Không tìm thấy thông tin mã số thuế này.");
+      }
+
+      const data = await res.json();
+      if (data && data.name) {
+        setCustomerName(data.name);
+        setTaxLookupSuccess(`Đã nhận diện: ${data.name}${data.address ? " - " + data.address : ""}`);
+        if (data.taxCode) {
+          setTaxCode(data.taxCode);
+        }
+      } else {
+        throw new Error("Không tìm thấy tên doanh nghiệp.");
+      }
+    } catch (err: any) {
+      setTaxLookupError(err.message || "Lỗi tra cứu mã số thuế.");
+      setTaxLookupSuccess(null);
+    } finally {
+      setTaxLookupLoading(false);
+    }
+  };
+
   const handleProductChange = (type: SalesProductType) => {
     setProductType(type);
     const def = PRODUCT_DEFINITIONS[type] || PRODUCT_DEFINITIONS.CRUDE_OIL;
@@ -731,26 +772,81 @@ export default function SalesInvoiceScreen() {
 
                 <div className="modal-grid-2">
                   <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
+                        Mã số thuế (nếu có)
+                      </label>
+                      <span style={{ fontSize: 11, color: "var(--brand)", fontWeight: 600 }}>
+                        ⚡ Auto-fill tên DN
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        type="text"
+                        placeholder="Nhập MST (VD: 0300588569, 1300994511)..."
+                        value={taxCode}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setTaxCode(val);
+                          setTaxLookupError(null);
+                          setTaxLookupSuccess(null);
+                          const clean = val.trim().replace(/[^0-9-]/g, "");
+                          if (clean.length === 10 || clean.length === 13 || clean.length === 14) {
+                            handleLookupTaxCode(clean);
+                          }
+                        }}
+                        onBlur={() => {
+                          const clean = taxCode.trim().replace(/[^0-9-]/g, "");
+                          if (clean.length >= 8 && !taxLookupSuccess && !customerName) {
+                            handleLookupTaxCode(clean);
+                          }
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleLookupTaxCode()}
+                        disabled={taxLookupLoading || !taxCode.trim()}
+                        style={{
+                          padding: "0 12px",
+                          background: taxLookupLoading ? "#94a3b8" : "var(--brand)",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: taxLookupLoading ? "not-allowed" : "pointer",
+                          whiteSpace: "nowrap",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4
+                        }}
+                        title="Tra cứu API để tự động điền Tên doanh nghiệp"
+                      >
+                        {taxLookupLoading ? "Đang tìm..." : "Tra cứu MST"}
+                      </button>
+                    </div>
+                    {taxLookupError && (
+                      <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
+                        ⚠️ {taxLookupError}
+                      </div>
+                    )}
+                    {taxLookupSuccess && (
+                      <div style={{ fontSize: 11, color: "#059669", marginTop: 4, fontWeight: 500 }}>
+                        ✓ {taxLookupSuccess}
+                      </div>
+                    )}
+                  </div>
+                  <div>
                     <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>
                       Tên Khách hàng / Doanh nghiệp thu mua *
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="VD: Công ty TNHH Dầu Thực Vật Miền Tây..."
+                      placeholder="VD: Công ty Cổ phần Sữa Việt Nam..."
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>
-                      Mã số thuế (nếu có)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="031..."
-                      value={taxCode}
-                      onChange={(e) => setTaxCode(e.target.value)}
                     />
                   </div>
                 </div>
