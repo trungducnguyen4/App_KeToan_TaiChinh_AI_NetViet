@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query } from "@nestjs/common";
+import { Controller, Get, Post, Put, Body, Query, Param } from "@nestjs/common";
 import { Roles } from "../auth/roles.decorator";
 import { WorkitService } from "./workit.service";
 
@@ -22,6 +22,12 @@ export class CapitalController {
   @Roles("admin", "accountant")
   createAsset(@Body() body: any) {
     return this.workit.createCapitalAsset(body);
+  }
+
+  @Put("assets/:id")
+  @Roles("admin", "accountant")
+  updateAsset(@Param("id") id: string, @Body() body: any) {
+    return this.workit.updateCapitalAsset(id, body);
   }
 
   @Get("shareholders")
