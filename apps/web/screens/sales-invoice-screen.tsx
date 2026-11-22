@@ -436,11 +436,10 @@ export default function SalesInvoiceScreen() {
               <option value="ALL_OIL">💧 Nhóm Dầu Dừa (Thô &amp; Lọc)</option>
               <option value="CRUDE_OIL">-- Dầu dừa thô</option>
               <option value="FILTERED_OIL">-- Dầu dừa lọc</option>
-              <option value="ALL_MEAL">🌾 Nhóm Cám Dừa (Thành phẩm)</option>
-              <option value="MEAL_BROWN">-- Cám dừa nâu</option>
-              <option value="MEAL_WHITE">-- Cám dừa trắng</option>
-              <option value="MEAL_WHOLE">-- Cám dừa nguyên</option>
-              <option value="BYPRODUCT">-- Cám dừa chung</option>
+              <option value="ALL_MEAL">🌾 Nhóm Cám Dừa (3 loại)</option>
+              <option value="MEAL_BROWN">-- Cám nâu</option>
+              <option value="MEAL_WHITE">-- Cám trắng</option>
+              <option value="MEAL_WHOLE">-- Cám nguyên</option>
             </select>
           </div>
 
@@ -906,11 +905,10 @@ export default function SalesInvoiceScreen() {
                         <option value="CRUDE_OIL">Dầu dừa thô xuất xưởng</option>
                         <option value="FILTERED_OIL">Dầu dừa lọc sạch (khung bản / ly tâm)</option>
                       </optgroup>
-                      <optgroup label="🌾 Nhóm Cám Dừa Thành Phẩm">
-                        <option value="MEAL_BROWN">Cám dừa nâu (ép nguyên vỏ/lụa đậm)</option>
-                        <option value="MEAL_WHITE">Cám dừa trắng (gọt vỏ lụa, giá trị cao)</option>
-                        <option value="MEAL_WHOLE">Cám dừa nguyên (hỗn hợp tiêu chuẩn)</option>
-                        <option value="BYPRODUCT">Cám dừa chung (tiêu chuẩn xuất bán)</option>
+                      <optgroup label="🌾 Nhóm Cám Dừa (3 loại chuẩn xưởng)">
+                        <option value="MEAL_BROWN">Cám nâu (ép nguyên vỏ/lụa đậm)</option>
+                        <option value="MEAL_WHITE">Cám trắng (gọt vỏ lụa, giá trị cao)</option>
+                        <option value="MEAL_WHOLE">Cám nguyên (hỗn hợp tiêu chuẩn)</option>
                       </optgroup>
                     </select>
                   </div>
