@@ -364,6 +364,8 @@ model Voucher {
   voucherNo                        String                    @map("voucher_no") @db.VarChar(64)
   voucherDate                      DateTime                  @map("voucher_date") @db.Date
   posting_date                     DateTime?                 @db.Date
+  due_date                         DateTime?                 @map("due_date") @db.Date
+  payment_term_days                Int?                      @map("payment_term_days")
   currencyCode                     String                    @default("VND") @map("currency_code") @db.VarChar(8)
   exchange_rate                    Decimal                   @default(1.000000) @db.Decimal(18, 6)
   status                           String                    @db.VarChar(20)
