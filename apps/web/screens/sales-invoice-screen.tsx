@@ -4,7 +4,7 @@ import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
 import { Pagination } from "../components/pagination";
 import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
-import { TwoSalesDonutCharts } from "../components/two-sales-donut-charts";
+import { CompactDonutCard } from "../components/compact-donut-card";
 
 export type SalesProductType =
   | "CRUDE_OIL"
@@ -342,50 +342,69 @@ export default function SalesInvoiceScreen() {
         </div>
 
         {/* Compact KPI Row - 80px according to erp-ux-ui skill */}
-        <div className="kpi-row-compact">
-          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #15936b" }}>
-            <span className="kpi-label">Tổng doanh thu xuất bán</span>
-            <span className="kpi-value text-right" style={{ color: "#15936b" }}>
-              {(totalRevenue / 1000000).toFixed(1)} Tr
-            </span>
-            <span className="kpi-sub">Gồm VAT: {(totalRevenue).toLocaleString("vi-VN")} đ</span>
+        {/* 4 Box ngang hàng (25% mỗi box): 2 Thẻ tài chính + 2 Thẻ biểu đồ tròn Dầu Dừa & Cám Dừa */}
+        <div className="kpi-row-compact" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", marginBottom: 16 }}>
+          {/* Box 1: Tổng doanh thu xuất bán */}
+          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #15936b", padding: "10px 14px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div>
+              <span className="kpi-label">Tổng doanh thu xuất bán</span>
+              <span className="kpi-value text-right" style={{ color: "#15936b", display: "block", fontSize: "18px", marginTop: 2 }}>
+                {(totalRevenue / 1000000).toFixed(1)} Tr
+              </span>
+            </div>
+            <span className="kpi-sub" style={{ marginTop: 6 }}>Gồm VAT: {(totalRevenue).toLocaleString("vi-VN")} đ</span>
           </div>
 
+          {/* Box 2: Biểu đồ tròn Dầu Dừa */}
+          <CompactDonutCard
+            title="Doanh thu Dầu Dừa"
+            totalAmount={oilRevenue}
+            totalQuantity={oilQuantity}
+            unit="kg"
+            themeColor="#059669"
+            slices={[
+              { name: "Dầu dừa thô", amount: crudeOilAmount, quantity: crudeOilQty, unit: "kg", color: "#059669", filterValue: "CRUDE_OIL" },
+              { name: "Dầu dừa lọc", amount: filteredOilAmount, quantity: filteredOilQty, unit: "kg", color: "#10b981", filterValue: "FILTERED_OIL" }
+            ]}
+            onFilterProduct={(val) => {
+              setFilterProduct(val);
+              setCurrentPage(1);
+            }}
+          />
 
-          <div className="kpi-card-compact" style={{ borderLeft: `4px solid ${overdueInvoices.length > 0 ? "#e11d48" : "#c77d14"}` }}>
-            <span className="kpi-label">Công nợ khách hàng chưa thu</span>
-            <span className="kpi-value text-right" style={{ color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b" }}>
-              {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ (Đã thu đủ)"}
-            </span>
-            <span className="kpi-sub" style={{ color: overdueInvoices.length > 0 ? "#be123c" : undefined, fontWeight: overdueInvoices.length > 0 ? 700 : undefined }}>
+          {/* Box 3: Biểu đồ tròn Cám Dừa */}
+          <CompactDonutCard
+            title="Doanh thu Cám Dừa"
+            totalAmount={mealRevenue}
+            totalQuantity={mealQuantity}
+            unit="kg"
+            themeColor="#0284c7"
+            slices={[
+              { name: "Cám nâu", amount: mealBrownAmount, quantity: mealBrownQty, unit: "kg", color: "#0284c7", filterValue: "MEAL_BROWN" },
+              { name: "Cám trắng", amount: mealWhiteAmount, quantity: mealWhiteQty, unit: "kg", color: "#38bdf8", filterValue: "MEAL_WHITE" },
+              { name: "Cám nguyên", amount: mealWholeAmount, quantity: mealWholeQty, unit: "kg", color: "#6366f1", filterValue: "MEAL_WHOLE" }
+            ]}
+            onFilterProduct={(val) => {
+              setFilterProduct(val);
+              setCurrentPage(1);
+            }}
+          />
+
+          {/* Box 4: Công nợ khách hàng chưa thu */}
+          <div className="kpi-card-compact" style={{ borderLeft: `4px solid ${overdueInvoices.length > 0 ? "#e11d48" : "#c77d14"}`, padding: "10px 14px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div>
+              <span className="kpi-label">Công nợ khách hàng chưa thu</span>
+              <span className="kpi-value text-right" style={{ color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b", display: "block", fontSize: "18px", marginTop: 2 }}>
+                {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ (Đã thu đủ)"}
+              </span>
+            </div>
+            <span className="kpi-sub" style={{ marginTop: 6, color: overdueInvoices.length > 0 ? "#be123c" : undefined, fontWeight: overdueInvoices.length > 0 ? 700 : undefined }}>
               {overdueInvoices.length > 0
                 ? `⚠️ ${overdueInvoices.length} HĐ quá hạn (${(overdueTotal / 1000000).toFixed(1)} Tr) • ${partialCount} đợt dở dang`
                 : `${invoices.filter((i) => i.paymentStatus !== "PAID").length} HĐ còn nợ • ${partialCount} đợt dở dang`}
             </span>
           </div>
         </div>
-
-        {/* 2 Biểu đồ tròn tách biệt: Doanh thu Dầu Dừa & Doanh thu Cám Dừa */}
-        <TwoSalesDonutCharts
-          oilRevenue={oilRevenue}
-          mealRevenue={mealRevenue}
-          oilQuantity={oilQuantity}
-          mealQuantity={mealQuantity}
-          crudeOilAmount={crudeOilAmount}
-          crudeOilQty={crudeOilQty}
-          filteredOilAmount={filteredOilAmount}
-          filteredOilQty={filteredOilQty}
-          mealBrownAmount={mealBrownAmount}
-          mealBrownQty={mealBrownQty}
-          mealWhiteAmount={mealWhiteAmount}
-          mealWhiteQty={mealWhiteQty}
-          mealWholeAmount={mealWholeAmount}
-          mealWholeQty={mealWholeQty}
-          onFilterProduct={(val) => {
-            setFilterProduct(val);
-            setCurrentPage(1);
-          }}
-        />
 
         {/* Toolbar & Filter */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
