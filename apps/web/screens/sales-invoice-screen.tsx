@@ -348,10 +348,9 @@ export default function SalesInvoiceScreen() {
           />
         </div>
 
-        {/* Compact KPI Row - 80px according to erp-ux-ui skill */}
-        {/* 4 Box ngang hàng (25% mỗi box): 2 Thẻ tài chính + 2 Thẻ biểu đồ tròn Dầu Dừa & Cám Dừa */}
-        <div className="kpi-row-compact" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 16 }}>
-          {/* Box 1: Tổng doanh thu xuất bán (Rich UI) */}
+        {/* 3 Box ngang hàng (33.33% mỗi box): Box Tài chính Doanh thu & Công nợ gộp + 2 Box Biểu đồ tròn Dầu Dừa & Cám Dừa */}
+        <div className="kpi-row-compact" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 16 }}>
+          {/* Box 1 (33.33%): Gộp Tổng doanh thu xuất bán & Công nợ chưa thu */}
           <div
             className="kpi-card-compact"
             style={{
@@ -363,33 +362,52 @@ export default function SalesInvoiceScreen() {
               minHeight: "84px"
             }}
           >
-            {/* Header: Label & Value */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span className="kpi-label">Tổng doanh thu xuất bán</span>
-              <span className="kpi-value text-right" style={{ color: "#15936b", fontSize: "17px", marginLeft: 8 }}>
-                {(totalRevenue / 1000000).toFixed(1)} Tr
-              </span>
+            {/* 2 Cột chỉ số chính: Doanh thu (Trái) & Công nợ (Phải) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "baseline" }}>
+              <div>
+                <span className="kpi-label" style={{ fontSize: "11px" }}>Tổng doanh thu xuất bán</span>
+                <div style={{ fontSize: "17px", fontWeight: 800, color: "#15936b", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+                  {(totalRevenue / 1000000).toFixed(1)} Tr
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span className="kpi-label" style={{ fontSize: "11px", color: overdueInvoices.length > 0 ? "#be123c" : "var(--muted)" }}>
+                  Công nợ chưa thu
+                </span>
+                <div style={{ fontSize: "17px", fontWeight: 800, color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+                  {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ"}
+                </div>
+              </div>
             </div>
 
-            {/* Progress bar: Tỷ lệ thực thu */}
+            {/* Progress bar: Tỷ lệ thực thu & Nợ quá hạn */}
             <div style={{ marginTop: 6, marginBottom: 4 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--muted)", marginBottom: 2 }}>
-                <span>Đã thực thu ({collectionRate}%)</span>
-                <span style={{ fontWeight: 700, color: "#15936b" }}>{(totalCollected / 1000000).toFixed(1)} Tr</span>
+                <span>Đã thu {collectionRate}% ({(totalCollected / 1000000).toFixed(1)} Tr)</span>
+                {overdueInvoices.length > 0 ? (
+                  <span style={{ color: "#be123c", fontWeight: 700 }}>⚠️ Quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr</span>
+                ) : (
+                  <span style={{ color: "#15936b", fontWeight: 600 }}>Trong hạn</span>
+                )}
               </div>
-              <div style={{ width: "100%", height: 5, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
-                <div style={{ width: `${Math.min(100, Number(collectionRate))}%`, height: "100%", background: "#15936b", borderRadius: 3, transition: "width 0.3s ease" }} />
+              <div style={{ width: "100%", height: 5, background: "#e2e8f0", borderRadius: 3, overflow: "hidden", display: "flex" }}>
+                <div style={{ width: `${Math.min(100, Number(collectionRate))}%`, height: "100%", background: "#15936b", transition: "width 0.3s ease" }} />
+                {unpaidTotal > 0 && (
+                  <div style={{ width: `${Math.min(100 - Number(collectionRate), ((unpaidTotal / (totalRevenue || 1)) * 100))}%`, height: "100%", background: overdueInvoices.length > 0 ? "#f43f5e" : "#fbbf24" }} />
+                )}
               </div>
             </div>
 
             {/* Subtext footer */}
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--muted)", marginTop: 2 }}>
-              <span>{totalInvoicesCount} HĐ ({paidInvoicesCount} tất toán)</span>
-              <span>VAT: {((totalRevenue * 0.08) / 1000000).toFixed(1)} Tr</span>
+              <span>{totalInvoicesCount} HĐ ({paidInvoicesCount} đã tất toán)</span>
+              <span style={{ color: overdueInvoices.length > 0 ? "#be123c" : "var(--muted)", fontWeight: overdueInvoices.length > 0 ? 600 : 400 }}>
+                {unpaidCount > 0 ? `${unpaidCount} HĐ còn nợ` : "Đã thu đủ 100%"}
+              </span>
             </div>
           </div>
 
-          {/* Box 2: Biểu đồ tròn Dầu Dừa */}
+          {/* Box 2 (33.33%): Biểu đồ tròn Dầu Dừa */}
           <CompactDonutCard
             title="Doanh thu Dầu Dừa"
             totalAmount={oilRevenue}
@@ -406,7 +424,7 @@ export default function SalesInvoiceScreen() {
             }}
           />
 
-          {/* Box 3: Biểu đồ tròn Cám Dừa (Màu sắc thực tế thành phẩm: Nâu đậm, Trắng ngà, Vàng rơm nguyên) */}
+          {/* Box 3 (33.33%): Biểu đồ tròn Cám Dừa */}
           <CompactDonutCard
             title="Doanh thu Cám Dừa"
             totalAmount={mealRevenue}
@@ -423,53 +441,6 @@ export default function SalesInvoiceScreen() {
               setCurrentPage(1);
             }}
           />
-
-          {/* Box 4: Công nợ khách hàng chưa thu (Rich UI) */}
-          <div
-            className="kpi-card-compact"
-            style={{
-              borderLeft: `4px solid ${overdueInvoices.length > 0 ? "#e11d48" : "#c77d14"}`,
-              padding: "10px 14px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              minHeight: "84px"
-            }}
-          >
-            {/* Header: Label & Value */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span className="kpi-label">Công nợ chưa thu</span>
-              <span className="kpi-value text-right" style={{ color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b", fontSize: "17px", marginLeft: 8 }}>
-                {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ"}
-              </span>
-            </div>
-
-            {/* Warning / Breakdown badge */}
-            <div style={{ display: "flex", gap: 6, marginTop: 4, marginBottom: 2 }}>
-              {overdueInvoices.length > 0 ? (
-                <div style={{ flex: 1, background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 4, padding: "2px 6px", fontSize: "10px", color: "#be123c", fontWeight: 600 }}>
-                  ⚠️ {overdueInvoices.length} HĐ quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr
-                </div>
-              ) : (
-                <div style={{ flex: 1, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "2px 6px", fontSize: "10px", color: "#15803d", fontWeight: 600 }}>
-                  ✓ Không có nợ quá hạn
-                </div>
-              )}
-              {partialCount > 0 && (
-                <div style={{ background: "#fefce8", border: "1px solid #fef08a", borderRadius: 4, padding: "2px 6px", fontSize: "10px", color: "#854d0e", fontWeight: 600 }}>
-                  {partialCount} dở dang
-                </div>
-              )}
-            </div>
-
-            {/* Subtext footer */}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--muted)", marginTop: 2 }}>
-              <span>{unpaidCount} hóa đơn còn nợ</span>
-              <span style={{ color: overdueInvoices.length > 0 ? "#be123c" : "var(--muted)", fontWeight: 600 }}>
-                {overdueInvoices.length > 0 ? "Cần đôn đốc" : "Trong hạn"}
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* Toolbar & Filter */}
