@@ -351,25 +351,6 @@ export default function SalesInvoiceScreen() {
             <span className="kpi-sub">Gồm VAT: {(totalRevenue).toLocaleString("vi-VN")} đ</span>
           </div>
 
-          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #0d9488" }}>
-            <span className="kpi-label">Doanh thu Dầu Dừa (Thô &amp; Lọc)</span>
-            <span className="kpi-value text-right" style={{ color: "#0d9488" }}>
-              {(oilRevenue / 1000000).toFixed(1)} Tr
-            </span>
-            <span className="kpi-sub">
-              {invoices.filter((i) => isOil(i.productType)).reduce((s, i) => s + i.quantity, 0).toLocaleString("vi-VN")} kg xuất xưởng
-            </span>
-          </div>
-
-          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #0f7bbf" }}>
-            <span className="kpi-label">Doanh thu Cám Dừa (3 loại)</span>
-            <span className="kpi-value text-right" style={{ color: "#0f7bbf" }}>
-              {(mealRevenue / 1000000).toFixed(1)} Tr
-            </span>
-            <span className="kpi-sub">
-              {invoices.filter((i) => isMeal(i.productType)).reduce((s, i) => s + i.quantity, 0).toLocaleString("vi-VN")} kg thành phẩm
-            </span>
-          </div>
 
           <div className="kpi-card-compact" style={{ borderLeft: `4px solid ${overdueInvoices.length > 0 ? "#e11d48" : "#c77d14"}` }}>
             <span className="kpi-label">Công nợ khách hàng chưa thu</span>
