@@ -299,6 +299,13 @@ export default function SalesInvoiceScreen() {
   });
 
   // Paged invoices
+  // Rich metrics for Box 1 & Box 4
+  const totalInvoicesCount = periodInvoices.length;
+  const paidInvoicesCount = periodInvoices.filter((i) => i.paymentStatus === "PAID").length;
+  const totalCollected = periodInvoices.reduce((s, i) => s + (i.paidAmount || 0), 0);
+  const collectionRate = totalRevenue > 0 ? ((totalCollected / totalRevenue) * 100).toFixed(0) : "0";
+  const unpaidCount = periodInvoices.filter((i) => i.paymentStatus !== "PAID").length;
+
   const pagedInvoices = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   // Segments calculation for Donut Chart
   const oilInvoices = periodInvoices.filter((i) => isOil(i.productType));
@@ -343,16 +350,43 @@ export default function SalesInvoiceScreen() {
 
         {/* Compact KPI Row - 80px according to erp-ux-ui skill */}
         {/* 4 Box ngang hàng (25% mỗi box): 2 Thẻ tài chính + 2 Thẻ biểu đồ tròn Dầu Dừa & Cám Dừa */}
-        <div className="kpi-row-compact" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", marginBottom: 16 }}>
-          {/* Box 1: Tổng doanh thu xuất bán */}
-          <div className="kpi-card-compact" style={{ borderLeft: "4px solid #15936b", padding: "10px 14px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
+        <div className="kpi-row-compact" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 16 }}>
+          {/* Box 1: Tổng doanh thu xuất bán (Rich UI) */}
+          <div
+            className="kpi-card-compact"
+            style={{
+              borderLeft: "4px solid #15936b",
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              minHeight: "84px"
+            }}
+          >
+            {/* Header: Label & Value */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span className="kpi-label">Tổng doanh thu xuất bán</span>
-              <span className="kpi-value text-right" style={{ color: "#15936b", display: "block", fontSize: "18px", marginTop: 2 }}>
+              <span className="kpi-value text-right" style={{ color: "#15936b", fontSize: "17px", marginLeft: 8 }}>
                 {(totalRevenue / 1000000).toFixed(1)} Tr
               </span>
             </div>
-            <span className="kpi-sub" style={{ marginTop: 6 }}>Gồm VAT: {(totalRevenue).toLocaleString("vi-VN")} đ</span>
+
+            {/* Progress bar: Tỷ lệ thực thu */}
+            <div style={{ marginTop: 6, marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--muted)", marginBottom: 2 }}>
+                <span>Đã thực thu ({collectionRate}%)</span>
+                <span style={{ fontWeight: 700, color: "#15936b" }}>{(totalCollected / 1000000).toFixed(1)} Tr</span>
+              </div>
+              <div style={{ width: "100%", height: 5, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ width: `${Math.min(100, Number(collectionRate))}%`, height: "100%", background: "#15936b", borderRadius: 3, transition: "width 0.3s ease" }} />
+              </div>
+            </div>
+
+            {/* Subtext footer */}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--muted)", marginTop: 2 }}>
+              <span>{totalInvoicesCount} HĐ ({paidInvoicesCount} tất toán)</span>
+              <span>VAT: {((totalRevenue * 0.08) / 1000000).toFixed(1)} Tr</span>
+            </div>
           </div>
 
           {/* Box 2: Biểu đồ tròn Dầu Dừa */}
@@ -390,19 +424,51 @@ export default function SalesInvoiceScreen() {
             }}
           />
 
-          {/* Box 4: Công nợ khách hàng chưa thu */}
-          <div className="kpi-card-compact" style={{ borderLeft: `4px solid ${overdueInvoices.length > 0 ? "#e11d48" : "#c77d14"}`, padding: "10px 14px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
-              <span className="kpi-label">Công nợ khách hàng chưa thu</span>
-              <span className="kpi-value text-right" style={{ color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b", display: "block", fontSize: "18px", marginTop: 2 }}>
-                {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ (Đã thu đủ)"}
+          {/* Box 4: Công nợ khách hàng chưa thu (Rich UI) */}
+          <div
+            className="kpi-card-compact"
+            style={{
+              borderLeft: `4px solid ${overdueInvoices.length > 0 ? "#e11d48" : "#c77d14"}`,
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              minHeight: "84px"
+            }}
+          >
+            {/* Header: Label & Value */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span className="kpi-label">Công nợ chưa thu</span>
+              <span className="kpi-value text-right" style={{ color: overdueInvoices.length > 0 ? "#be123c" : unpaidTotal > 0 ? "#d94b35" : "#15936b", fontSize: "17px", marginLeft: 8 }}>
+                {unpaidTotal > 0 ? `${(unpaidTotal / 1000000).toFixed(1)} Tr` : "0 đ"}
               </span>
             </div>
-            <span className="kpi-sub" style={{ marginTop: 6, color: overdueInvoices.length > 0 ? "#be123c" : undefined, fontWeight: overdueInvoices.length > 0 ? 700 : undefined }}>
-              {overdueInvoices.length > 0
-                ? `⚠️ ${overdueInvoices.length} HĐ quá hạn (${(overdueTotal / 1000000).toFixed(1)} Tr) • ${partialCount} đợt dở dang`
-                : `${invoices.filter((i) => i.paymentStatus !== "PAID").length} HĐ còn nợ • ${partialCount} đợt dở dang`}
-            </span>
+
+            {/* Warning / Breakdown badge */}
+            <div style={{ display: "flex", gap: 6, marginTop: 4, marginBottom: 2 }}>
+              {overdueInvoices.length > 0 ? (
+                <div style={{ flex: 1, background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 4, padding: "2px 6px", fontSize: "10px", color: "#be123c", fontWeight: 600 }}>
+                  ⚠️ {overdueInvoices.length} HĐ quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr
+                </div>
+              ) : (
+                <div style={{ flex: 1, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "2px 6px", fontSize: "10px", color: "#15803d", fontWeight: 600 }}>
+                  ✓ Không có nợ quá hạn
+                </div>
+              )}
+              {partialCount > 0 && (
+                <div style={{ background: "#fefce8", border: "1px solid #fef08a", borderRadius: 4, padding: "2px 6px", fontSize: "10px", color: "#854d0e", fontWeight: 600 }}>
+                  {partialCount} dở dang
+                </div>
+              )}
+            </div>
+
+            {/* Subtext footer */}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--muted)", marginTop: 2 }}>
+              <span>{unpaidCount} hóa đơn còn nợ</span>
+              <span style={{ color: overdueInvoices.length > 0 ? "#be123c" : "var(--muted)", fontWeight: 600 }}>
+                {overdueInvoices.length > 0 ? "Cần đôn đốc" : "Trong hạn"}
+              </span>
+            </div>
           </div>
         </div>
 
