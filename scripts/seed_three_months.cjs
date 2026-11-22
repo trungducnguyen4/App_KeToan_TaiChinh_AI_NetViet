@@ -61,14 +61,19 @@ const UTILITY_SUPPLIERS = [
 
 // Customers data
 const CUSTOMERS = [
-  { name: "Công ty CP Dược Mỹ Phẩm Sài Gòn", taxCode: "0309998888", series: "1C26TNV", ratio: 0.45 },
-  { name: "Công ty TNHH Dầu Thực Vật Miền Tây", taxCode: "1800112233", series: "1C26TNV", ratio: 0.35 },
+  { name: "Công ty CP Dược Mỹ Phẩm Sài Gòn", taxCode: "0309998888", series: "1C26TNV", ratio: 0.30 },
+  { name: "Công ty TNHH Dầu Thực Vật Miền Tây", taxCode: "1800112233", series: "1C26TNV", ratio: 0.30 },
+  { name: "Công ty Mỹ Phẩm Quốc Tế Cỏ Cây Hoa Lá", taxCode: "0108992233", series: "1C26TNV", ratio: 0.20 },
   { name: "Công ty CP Thực Phẩm Hữu Cơ Bến Tre", taxCode: "1300778899", series: "1C26TNV", ratio: 0.20 }
 ];
 
 const BYPRODUCT_BUYERS = [
-  { name: "Cơ sở Sản xuất Thức Ăn Chăn Nuôi Hòa Phát", taxCode: "1300554433", unitPrice: 1200 },
-  { name: "Hợp tác xã Nông Nghiệp Hữu Cơ Ba Tri", taxCode: "1300667788", unitPrice: 1250 }
+  { name: "Cơ sở Sản xuất Thức Ăn Chăn Nuôi Hòa Phát", taxCode: "1300554433", unitPrice: 1300, productType: "MEAL_BROWN", label: "cám dừa nâu ép khô" },
+  { name: "Công ty CP Bánh Kẹo Bibica Miền Tây", taxCode: "1200889911", unitPrice: 2400, productType: "MEAL_WHITE", label: "cám dừa trắng ép mịn" },
+  { name: "Hợp tác xã Nông Nghiệp Hữu Cơ Ba Tri", taxCode: "1300667788", unitPrice: 1650, productType: "MEAL_WHOLE", label: "cám dừa nguyên chất" },
+  { name: "Trang trại Nuôi Bò Sữa Ba Tri", taxCode: "1300887766", unitPrice: 1250, productType: "MEAL_BROWN", label: "cám dừa nâu" },
+  { name: "Xưởng Sản Xuất Bánh Dừa Nướng Đặc Sản Bến Tre", taxCode: "1300994422", unitPrice: 2500, productType: "MEAL_WHITE", label: "cám dừa trắng thượng hạng" },
+  { name: "Hợp tác xã Chăn Nuôi Thủy Sản Châu Thành", taxCode: "1300443322", unitPrice: 1350, productType: "BYPRODUCT", label: "cám dừa thành phẩm" }
 ];
 
 async function seedThreeMonths() {
@@ -189,13 +194,16 @@ async function seedThreeMonths() {
     // When crude oil inventory reaches >= 6,000 kg, dispatch an invoice
     if (currentInventoryOilKg >= 6000) {
       const customer = CUSTOMERS[salesVoucherSeq % CUSTOMERS.length];
-      const dispatchKg = Math.min(currentInventoryOilKg - 1000, 5000 + Math.round(Math.random() * 3000));
-      const unitPrice = 30000 + (month === 11 ? 500 : 0); // 30,000 to 30,500 đ/kg crude coconut oil
+      const isFiltered = salesVoucherSeq % 2 === 1;
+      const productType = isFiltered ? "FILTERED_OIL" : "CRUDE_OIL";
+      const dispatchKg = Math.min(currentInventoryOilKg - 1000, 4500 + Math.round(Math.random() * 3000));
+      const unitPrice = isFiltered ? (35000 + (month === 11 ? 1000 : 0)) : (30000 + (month === 11 ? 500 : 0));
       const subtotal = dispatchKg * unitPrice;
       const vatRate = 8; // 8% VAT for vegetable oil
       const vatAmount = Math.round(subtotal * 0.08);
       const totalAmount = subtotal + vatAmount;
       const voucherNo = `HDB-${year}-${String(salesVoucherSeq++).padStart(3, '0')}`;
+      const productDesc = isFiltered ? "dầu dừa lọc tinh khiết đạt chuẩn" : "dầu dừa thô xuất xưởng";
 
       const saleRes = await post('/sales/invoices', {
         docType: "VAT_INVOICE",
@@ -204,7 +212,7 @@ async function seedThreeMonths() {
         customerName: customer.name,
         taxCode: customer.taxCode,
         invoiceSeries: customer.series,
-        productType: "CRUDE_OIL",
+        productType,
         quantity: dispatchKg,
         unit: "kg",
         unitPrice,
@@ -212,7 +220,7 @@ async function seedThreeMonths() {
         vatRate,
         vatAmount,
         totalAmount,
-        description: `Xuất bán ${(dispatchKg).toLocaleString('vi-VN')} kg dầu dừa thô giao tại xưởng ép cho ${customer.name}`
+        description: `Xuất bán ${(dispatchKg).toLocaleString('vi-VN')} kg ${productDesc} cho ${customer.name}`
       });
 
       if (saleRes.status === 201) {
@@ -231,12 +239,12 @@ async function seedThreeMonths() {
       }
     }
 
-    // 4. Byproduct sale (Xác/bã dừa) once every ~10 days
-    if (currentInventoryByproductKg >= 25000) {
+    // 4. Byproduct sale (Cám dừa thành phẩm: nâu, trắng, nguyên) once every ~10 days
+    if (currentInventoryByproductKg >= 20000) {
       const buyer = BYPRODUCT_BUYERS[salesVoucherSeq % BYPRODUCT_BUYERS.length];
-      const saleQty = Math.round(currentInventoryByproductKg / 1000) * 1000;
+      const saleQty = Math.round((currentInventoryByproductKg * 0.7) / 1000) * 1000;
       const subtotal = saleQty * buyer.unitPrice;
-      const totalAmount = subtotal; // Bã dừa bán cho HTX chăn nuôi
+      const totalAmount = subtotal;
       const voucherNo = `BK-${year}-${String(salesVoucherSeq++).padStart(3, '0')}`;
 
       const saleRes = await post('/sales/invoices', {
@@ -245,7 +253,7 @@ async function seedThreeMonths() {
         voucherDate: `${dateStr}T15:30:00.000Z`,
         customerName: buyer.name,
         taxCode: buyer.taxCode,
-        productType: "BYPRODUCT",
+        productType: buyer.productType,
         quantity: saleQty,
         unit: "kg",
         unitPrice: buyer.unitPrice,
@@ -253,7 +261,7 @@ async function seedThreeMonths() {
         vatRate: 0,
         vatAmount: 0,
         totalAmount,
-        description: `Bán phụ phẩm xác dừa ép ${(saleQty).toLocaleString('vi-VN')} kg làm thức ăn gia súc cho ${buyer.name}`
+        description: `Xuất bán ${(saleQty).toLocaleString('vi-VN')} kg ${buyer.label} cho ${buyer.name}`
       });
 
       if (saleRes.status === 201) {
@@ -263,7 +271,7 @@ async function seedThreeMonths() {
         // Byproduct buyer pays cash
         const payRes = await post(`/sales/invoices/${saleId}/payment`, {
           paymentChannel: "cash",
-          description: `Thu tiền mặt bán bã dừa theo phiếu ${voucherNo}`
+          description: `Thu tiền mặt bán cám dừa theo phiếu ${voucherNo}`
         });
         if (payRes.status === 201) totalSalesPaymentsCreated++;
       }

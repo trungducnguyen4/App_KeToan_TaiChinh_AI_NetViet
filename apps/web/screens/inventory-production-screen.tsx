@@ -220,14 +220,14 @@ export default function InventoryProductionScreen() {
             <div className="kpi-delta">Tổng {batches.length} mẻ sản xuất</div>
           </article>
           <article className="kpi-card">
-            <div className="kpi-label">Dầu dừa thô thu hồi</div>
+            <div className="kpi-label">Dầu dừa thu hồi (Thô/Lọc)</div>
             <div className="kpi-value" style={{ color: "#15936b" }}>{totalOilTons.toFixed(2)} Tấn</div>
-            <div className="kpi-delta">~{totalLiters.toLocaleString("vi-VN")} Lít dầu sau lọc</div>
+            <div className="kpi-delta">~{totalLiters.toLocaleString("vi-VN")} Lít dầu thành phẩm</div>
           </article>
           <article className="kpi-card">
-            <div className="kpi-label">Bã dừa phụ phẩm</div>
+            <div className="kpi-label">Cám dừa thành phẩm</div>
             <div className="kpi-value" style={{ color: "#c77d14" }}>{totalByproductTons.toFixed(2)} Tấn</div>
-            <div className="kpi-delta">Bán thu hồi làm thức ăn/phân</div>
+            <div className="kpi-delta">3 loại: cám nâu, trắng, nguyên</div>
           </article>
           <article className="kpi-card">
             <div className="kpi-label">Giá thành 1 kg dầu thô</div>
@@ -372,7 +372,7 @@ export default function InventoryProductionScreen() {
                   </div>
 
                   <div className="form-field">
-                    <label>Bã dừa ép thu hồi (kg)</label>
+                    <label>Cám dừa ép thu hồi (kg) *</label>
                     <input
                       type="number"
                       value={form.byproductKg}
@@ -382,7 +382,7 @@ export default function InventoryProductionScreen() {
                   </div>
 
                   {/* Realtime Yield Badge */}
-                  <div className="form-field lg" style={{ gridColumn: "span 6" }}>
+                  <div className="form-field span-6">
                     <label>TỶ LỆ THU HỒI DẦU (% YIELD)</label>
                     <div
                       style={{
@@ -459,7 +459,7 @@ export default function InventoryProductionScreen() {
                     />
                   </div>
 
-                  <div className="form-field xl" style={{ gridColumn: "span 12" }}>
+                  <div className="form-field span-12">
                     <label>Ghi chú mẻ ép</label>
                     <input
                       type="text"
@@ -502,7 +502,7 @@ export default function InventoryProductionScreen() {
                 />
               </div>
 
-              <div style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
+              <div className="table-scroll" style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
                 <table className="data-table">
                   <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>
                     <tr>
@@ -513,7 +513,7 @@ export default function InventoryProductionScreen() {
                       <th style={{ textAlign: "right" }}>Dầu thô ra (kg)</th>
                       <th style={{ textAlign: "right" }}>Thể tích (Lít)</th>
                       <th style={{ textAlign: "center" }}>Tỷ lệ thu hồi</th>
-                      <th style={{ textAlign: "right" }}>Bã dừa (kg)</th>
+                      <th style={{ textAlign: "right" }}>Cám dừa thu hồi (kg)</th>
                       <th style={{ textAlign: "right" }}>Giá thành (đ/kg)</th>
                       <th>Ghi chú</th>
                     </tr>
@@ -755,7 +755,7 @@ export default function InventoryProductionScreen() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginTop: "20px" }}>
+            <div className="responsive-grid-3" style={{ marginTop: "20px" }}>
               {/* Kho 1 */}
               <div style={{ background: "#f8fafc", border: "1px solid var(--line)", borderRadius: "10px", padding: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -779,14 +779,14 @@ export default function InventoryProductionScreen() {
                   <span style={{ width: 44, height: 44, borderRadius: 10, background: "#ecfdf5", display: "grid", placeItems: "center", color: "#15936b" }}>
                     <AppIcon name="Droplet" size={24} />
                   </span>
-                  <span style={{ fontSize: "12px", background: "#eff6ff", color: "#1e40af", padding: "3px 8px", borderRadius: "10px", fontWeight: 700 }}>Kho Thành Phẩm</span>
+                  <span style={{ fontSize: "12px", background: "#eff6ff", color: "#1e40af", padding: "3px 8px", borderRadius: "10px", fontWeight: 700 }}>Kho Dầu Dừa</span>
                 </div>
-                <h4 style={{ margin: "12px 0 4px", fontSize: "16px", fontWeight: 700 }}>Dầu Dừa Thô (Sau Lọc)</h4>
+                <h4 style={{ margin: "12px 0 4px", fontSize: "16px", fontWeight: 700 }}>Dầu Dừa Thành Phẩm (Thô &amp; Lọc)</h4>
                 <div style={{ fontSize: "24px", fontWeight: 800, color: "#15936b", margin: "8px 0" }}>
                   {totalLiters.toLocaleString("vi-VN")} Lít
                 </div>
                 <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
-                  Tương đương ~{(totalLiters / 200).toFixed(0)} phuy 200L tiêu chuẩn sẵn sàng xuất bán.
+                  Gồm 2 phân loại: <strong>Dầu thô</strong> (xuất thẳng công nghiệp) và <strong>Dầu lọc</strong> (khung bản sạch cặn đạt chuẩn đóng phuy).
                 </p>
               </div>
 
@@ -796,14 +796,14 @@ export default function InventoryProductionScreen() {
                   <span style={{ width: 44, height: 44, borderRadius: 10, background: "#fef3c7", display: "grid", placeItems: "center", color: "#c77d14" }}>
                     <AppIcon name="Boxes" size={24} />
                   </span>
-                  <span style={{ fontSize: "12px", background: "#fef3c7", color: "#92400e", padding: "3px 8px", borderRadius: "10px", fontWeight: 700 }}>Kho Phụ Phẩm</span>
+                  <span style={{ fontSize: "12px", background: "#ecfdf5", color: "#065f46", padding: "3px 8px", borderRadius: "10px", fontWeight: 700 }}>Kho Cám Dừa (Thành phẩm)</span>
                 </div>
-                <h4 style={{ margin: "12px 0 4px", fontSize: "16px", fontWeight: 700 }}>Bã Dừa Ép Khô</h4>
+                <h4 style={{ margin: "12px 0 4px", fontSize: "16px", fontWeight: 700 }}>Cám Dừa Ép (3 Loại)</h4>
                 <div style={{ fontSize: "24px", fontWeight: 800, color: "#c77d14", margin: "8px 0" }}>
                   {totalByproductTons.toFixed(2)} Tấn
                 </div>
                 <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
-                  Đóng bao 50kg, chờ thương lái thức ăn gia súc & phân bón hữu cơ đến bốc.
+                  Phân loại thành phẩm: <strong>Cám nâu</strong> (thức ăn chăn nuôi), <strong>Cám trắng</strong> (giá trị cao), <strong>Cám nguyên</strong> (tiêu chuẩn).
                 </p>
               </div>
             </div>
