@@ -3,6 +3,8 @@ import type { ProductionBatchRecord, SupplierYieldPerformance } from "@domain/ty
 import { AppShell } from "../components/app-shell";
 import { AppIcon } from "../components/icons";
 import { fetchApi, postApi } from "../lib/api";
+import { Pagination } from "../components/pagination";
+import { PeriodFilter, PeriodFilterValue, filterByPeriod } from "../components/period-filter";
 
 const currency = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -49,6 +51,9 @@ export default function InventoryProductionScreen() {
 
   // Search & Filters
   const [filterQuery, setFilterQuery] = useState("");
+  const [period, setPeriod] = useState<PeriodFilterValue>("3M");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   async function loadData() {
     try {
@@ -144,17 +149,20 @@ export default function InventoryProductionScreen() {
     }
   }
 
-  // Aggregate metrics
-  const totalRawTons = batches.reduce((sum, b) => sum + b.rawMaterialKg, 0) / 1000;
-  const totalOilTons = batches.reduce((sum, b) => sum + b.crudeOilKg, 0) / 1000;
-  const totalLiters = batches.reduce((sum, b) => sum + b.crudeOilLiters, 0);
-  const totalByproductTons = batches.reduce((sum, b) => sum + b.byproductKg, 0) / 1000;
+  // Filter batches by period first
+  const periodBatches = filterByPeriod(batches, (b) => b.batchDate, period);
+
+  // Aggregate metrics based on selected period
+  const totalRawTons = periodBatches.reduce((sum, b) => sum + b.rawMaterialKg, 0) / 1000;
+  const totalOilTons = periodBatches.reduce((sum, b) => sum + b.crudeOilKg, 0) / 1000;
+  const totalLiters = periodBatches.reduce((sum, b) => sum + b.crudeOilLiters, 0);
+  const totalByproductTons = periodBatches.reduce((sum, b) => sum + b.byproductKg, 0) / 1000;
   const avgYieldRate = totalRawTons > 0 ? ((totalOilTons / totalRawTons) * 100).toFixed(2) : "0.00";
-  const avgUnitCost = batches.length > 0
-    ? Math.round(batches.reduce((sum, b) => sum + b.unitCostPerKg, 0) / batches.length)
+  const avgUnitCost = periodBatches.length > 0
+    ? Math.round(periodBatches.reduce((sum, b) => sum + b.unitCostPerKg, 0) / periodBatches.length)
     : 0;
 
-  const filteredBatches = batches.filter((b) => {
+  const filteredBatches = periodBatches.filter((b) => {
     if (!filterQuery.trim()) return true;
     const q = filterQuery.toLowerCase();
     return (
@@ -164,13 +172,27 @@ export default function InventoryProductionScreen() {
     );
   });
 
+  // Paged batches
+  const pagedBatches = filteredBatches.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <AppShell activeModule="inventory">
       <div className="workspace">
-        <div className="breadcrumb">
-          <span>Trang chủ</span>
-          <span>/</span>
-          <span>Kho & Công đoạn Ép/Lọc</span>
+        {/* Breadcrumb & Period Filter */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div className="breadcrumb" style={{ margin: 0 }}>
+            <span>Trang chủ</span>
+            <span>/</span>
+            <span>Kho &amp; Công đoạn Ép/Lọc</span>
+          </div>
+
+          <PeriodFilter
+            value={period}
+            onChange={(val) => {
+              setPeriod(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
 
         {/* Hero Section */}
@@ -462,8 +484,8 @@ export default function InventoryProductionScreen() {
             </section>
 
             {/* Batches Table */}
-            <section className="panel table-scroll" style={{ marginTop: "24px" }}>
-              <div className="subsection" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <section className="panel" style={{ marginTop: "24px", padding: 0, overflow: "hidden" }}>
+              <div className="subsection" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px" }}>
                 <div>
                   <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0 }}>
                     Nhật ký các Mẻ Ép / Lọc Dầu ({filteredBatches.length})
@@ -480,86 +502,97 @@ export default function InventoryProductionScreen() {
                 />
               </div>
 
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Mã mẻ</th>
-                    <th>Ngày ép</th>
-                    <th>Thương lái cấp vỏ</th>
-                    <th style={{ textAlign: "right" }}>Vỏ dừa vào (kg)</th>
-                    <th style={{ textAlign: "right" }}>Dầu thô ra (kg)</th>
-                    <th style={{ textAlign: "right" }}>Thể tích (Lít)</th>
-                    <th style={{ textAlign: "center" }}>Tỷ lệ thu hồi</th>
-                    <th style={{ textAlign: "right" }}>Bã dừa (kg)</th>
-                    <th style={{ textAlign: "right" }}>Giá thành (đ/kg)</th>
-                    <th>Ghi chú</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBatches.length === 0 ? (
+              <div style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
+                <table className="data-table">
+                  <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>
                     <tr>
-                      <td colSpan={10} style={{ textAlign: "center", padding: "32px", color: "var(--muted)" }}>
-                        {isLoading ? "Đang tải dữ liệu..." : "Chưa có mẻ ép nào."}
-                      </td>
+                      <th>Mã mẻ</th>
+                      <th>Ngày ép</th>
+                      <th>Thương lái cấp vỏ</th>
+                      <th style={{ textAlign: "right" }}>Vỏ dừa vào (kg)</th>
+                      <th style={{ textAlign: "right" }}>Dầu thô ra (kg)</th>
+                      <th style={{ textAlign: "right" }}>Thể tích (Lít)</th>
+                      <th style={{ textAlign: "center" }}>Tỷ lệ thu hồi</th>
+                      <th style={{ textAlign: "right" }}>Bã dừa (kg)</th>
+                      <th style={{ textAlign: "right" }}>Giá thành (đ/kg)</th>
+                      <th>Ghi chú</th>
                     </tr>
-                  ) : (
-                    filteredBatches.map((b) => (
-                      <tr key={b.id}>
-                        <td>
-                          <strong>{b.batchCode}</strong>
-                        </td>
-                        <td>{b.batchDate}</td>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{b.supplierName || "Thương lái lẻ"}</div>
-                        </td>
-                        <td style={{ textAlign: "right", fontWeight: 600 }}>
-                          {b.rawMaterialKg.toLocaleString("vi-VN")}
-                        </td>
-                        <td style={{ textAlign: "right", fontWeight: 700, color: "#0284c7" }}>
-                          {b.crudeOilKg.toLocaleString("vi-VN")}
-                        </td>
-                        <td style={{ textAlign: "right", color: "var(--muted)" }}>
-                          {b.crudeOilLiters.toLocaleString("vi-VN")} L
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              padding: "3px 8px",
-                              borderRadius: "12px",
-                              fontSize: "12px",
-                              fontWeight: 700,
-                              background:
-                                b.oilYieldRate >= 22
-                                  ? "#dcfce7"
-                                  : b.oilYieldRate >= 20
-                                  ? "#e0e7ff"
-                                  : "#fee2e2",
-                              color:
-                                b.oilYieldRate >= 22
-                                  ? "#15803d"
-                                  : b.oilYieldRate >= 20
-                                  ? "#3730a3"
-                                  : "#b91c1c"
-                            }}
-                          >
-                            {b.oilYieldRate}%
-                          </span>
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          {b.byproductKg.toLocaleString("vi-VN")}
-                        </td>
-                        <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a" }}>
-                          {currency.format(b.unitCostPerKg)}
-                        </td>
-                        <td style={{ fontSize: "12px", color: "var(--muted)", maxWidth: "250px" }}>
-                          {b.notes || "—"}
+                  </thead>
+                  <tbody>
+                    {filteredBatches.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} style={{ textAlign: "center", padding: "32px", color: "var(--muted)" }}>
+                          {isLoading ? "Đang tải dữ liệu..." : "Chưa có mẻ ép nào."}
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      pagedBatches.map((b) => (
+                        <tr key={b.id}>
+                          <td>
+                            <strong>{b.batchCode}</strong>
+                          </td>
+                          <td>{b.batchDate}</td>
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{b.supplierName || "Thương lái lẻ"}</div>
+                          </td>
+                          <td style={{ textAlign: "right", fontWeight: 600 }}>
+                            {b.rawMaterialKg.toLocaleString("vi-VN")}
+                          </td>
+                          <td style={{ textAlign: "right", fontWeight: 700, color: "#0284c7" }}>
+                            {b.crudeOilKg.toLocaleString("vi-VN")}
+                          </td>
+                          <td style={{ textAlign: "right", color: "var(--muted)" }}>
+                            {b.crudeOilLiters.toLocaleString("vi-VN")} L
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "3px 8px",
+                                borderRadius: "12px",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                background:
+                                  b.oilYieldRate >= 22
+                                    ? "#dcfce7"
+                                    : b.oilYieldRate >= 20
+                                    ? "#e0e7ff"
+                                    : "#fee2e2",
+                                color:
+                                  b.oilYieldRate >= 22
+                                    ? "#15803d"
+                                    : b.oilYieldRate >= 20
+                                    ? "#3730a3"
+                                    : "#b91c1c"
+                              }}
+                            >
+                              {b.oilYieldRate}%
+                            </span>
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            {b.byproductKg.toLocaleString("vi-VN")}
+                          </td>
+                          <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a" }}>
+                            {currency.format(b.unitCostPerKg)}
+                          </td>
+                          <td style={{ fontSize: "12px", color: "var(--muted)", maxWidth: "250px" }}>
+                            {b.notes || "—"}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredBatches.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+              />
             </section>
           </>
         )}

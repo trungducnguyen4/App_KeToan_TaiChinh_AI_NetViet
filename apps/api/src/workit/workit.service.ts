@@ -1808,16 +1808,16 @@ export class WorkitService {
 
       if (avgYieldRate >= 22.0) {
         rating = "EXCELLENT";
-        recommendation = "🌟 Vỏ dừa già, khô, tỷ lệ dầu rất cao (>22%). Ưu tiên tăng sản lượng thu mua.";
+        recommendation = "[XUẤT SẮC] Vỏ dừa già, khô, tỷ lệ dầu rất cao (>22%). Ưu tiên tăng sản lượng thu mua.";
       } else if (avgYieldRate >= 20.0) {
         rating = "GOOD";
-        recommendation = "✅ Đạt chuẩn định mức xưởng (20-22%). Giữ nguyên giá thu mua.";
+        recommendation = "[ĐẠT CHUẨN] Đạt chuẩn định mức xưởng (20-22%). Giữ nguyên giá thu mua.";
       } else if (avgYieldRate >= 18.5) {
         rating = "AVERAGE";
-        recommendation = "⚠️ Tỷ lệ dầu ở ngưỡng tối thiểu (18.5-20%). Cần kiểm tra kỹ độ ẩm khi cân.";
+        recommendation = "[TRUNG BÌNH] Tỷ lệ dầu ở ngưỡng tối thiểu (18.5-20%). Cần kiểm tra kỹ độ ẩm khi cân.";
       } else {
         rating = "POOR";
-        recommendation = "❌ Vỏ dừa nhiều nước hoặc dừa non (<18%). Đàm phán giảm giá thu mua hoặc trừ tỷ lệ nước.";
+        recommendation = "[CẢNH BÁO] Vỏ dừa nhiều nước hoặc dừa non (<18%). Đàm phán giảm giá thu mua hoặc trừ tỷ lệ nước.";
       }
 
       return {
@@ -2075,7 +2075,7 @@ export class WorkitService {
     return {
       exportTimestamp: new Date().toISOString(),
       workshop: {
-        name: "Xưởng Thu mua & Ép Dầu dừa NetViet Bến Tre",
+        name: "Xưởng Thu mua & Ép Dầu dừa Bến Tre",
         taxCode: "0318999888",
         address: "Cụm Công nghiệp Long Định, Châu Thành, Bến Tre",
         manager: "Nguyễn Văn Đạt - Quản đốc Xưởng",

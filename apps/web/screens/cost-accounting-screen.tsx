@@ -86,7 +86,7 @@ export default function CostAccountingScreen() {
     try {
       const data = await fetchApi<any>("/cost-accounting/export-package");
       setExportData(data);
-      setExportMessage("✅ Đã tạo gói đóng gói báo cáo hoàn tất! Dữ liệu đã sẵn sàng để xuất hoặc in nộp.");
+      setExportMessage("Đã tạo gói đóng gói báo cáo hoàn tất! Dữ liệu đã sẵn sàng để xuất hoặc in nộp.");
     } catch (err: any) {
       alert("Lỗi xuất gói báo cáo: " + err.message);
     }
@@ -499,7 +499,7 @@ export default function CostAccountingScreen() {
                 </p>
                 <a className="button" style={{ width: "100%", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }} href="/modules/purchasing">
                   <AppIcon name="Search" size={15} />
-                  Mở Phân hệ Mua vào
+                  Mở Hóa đơn Mua vào
                 </a>
               </div>
 
@@ -513,7 +513,7 @@ export default function CostAccountingScreen() {
                 </p>
                 <a className="button" style={{ width: "100%", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }} href="/modules/sales">
                   <AppIcon name="Search" size={15} />
-                  Mở Phân hệ Bán ra
+                  Mở Hóa đơn Bán ra
                 </a>
               </div>
 

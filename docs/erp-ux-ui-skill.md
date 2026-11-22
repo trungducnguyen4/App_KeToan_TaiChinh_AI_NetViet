@@ -1,40 +1,72 @@
 # ERP UX/UI Design Guidelines (Vietnamese SME & Production)
 
-Bộ quy tắc thiết kế giao diện cho phần mềm Quản trị Doanh nghiệp (ERP), Kế toán, Thu mua và Quản lý Phân xưởng sản xuất tại Việt Nam.
+Interface design rules for Enterprise Resource Planning (ERP), Accounting, Purchasing, and Workshop Production Management systems.
 
-## 1. Mật độ Dữ liệu Chuẩn Enterprise (Data Density)
-- Dùng cỡ chữ `13px` (phụ trợ) và `14px` (nội dung chính) cho bảng số liệu.
-- Chiều cao dòng trong bảng: `36px - 40px` (compact mode).
-- Bắt buộc áp dụng thuộc tính CSS: `font-variant-numeric: tabular-nums` (hoặc class `tabular-nums`).
-- **Căn lề phải (`text-align: right`)** tuyệt đối cho mọi cột tiền tệ, đơn giá, số lượng (kg, lít, tấn), thuế suất, tỷ lệ %.
-- Căn lề trái (`text-align: left`) cho mã chứng từ, tên đối tượng, nội dung diễn giải.
-- Căn giữa (`text-align: center`) cho ngày tháng, trạng thái, hành động.
+> **Language Policy**:
+> - Instructions and guidelines: English (token-efficient).
+> - End-user UI strings and PR descriptions: Vietnamese.
 
-## 2. Loại bỏ Banner Rườm rà — Đưa Bảng Dữ Liệu ra Mặt Tiền
-- **Thanh Header mỏng gọn (48px - 52px)**: Breadcrumb, Tiêu đề phân hệ, Bộ lọc kỳ (`Tháng này / Quý này / Tùy chọn`), nút CTA chính.
-- **Thẻ KPI nén thành 1 hàng gọn (~76px - 84px)**: 4-5 chỉ số tài chính/sản xuất cốt lõi trên 1 hàng.
-- **Bảng dữ liệu (Data Table) xuất hiện ngay lập tức**: Sử dụng **Tab ngang** ở đầu trang để chuyển đổi giữa các loại chứng từ.
+---
 
-## 3. Đồng bộ 100% Tiếng Việt Có Dấu Chuẩn Nghiệp Vụ
-- Tuyệt đối không dùng tiếng Việt không dấu.
-- Mọi nhãn, thông báo, nút bấm, tiêu đề cột phải dùng tiếng Việt có dấu chuẩn mực kế toán Việt Nam.
+## 1. Enterprise Data Density
+- **Typography & Row Sizing**:
+  - Use font sizes `13px` (secondary) and `14px` (primary) for numerical tables.
+  - Table row height: `36px - 40px` (compact mode), avoiding bloated SaaS marketing padding.
+- **Number Alignment & Formatting**:
+  - Mandatory CSS property: `font-variant-numeric: tabular-nums` (or class `.tabular-nums`).
+  - **Strict Right-Alignment (`text-align: right`)** for all currency (VND), unit price, quantity (kg, lít, tấn), tax rates, and yield percentages.
+  - Left-alignment (`text-align: left`) for document codes, partner names, and descriptions.
+  - Center-alignment (`text-align: center`) for dates, status badges, and action buttons.
 
-## 4. Bố cục Split-View & Ngăn Kéo (Slide-over Drawer / Sheet)
-- Bố cục Split-View: Đối chiếu file ảnh/PDF gốc bên trái và form nhập liệu bên phải.
-- Slide-over Drawer: Thao tác tạo mới/chỉnh sửa trượt từ cạnh phải, không làm mất ngữ cảnh cuộn trang.
+---
 
-## 5. Nhập Liệu Thân Thiện Với Bàn Phím (Keyboard-First)
-- Hỗ trợ phím `Tab` để di chuyển liên tục giữa các trường.
-- `Enter` thêm dòng mới, tự động cộng dồn thành tiền và thuế theo thời gian thực.
+## 2. Eliminate Hero Banners — Data Table First
+- **Compact Topbar (48px - 52px)**:
+  - Replace oversized hero banners with a thin header containing breadcrumbs, module title, period filter (`This Month / This Quarter / Custom`), and primary action CTA (`+ New Weigh Slip / Expense Invoice`).
+- **Compact KPI Banner (76px - 84px)**:
+  - Display 4-5 core financial/production KPIs in a single horizontal row.
+  - Primary metric: bold `20px - 24px`, secondary labels: `12px`.
+- **Immediate Data Table Visibility**:
+  - The primary document table must be visible immediately on page load without intermediate navigation cards.
+  - Use horizontal tabs at the top for sub-views (e.g. `All` | `Weighbridge Slips` | `VAT Expenses` | `Supplier Ranking`).
 
-## 6. Định Dạng Chuẩn Việt Nam & Trạng Thái Nhất Quán
-- Tiền tệ: `12.500.000 ₫` (phân cách dấu chấm).
-- Khối lượng: `12.500,5 kg`.
-- Trạng thái nhất quán: Xám (Nháp), Vàng (Chờ thanh toán), Xanh lá (Đã thanh toán), Đỏ (Đã hủy/Cảnh báo).
+---
 
-## 7. Chuẩn Icon Hệ Thống: Đồng Bộ Theo Sidebar (Lucide React SVG Icons via AppIcon)
-- **Tuyệt đối CẤM dùng Cartoon Emojis**: Không dùng các ký tự emoji (như `🥥`, `🌾`, `⚙️`, `🏆`, `📦`, `🧮`, `⚡`, `💰`, `💵`, `🏦`, `⚖️`, `🧾`, `🏢`, `🛢️`, `🥇`, `🥈`, `🥉`) ở bất kỳ đâu trên giao diện: Tab, Nút bấm, Badge, Modal header, Input placeholder. Emojis làm giao diện ERP bị thiếu chuyên nghiệp, lệch chuẩn B2B enterprise và hiển thị màu sắc lòe loẹt, méo mó trên các hệ điều hành khác nhau (Windows / Android / macOS / iOS).
-- **Bắt buộc sử dụng hệ thống Icon SVG chuẩn Sidebar (`<AppIcon />`)**:
-  - Toàn bộ giao diện phải dùng chung component `<AppIcon name="..." size={16} />` dựa trên thư viện Lucide React với nét chuẩn `strokeWidth: 2.1`.
-  - Icon phải được căn chỉnh flexbox thẳng hàng với văn bản (`display: inline-flex; align-items: center; gap: 6px`).
-  - Các icon thông dụng: `Scale` (phiếu cân), `ReceiptText` (hóa đơn VAT), `Cog` (mẻ ép/lọc), `Trophy` / `Medal` (xếp hạng thương lái), `Package` / `Boxes` (tồn kho/kho bãi), `BarChart3` / `Calculator` (giá thành), `Droplet` (dầu dừa thô), `Leaf` (bã dừa/phụ phẩm), `Coins` (thu chi/tiền mặt), `Landmark` (ngân hàng), `CheckCircle2` / `Check` (hoàn thành), `AlertTriangle` / `AlertCircle` (cảnh báo).
+## 3. Accented Vietnamese for All User UI (100%)
+- Strictly prohibit unaccented Vietnamese in the user interface.
+- All user-visible labels, alerts, notifications, buttons, and headers must use correct, professional Vietnamese accounting terminology:
+  - `Phiếu thu tiền mặt`, `Phiếu chi tiền mặt`, `Ủy nhiệm chi (Báo nợ)`, `Báo có ngân hàng`
+  - `Số dư quỹ tiền mặt`, `Tài khoản ngân hàng`, `Công nợ phải trả`, `Công nợ phải thu`
+  - `Trọng lượng tịnh (kg)`, `Tỷ lệ thu hồi dầu (% Yield)`, `Hao hụt bã dừa`
+
+---
+
+## 4. Split-View & Slide-over Drawer Layout
+- **Split-View (Two Columns)**:
+  - Invoice verification: Left pane (40-50%) displays original invoice PDF/image with zoom controls; Right pane (50-60%) contains data entry/verification form.
+- **Slide-over Drawer for Quick Actions**:
+  - Line-item entries, supplier payments, and batch recordings open in a slide-over drawer from the right, preserving background table scroll and filter context.
+
+---
+
+## 5. Keyboard-First Data Entry
+- Full `Tab` navigation across consecutive input fields.
+- Table line-item entry: pressing `Enter` creates the next row automatically.
+- Realtime formula calculation: `Subtotal = Quantity × Unit Price` and `Total = Subtotal + VAT - Discounts`.
+
+---
+
+## 6. Consistent Color Palette & Status Coding
+- Gray (`#f1f5f9` / `#475569`): *Draft (Bản nháp)*.
+- Amber (`#fef3c7` / `#92400e`): *Pending Payment / Pending Approval (Chờ thanh toán / Chờ duyệt)*.
+- Green (`#dcfce7` / `#15803d`): *Paid / Completed / Meeting Target (Đã thanh toán / Đạt chuẩn)*.
+- Red (`#fee2e2` / `#b91c1c`): *Canceled / Overdue / Warning (Đã hủy / Quá hạn / Cảnh báo)*.
+
+---
+
+## 7. System Icon Standardization (Lucide React via AppIcon)
+- **STRICT BAN ON CARTOON EMOJIS**:
+  - Do NOT use emojis (`🥥`, `🌾`, `⚙️`, `🏆`, `📦`, `🧮`, `⚡`, `💰`, `💵`, `🏦`, `⚖️`, `🧾`, `🏢`, `🛢️`, `🥇`, `🥈`, `🥉`) in buttons, tabs, modal headers, or badges.
+- **Mandatory SVG Lucide Icon System**:
+  - Use `<AppIcon name="..." size={16} />` based on Lucide React (`strokeWidth: 2.1`).
+  - Standard icons: `Scale` (weigh slip), `ReceiptText` (VAT invoice), `Cog` (batch press/filter), `Trophy` / `Medal` (supplier ranking), `Package` / `Boxes` (inventory/stock), `BarChart3` / `Calculator` (cost calculation), `Droplet` (crude oil), `Leaf` (coconut meal byproduct), `Coins` (cash vouchers), `Landmark` (bank advice), `CheckCircle2` (complete), `AlertTriangle` (warning).

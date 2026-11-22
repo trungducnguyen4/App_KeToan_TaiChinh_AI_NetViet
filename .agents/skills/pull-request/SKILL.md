@@ -1,67 +1,78 @@
 ---
 name: pull-request
 description: >-
-  Quy chuẩn và luồng tự động hóa mở Pull Request (PR) chuẩn 4 Trụ Cột (Tests, Runtime, Visual, Confidence). Hướng dẫn kiểm tra nhánh, chạy typecheck/test, lấy bằng chứng runtime API/DB, nhúng ảnh/GIF minh chứng trực quan vào PR description, và tuân thủ ranh giới an toàn cho AI agent.
+  Standardized protocol for opening Pull Requests following the 4-Pillar Verification Model (Tests, Runtime, Visual, Confidence). Enforces branch hygiene, build/type checks, live runtime proof, inline screenshot/GIF embeds, and autonomous agent safety boundaries.
 whenToUse: >-
-  Kích hoạt khi người dùng yêu cầu: mở PR, tạo Pull Request, review PR, kiểm tra điều kiện merge PR, hoặc chuẩn bị bộ chứng từ kiểm thử để submit code lên GitHub.
+  Trigger when the user asks to open, review, verify, or prepare a Pull Request (PR) on GitHub.
 ---
 
 # Pull Request (PR) Automation & Authoring Skill
 
-Bộ kỹ năng này chuẩn hóa quy trình tạo và nghiệm thu Pull Request cho dự án ERP Dầu Dừa NetViet (`App_KeToan_TaiChinh_AI_NetViet`), kết hợp chặt chẽ với **Verification Protocol — 4 Trụ Cột** và **Git Automation Boundaries**.
+This skill standardizes the Pull Request creation and verification workflow for the repository, integrating the **Risk-Based 4-Pillar Verification Protocol** and **Git Automation Boundaries**.
+
+> **Language Policy**:
+> - All agent instructions, skills, and rules MUST remain in concise **English** to optimize token consumption.
+> - The final PR body/description and reviewer communications MUST be written in **Vietnamese**.
 
 ---
 
-## 1. Quy trình 5 bước tạo Pull Request chuẩn
+## 1. 5-Step Pull Request Workflow
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │ 1. Git & Branch │ ──> │ 2. Tests & Build │ ──> │ 3. Runtime Check │ ──> │ 4. Visual Proof  │ ──> │ 5. Open & Embed │
-│ (NV-xxx pattern)│     │ (npm typecheck)  │     │ (Live API status)│     │ (Real Dev Server)│     │ (Direct Raw URL)│
+│ (Ticket pattern)│     │ (npm typecheck)  │     │ (Live API/DB)    │     │ (Live Dev Server)│     │ (Direct Raw URL)│
 └─────────────────┘     └──────────────────┘     └──────────────────┘     └──────────────────┘     └─────────────────┘
 ```
 
-### Bước 1: Kiểm tra Nhánh & Conventional Commits
-- Xác định mã Issue / Ticket: ví dụ `NV-001`, `NV-002`.
-- Tên nhánh: `feature/NV-xxx` hoặc `bugfix/NV-xxx`.
-- Commit messages: Theo chuẩn Conventional Commits tiếng Anh:
-  - `feat(cost): ...`
-  - `fix(purchasing): ...`
-  - `refactor(ui): ...`
+### Step 1: Branch Isolation & Conventional Commits
+- Identify ticket / issue key: e.g., `NV-001`, `EX-042`.
+- Branch naming: `feature/<ticket>-<slug>` or `bugfix/<ticket>-<slug>`.
+- Commit messages: Conventional Commits in English:
+  - `feat(<scope>): ...`
+  - `fix(<scope>): ...`
+  - `refactor(<scope>): ...`
   - `docs(proof): ...`
 
-### Bước 2: Chạy Kiểm tra Cú pháp & Build (Trụ cột 1: Tests)
-Bắt buộc chạy và kiểm tra kết quả:
+### Step 2: Syntax, Typecheck & Build (Pillar 1: Tests)
+Execute type checking and build verification:
 ```powershell
 npm run typecheck
 ```
-- Phải đảm bảo `@workit/api build` và `tsc --noEmit` hoàn thành với **Exit code 0 (0 errors)**.
-- Ghi nhận chỉ số: `Passed 100%, 0 failures`.
+- Must complete with **Exit code 0 (0 errors)**.
+- Document metrics: `Passed 100%, 0 failures`.
 
-### Bước 3: Xác minh Runtime Thực tế (Trụ cột 2: Runtime)
-Gọi trực tiếp API hoặc kiểm tra dữ liệu qua curl/fetch:
-- **Endpoint kiểm tra**: ví dụ `GET /api/batches/cost-summary`, `POST /api/invoices`.
-- **HTTP Status Code**: `200 OK` hoặc `201 Created`.
-- **Dữ liệu trả về**: Đúng shape dữ liệu, không có lỗi 500 hay trường `undefined`.
-- **Trạng thái Database**: Xác minh bản ghi được ghi nhận vào MariaDB (ví dụ số lượng mẻ, giá thành 1 kg dầu dừa).
+### Step 3: Runtime Verification (Pillar 2: Runtime)
+Validate against the live API and database:
+- **Endpoints tested**: e.g., `GET /api/batches/cost-summary`, `POST /api/invoices`.
+- **HTTP Status Code**: `200 OK` or `201 Created` (or expected `400/403` for rejection guardrails).
+- **Payload Shape**: Validate data integrity, zero `500 Internal Server Error`, no dangling `undefined` fields.
+- **Database State**: Confirm Prisma/MariaDB entity creation and consistency.
 
-### Bước 4: Thu thập Bằng chứng Trực quan (Trụ cột 3: Visual)
-- **Đối với Static UI / Bảng dữ liệu (Tier 3)**:
-  - Chụp ảnh màn hình từ Dev Server thật `http://localhost:3000` (giữ nguyên Sidebar 280px và Header).
-  - Lưu vào thư mục `docs/screenshots/<ticket>-<view>.png`.
-- **Đối với User Flow / Quy trình tính giá thành / Thanh toán 1-click (Tier 4)**:
-  - Chụp chuỗi thao tác (nhập liệu ➔ bấm nút ➔ kết quả).
-  - Dùng script `python scripts/create_visual_gif.py` đóng gói thành Animated GIF mượt mà.
-  - Lưu vào `docs/screenshots/<ticket>-<flow>.gif`.
-- Commit và push ảnh/GIF lên nhánh làm việc:
+### Step 4: Visual Proof Capture (Pillar 3: Visual)
+- **Static UI / Tables (Tier 3)**:
+  - Capture viewport screenshot from the **live dev server** (`http://localhost:3000`) with full Layout Shell (Sidebar 280px + Header).
+  - Save to `docs/screenshots/<ticket>-<slug>.png`.
+- **User Flows / Multi-Step Actions (Tier 4)**:
+  - Capture sequence (input ➔ submit ➔ result state).
+  - Use `python scripts/create_visual_gif.py` to compile into an animated GIF.
+  - Save to `docs/screenshots/<ticket>-<flow>.gif`.
+- Stage, commit, and push assets to remote:
   ```powershell
   git add docs/screenshots/
-  git commit -m "docs(proof): add visual proof for NV-xxx"
+  git commit -m "docs(proof): add visual proof for <ticket>"
   git push origin <branch-name>
   ```
 
-### Bước 5: Viết Nội dung PR & Mở Pull Request (Trụ cột 4: Confidence)
-Điền đầy đủ theo file template [`.github/PULL_REQUEST_TEMPLATE.md`](file:///.github/PULL_REQUEST_TEMPLATE.md):
+### Step 5: Author PR Body (in Vietnamese) & Open/Update PR (Pillar 4: Confidence)
+Fill out the PR description using the template format from [`.github/PULL_REQUEST_TEMPLATE.md`](file:///.github/PULL_REQUEST_TEMPLATE.md). **The PR description MUST be written in Vietnamese**.
+
+> ⚠️ **CRITICAL ANTI-PATTERN & MANDATORY ENFORCEMENT**:
+> - **NEVER** leave the main PR description (`body`) empty, unpopulated, or containing only placeholder comments.
+> - **NEVER** post the 4-Pillar report as an Issue Comment (`add_issue_comment`) while leaving the top PR description blank.
+> - **ALWAYS** set or update the PR `body` directly using `create_pull_request` (when opening) or `update_issue` / `update_pull_request` (when modifying an existing PR).
+> - **MANDATORY POST-PR VERIFICATION**: Immediately after creating or updating a PR, fetch the PR using `get_pull_request` and assert that `body` is NOT empty, contains the 4-Pillar headers, and has live raw asset links.
+> - **ALWAYS** return the clickable Markdown PR URL `[PR #<number>](<html_url>)` directly to the user in the final response.
 
 ```markdown
 ## 📌 Overview
@@ -72,27 +83,25 @@ Gọi trực tiếp API hoặc kiểm tra dữ liệu qua curl/fetch:
 ## 🔍 Proof of Change & Confidence Report (Verification Protocol — 4 Trụ Cột)
 
 ### 1. 🧪 Tests (Focused logic and integration checks)
-- [x] Syntax & Type check (`npm run typecheck`): Passed (0 errors)
-- [x] API build check (`npm run api:build`): Passed (0 errors)
+- [x] Syntax & Type check (`npm run typecheck`): Passed 100% (0 errors)
+- [x] API build check (`npm run api:build`): Passed 100% (0 errors)
 - [x] Test metrics: Passed 100%
 
 ### 2. ⚡ Runtime (Use the actual feature end to end)
-- **Endpoint / Action**: GET /api/batches/cost-summary, POST /api/invoices
+- **Endpoint / Action**: [Endpoint hoặc hành động đã kiểm thử]
 - **Status code / Response**: HTTP 200 OK / HTTP 201 Created
-- **Database verification**: Dữ liệu phiếu cân & giá thành lưu trữ nhất quán trong MariaDB
+- **Database verification**: Dữ liệu lưu trữ nhất quán trong database
 
 ### 3. 👁️ Visual (Inspect what the user will see)
 - [x] **Visual Evidence:**
-  ![Minh chứng UI/User Flow](https://raw.githubusercontent.com/trungducnguyen4/App_KeToan_TaiChinh_AI_NetViet/<branch-name>/docs/screenshots/<filename>.gif)
+  ![Minh chứng User Flow](https://raw.githubusercontent.com/<owner>/<repo>/<branch-name>/docs/screenshots/<filename>.gif)
 
 ### 4. 🎯 Confidence (State what was verified — and what was not)
-- **Mức độ tự tin (Confidence level)**: High
+- **Mức độ tự tin (Confidence level)**: High / Medium / Low
 - **Những gì ĐÃ được chứng minh (Verified)**:
-  - Bảng tính giá thành tự động phân rã 5 yếu tố chi phí.
-  - Form nhập liệu phiếu cân vỏ dừa tự động tính tiền trừ tạp chất.
-  - Giao diện tiếng Việt có dấu chuẩn ERP và font `tabular-nums`.
+  - [Liệt kê các trường hợp và tính năng đã test thành công]
 - **Những gì CHƯA kiểm thử / Ranh giới phụ thuộc (NOT verified)**:
-  - Kết nối phần cứng cổng COM trực tiếp từ cân bàn điện tử tại cổng xưởng.
+  - [Liệt kê các ranh giới phần cứng hoặc dịch vụ bên ngoài chưa test]
 
 ---
 
@@ -105,16 +114,17 @@ Gọi trực tiếp API hoặc kiểm tra dữ liệu qua curl/fetch:
 
 ---
 
-## 2. Ranh giới An toàn Tự động hóa Git (Agent Boundaries)
+## 2. Git Automation Safety Boundaries
 
-### ✅ Được phép tự động thực hiện:
-- Tạo nhánh tính năng/sửa lỗi `feature/NV-xxx`.
-- Chạy typecheck, build, test.
-- Chụp ảnh màn hình / xuất GIF từ trình duyệt thật và lưu vào `docs/screenshots/`.
-- Commit code theo Conventional Commits và push nhánh feature lên remote.
-- Mở Pull Request hoặc cập nhật PR body trên GitHub.
+### ✅ Autonomous Permissions:
+- Create and switch to feature/bugfix branches matching the ticket pattern.
+- Execute type checks, builds, tests, and dev servers.
+- Capture live screenshots/GIFs and save to `docs/screenshots/`.
+- Commit code using Conventional Commits and push feature branches to remote.
+- Open Pull Requests or update PR body on GitHub.
 
-### ⛔ TUYỆT ĐỐI CẤM (Phải có xác nhận của con người):
-- CẤM push trực tiếp vào các nhánh bảo vệ (`main`, `master`, `production`, `develop`).
-- CẤM dùng lệnh force push (`git push -f` hoặc `--force-with-lease`).
-- CẤM tự động merge PR vào nhánh chính mà không có sự đồng ý của reviewer.
+### ⛔ Strict Prohibitions (Requires Explicit Human Confirmation):
+- NEVER push directly to protected branches (`main`, `master`, `production`, `develop`).
+- NEVER use force push (`git push -f` or `--force-with-lease`).
+- NEVER merge Pull Requests autonomously without human review approval.
+- NEVER delete remote branches or tags.
