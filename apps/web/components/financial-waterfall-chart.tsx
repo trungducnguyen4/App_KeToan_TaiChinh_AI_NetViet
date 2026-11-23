@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AppIcon } from "./icons";
 
 interface FinancialWaterfallChartProps {
   totalRevenue: number;
@@ -344,7 +345,8 @@ export function FinancialWaterfallChart({
               lineHeight: 1.45
             }}
           >
-            💡 <strong>Khoảng đệm an toàn:</strong> Xưởng chỉ cần đạt <strong>{breakEvenMonthlyKgOil.toLocaleString("vi-VN")} kg dầu/tháng</strong> (tương đương <strong>{(breakEvenMonthlyRevenue / 1000000).toFixed(0)} Tr</strong>) là đã bù đắp đủ toàn bộ chi phí cố định (khấu hao máy móc + quản lý xưởng).
+            <AppIcon name="Sparkles" size={13} style={{ color: "#15803d", display: "inline-block", verticalAlign: "middle", marginRight: 5 }} />
+            <strong>Khoảng đệm an toàn:</strong> Xưởng chỉ cần đạt <strong>{breakEvenMonthlyKgOil.toLocaleString("vi-VN")} kg dầu/tháng</strong> (tương đương <strong>{(breakEvenMonthlyRevenue / 1000000).toFixed(0)} Tr</strong>) là đã bù đắp đủ toàn bộ chi phí cố định (khấu hao máy móc + quản lý xưởng).
           </div>
         </div>
       )}

@@ -385,7 +385,7 @@ export default function SalesInvoiceScreen() {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--muted)", marginBottom: 2 }}>
                 <span>Đã thu {collectionRate}% ({(totalCollected / 1000000).toFixed(1)} Tr)</span>
                 {overdueInvoices.length > 0 ? (
-                  <span style={{ color: "#be123c", fontWeight: 700 }}>⚠️ Quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr</span>
+                  <span style={{ color: "#be123c", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name="AlertTriangle" size={11} /> Quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr</span>
                 ) : (
                   <span style={{ color: "#15936b", fontWeight: 600 }}>Trong hạn</span>
                 )}
@@ -459,10 +459,10 @@ export default function SalesInvoiceScreen() {
               style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--line)", fontSize: 13 }}
             >
               <option value="ALL">Tất cả thanh toán</option>
-              <option value="PAID">✓ Đã thu đủ</option>
-              <option value="PARTIAL">⏳ Đã thu 1 phần</option>
-              <option value="UNPAID">⏱️ Chưa thu</option>
-              <option value="OVERDUE">⚠️ Quá hạn thanh toán</option>
+              <option value="PAID">Đã thu đủ (PAID)</option>
+              <option value="PARTIAL">Đã thu 1 phần (PARTIAL)</option>
+              <option value="UNPAID">Chưa thu (UNPAID)</option>
+              <option value="OVERDUE">Quá hạn thanh toán (OVERDUE)</option>
             </select>
             <select
               value={filterProduct}
@@ -470,10 +470,10 @@ export default function SalesInvoiceScreen() {
               style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--line)", fontSize: 13 }}
             >
               <option value="ALL">Tất cả sản phẩm</option>
-              <option value="ALL_OIL">💧 Nhóm Dầu Dừa (Thô &amp; Lọc)</option>
+              <option value="ALL_OIL">Nhóm Dầu Dừa (Thô &amp; Lọc)</option>
               <option value="CRUDE_OIL">-- Dầu dừa thô</option>
               <option value="FILTERED_OIL">-- Dầu dừa lọc</option>
-              <option value="ALL_MEAL">🌾 Nhóm Cám Dừa (3 loại)</option>
+              <option value="ALL_MEAL">Nhóm Cám Dừa (3 loại)</option>
               <option value="MEAL_BROWN">-- Cám nâu</option>
               <option value="MEAL_WHITE">-- Cám trắng</option>
               <option value="MEAL_WHOLE">-- Cám nguyên</option>
@@ -527,7 +527,7 @@ export default function SalesInvoiceScreen() {
                         <div style={{ fontSize: 10, color: "var(--muted)" }}>Hạn: {inv.dueDate || "-"}</div>
                       ) : inv.isOverdue ? (
                         <span style={{ fontSize: 10, fontWeight: 700, color: "#be123c", background: "#ffe4e6", padding: "1px 5px", borderRadius: 3, display: "inline-block", marginTop: 2 }}>
-                          ⚠️ Quá hạn {inv.overdueDays}N
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><AppIcon name="AlertTriangle" size={10} /> Quá hạn {inv.overdueDays}N</span>
                         </span>
                       ) : inv.daysUntilDue === 0 ? (
                         <span style={{ fontSize: 10, fontWeight: 700, color: "#b45309", background: "#fef3c7", padding: "1px 5px", borderRadius: 3, display: "inline-block", marginTop: 2 }}>
@@ -854,7 +854,7 @@ export default function SalesInvoiceScreen() {
                         Mã số thuế (nếu có)
                       </label>
                       <span style={{ fontSize: 11, color: "var(--brand)", fontWeight: 600 }}>
-                        ⚡ Auto-fill tên DN
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><AppIcon name="Zap" size={11} /> Auto-fill tên DN</span>
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
@@ -905,12 +905,12 @@ export default function SalesInvoiceScreen() {
                     </div>
                     {taxLookupError && (
                       <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
-                        ⚠️ {taxLookupError}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name="AlertTriangle" size={11} /> {taxLookupError}</span>
                       </div>
                     )}
                     {taxLookupSuccess && (
                       <div style={{ fontSize: 11, color: "#059669", marginTop: 4, fontWeight: 500 }}>
-                        ✓ {taxLookupSuccess}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name="CheckCircle2" size={11} /> {taxLookupSuccess}</span>
                       </div>
                     )}
                   </div>
@@ -938,11 +938,11 @@ export default function SalesInvoiceScreen() {
                       onChange={(e) => handleProductChange(e.target.value as any)}
                       style={{ fontWeight: 700 }}
                     >
-                      <optgroup label="💧 Nhóm Dầu Dừa (Xuất xưởng / tinh chế)">
+                      <optgroup label="Nhóm Dầu Dừa (Xuất xưởng / tinh chế)">
                         <option value="CRUDE_OIL">Dầu dừa thô xuất xưởng</option>
                         <option value="FILTERED_OIL">Dầu dừa lọc sạch (khung bản / ly tâm)</option>
                       </optgroup>
-                      <optgroup label="🌾 Nhóm Cám Dừa (3 loại chuẩn xưởng)">
+                      <optgroup label="Nhóm Cám Dừa (3 loại chuẩn xưởng)">
                         <option value="MEAL_BROWN">Cám nâu (ép nguyên vỏ/lụa đậm)</option>
                         <option value="MEAL_WHITE">Cám trắng (gọt vỏ lụa, giá trị cao)</option>
                         <option value="MEAL_WHOLE">Cám nguyên (hỗn hợp tiêu chuẩn)</option>
@@ -1121,7 +1121,7 @@ export default function SalesInvoiceScreen() {
                   </div>
                   <div style={{ background: afterThisPayment === 0 ? "#ecfdf5" : "#fffbeb", padding: "8px 12px", borderRadius: 6, border: `1px solid ${afterThisPayment === 0 ? "#a7f3d0" : "#fef08a"}` }}>
                     <div style={{ fontSize: 11, color: afterThisPayment === 0 ? "#065f46" : "#854d0e" }}>
-                      {afterThisPayment === 0 ? "✓ Sẽ hoàn tất công nợ:" : "⏳ Còn nợ lại sau đợt này:"}
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name={afterThisPayment === 0 ? "CheckCircle2" : "Clock"} size={12} /> {afterThisPayment === 0 ? "Sẽ hoàn tất công nợ:" : "Còn nợ lại sau đợt này:"}</span>
                     </div>
                     <div className="tabular-nums" style={{ fontSize: 14, fontWeight: 700, color: afterThisPayment === 0 ? "#065f46" : "#b45309" }}>
                       {afterThisPayment.toLocaleString("vi-VN")} đ

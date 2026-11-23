@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AppIcon } from "./icons";
 
 interface SalesPieSegment {
   name: string;
@@ -252,7 +253,8 @@ export const SalesRevenueDonutChart: React.FC<SalesRevenueDonutChartProps> = ({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
           <div>
             <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
-              <span>📊 Cơ cấu Doanh thu Xuất Bán (Biểu đồ tròn)</span>
+              <AppIcon name="PieChart" size={15} style={{ color: "var(--brand)" }} />
+              <span>Cơ cấu Doanh thu Xuất Bán (Biểu đồ tròn)</span>
               <span style={{ fontSize: "11px", fontWeight: 600, color: "#059669", background: "#ecfdf5", padding: "2px 8px", borderRadius: 12 }}>
                 Dầu {oilPct}% • Cám {mealPct}%
               </span>

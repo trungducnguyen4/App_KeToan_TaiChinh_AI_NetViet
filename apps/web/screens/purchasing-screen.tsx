@@ -672,7 +672,10 @@ export default function PurchasingScreen() {
                   <div className="form-field span-3">
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <label style={{ margin: 0 }}>Mã số thuế (MST) NCC</label>
-                      <span style={{ fontSize: 10, color: "var(--brand)", fontWeight: 600 }}>⚡ Auto-fill</span>
+                      <span style={{ fontSize: 10, color: "var(--brand)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                        <AppIcon name="Zap" size={11} />
+                        Auto-fill
+                      </span>
                     </div>
                     <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
                       <input
@@ -711,13 +714,15 @@ export default function PurchasingScreen() {
                       </button>
                     </div>
                     {taxLookupError && (
-                      <div style={{ fontSize: 10, color: "#dc2626", marginTop: 2 }}>
-                        ⚠️ {taxLookupError}
+                      <div style={{ fontSize: 10, color: "#dc2626", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                        <AppIcon name="AlertTriangle" size={11} />
+                        <span>{taxLookupError}</span>
                       </div>
                     )}
                     {taxLookupSuccess && (
-                      <div style={{ fontSize: 10, color: "#059669", marginTop: 2, fontWeight: 500 }}>
-                        ✓ {taxLookupSuccess}
+                      <div style={{ fontSize: 10, color: "#059669", marginTop: 2, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                        <AppIcon name="CheckCircle2" size={11} />
+                        <span>{taxLookupSuccess}</span>
                       </div>
                     )}
                   </div>

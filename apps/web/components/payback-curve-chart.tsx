@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AppIcon } from "./icons";
 
 interface PaybackCurveChartProps {
   capex: number;
@@ -324,7 +325,7 @@ export function PaybackCurveChart({
                 fontWeight="800"
                 fill="#ffffff"
               >
-                🚩 Hoàn vốn {paybackMonth?.toFixed(2)}T
+                Hoàn vốn {paybackMonth?.toFixed(2)}T
               </text>
             </g>
           )}
@@ -438,10 +439,13 @@ export function PaybackCurveChart({
           </span>
         </div>
 
-        <div style={{ color: "#059669", fontWeight: 600 }}>
-          {viewMode === "capex"
-            ? "✓ CAPEX 2,45 Tỷ đã được bù đắp 100% tại Tháng 2,74 (trong T3)"
-            : "✓ Toàn bộ 3,50 Tỷ vốn góp cổ đông dự kiến hoàn tất tại Tháng 3,91 (trong T4)"}
+        <div style={{ color: "#059669", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+          <AppIcon name="CheckCircle2" size={13} style={{ color: "#059669" }} />
+          <span>
+            {viewMode === "capex"
+              ? "CAPEX 2,45 Tỷ đã được bù đắp 100% tại Tháng 2,74 (trong T3)"
+              : "Toàn bộ 3,50 Tỷ vốn góp cổ đông dự kiến hoàn tất tại Tháng 3,91 (trong T4)"}
+          </span>
         </div>
       </div>
     </div>
