@@ -120,7 +120,7 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
       </div>
 
       <div className="section-title">
-        <h2>Nghiep vu</h2>
+        <h2>Nghiệp vụ Phân hệ</h2>
         <StatusPill status={current.status} />
       </div>
       <div className="module-grid">
@@ -143,10 +143,10 @@ export function ModuleDashboard({ moduleKey }: { moduleKey: ModuleKey }) {
               <h3>{screen}</h3>
               <p>
                 {isCash
-                  ? "Da gan route va pattern nghiep vu M2: dashboard, voucher, sao ke va doi chieu."
+                  ? "Đã gắn tuyến đường và quy trình nghiệp vụ: tổng quan, chứng từ thu chi, sao kê và đối soát."
                   : index === 0
-                    ? "Man hinh uu tien cho v1, san sang noi API."
-                    : "Da scaffold theo metadata module."}
+                    ? "Màn hình ưu tiên vận hành, sẵn sàng kết nối dữ liệu thực tế."
+                    : "Giao diện chuẩn hóa theo quy trình vận hành xưởng."}
               </p>
             </div>
           </a>

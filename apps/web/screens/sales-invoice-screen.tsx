@@ -385,7 +385,7 @@ export default function SalesInvoiceScreen() {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--muted)", marginBottom: 2 }}>
                 <span>Đã thu {collectionRate}% ({(totalCollected / 1000000).toFixed(1)} Tr)</span>
                 {overdueInvoices.length > 0 ? (
-                  <span style={{ color: "#be123c", fontWeight: 700 }}>⚠️ Quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr</span>
+                  <span style={{ color: "#be123c", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name="AlertTriangle" size={11} /> Quá hạn: {(overdueTotal / 1000000).toFixed(1)} Tr</span>
                 ) : (
                   <span style={{ color: "#15936b", fontWeight: 600 }}>Trong hạn</span>
                 )}
@@ -459,10 +459,10 @@ export default function SalesInvoiceScreen() {
               style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--line)", fontSize: 13 }}
             >
               <option value="ALL">Tất cả thanh toán</option>
-              <option value="PAID">✓ Đã thu đủ</option>
-              <option value="PARTIAL">⏳ Đã thu 1 phần</option>
-              <option value="UNPAID">⏱️ Chưa thu</option>
-              <option value="OVERDUE">⚠️ Quá hạn thanh toán</option>
+              <option value="PAID">Đã thu đủ (PAID)</option>
+              <option value="PARTIAL">Đã thu 1 phần (PARTIAL)</option>
+              <option value="UNPAID">Chưa thu (UNPAID)</option>
+              <option value="OVERDUE">Quá hạn thanh toán (OVERDUE)</option>
             </select>
             <select
               value={filterProduct}
@@ -470,10 +470,10 @@ export default function SalesInvoiceScreen() {
               style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--line)", fontSize: 13 }}
             >
               <option value="ALL">Tất cả sản phẩm</option>
-              <option value="ALL_OIL">💧 Nhóm Dầu Dừa (Thô &amp; Lọc)</option>
+              <option value="ALL_OIL">Nhóm Dầu Dừa (Thô &amp; Lọc)</option>
               <option value="CRUDE_OIL">-- Dầu dừa thô</option>
               <option value="FILTERED_OIL">-- Dầu dừa lọc</option>
-              <option value="ALL_MEAL">🌾 Nhóm Cám Dừa (3 loại)</option>
+              <option value="ALL_MEAL">Nhóm Cám Dừa (3 loại)</option>
               <option value="MEAL_BROWN">-- Cám nâu</option>
               <option value="MEAL_WHITE">-- Cám trắng</option>
               <option value="MEAL_WHOLE">-- Cám nguyên</option>
@@ -493,200 +493,240 @@ export default function SalesInvoiceScreen() {
 
         {/* Invoices Data Table */}
         <div className="table-card" style={{ background: "#ffffff", borderRadius: "8px", border: "1px solid var(--line)", overflow: "hidden" }}>
-          <div className="table-scroll" style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
+          <div className="table-scroll" style={{ overflowX: "auto", width: "100%" }}>
             <table className="data-table compact tabular-nums" style={{ width: "100%" }}>
-              <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>
+              <thead style={{ background: "#edf5f2", borderBottom: "1px solid #d1fae5" }}>
                 <tr>
-                  <th style={{ width: 105 }}>Số HĐ</th>
-                  <th style={{ width: 80 }}>Ký hiệu</th>
-                  <th style={{ width: 130 }}>Ngày lập / Hạn nợ</th>
-                  <th>Khách hàng</th>
-                  <th style={{ width: 95 }}>MST</th>
-                  <th style={{ width: 135 }}>Sản phẩm</th>
-                  <th className="text-right" style={{ width: 85 }}>Số lượng</th>
-                  <th className="text-right" style={{ width: 95 }}>Đơn giá</th>
-                  <th className="text-right" style={{ width: 110 }}>Thành tiền</th>
-                  <th className="text-right" style={{ width: 55 }}>VAT</th>
-                  <th className="text-right" style={{ width: 125 }}>Tổng tiền</th>
-                  <th style={{ width: 145 }}>Thanh toán</th>
-                  <th style={{ width: 120 }}>Thao tác</th>
+                  <th style={{ width: 160, whiteSpace: "nowrap" }}>Chứng từ</th>
+                  <th style={{ minWidth: 220 }}>Khách hàng / MST</th>
+                  <th style={{ width: 160, whiteSpace: "nowrap" }}>Sản phẩm</th>
+                  <th style={{ width: 140, textAlign: "right", whiteSpace: "nowrap" }}>Khối lượng &amp; Đơn giá</th>
+                  <th style={{ width: 140, textAlign: "right", whiteSpace: "nowrap" }}>Tổng tiền (VNĐ)</th>
+                  <th style={{ width: 140, textAlign: "center", whiteSpace: "nowrap" }}>Thanh toán</th>
+                  <th style={{ width: 120, textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {pagedInvoices.map((inv) => (
-                  <tr key={inv.id}>
-                    <td className="font-mono" style={{ fontWeight: 700, color: "#0f7bbf" }}>
-                      {inv.voucherNo}
-                    </td>
-                    <td className="font-mono" style={{ color: "var(--muted)" }}>
-                      {inv.invoiceSeries || "-"}
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{inv.voucherDate}</div>
-                      {inv.paymentStatus === "PAID" ? (
-                        <div style={{ fontSize: 10, color: "var(--muted)" }}>Hạn: {inv.dueDate || "-"}</div>
-                      ) : inv.isOverdue ? (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#be123c", background: "#ffe4e6", padding: "1px 5px", borderRadius: 3, display: "inline-block", marginTop: 2 }}>
-                          ⚠️ Quá hạn {inv.overdueDays}N
-                        </span>
-                      ) : inv.daysUntilDue === 0 ? (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#b45309", background: "#fef3c7", padding: "1px 5px", borderRadius: 3, display: "inline-block", marginTop: 2 }}>
-                          Đến hạn hôm nay
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 10, color: "#0369a1", background: "#f0f9ff", padding: "1px 5px", borderRadius: 3, display: "inline-block", marginTop: 2 }}>
-                          Còn {inv.daysUntilDue}N ({inv.paymentTermDays}N)
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ fontWeight: 600 }}>{inv.customerName}</td>
-                    <td className="font-mono" style={{ fontSize: 12 }}>{inv.taxCode || "-"}</td>
-                    <td>
-                      {(() => {
-                        const def = PRODUCT_DEFINITIONS[inv.productType] || {
-                          name: inv.productName || "Sản phẩm",
-                          category: "OIL",
-                          badgeColor: "#0369a1",
-                          badgeBg: "#e0f2fe"
-                        };
-                        return (
-                          <span
-                            style={{
-                              padding: "2px 6px",
-                              borderRadius: 4,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: def.badgeBg,
-                              color: def.badgeColor,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4
-                            }}
-                          >
-                            {def.category === "OIL" ? (
-                              <AppIcon name="Droplet" size={13} />
-                            ) : (
-                              <AppIcon name="Leaf" size={13} />
-                            )}
-                            {def.name}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="text-right" style={{ fontWeight: 600 }}>
-                      {inv.quantity.toLocaleString("vi-VN")} {inv.unit}
-                    </td>
-                    <td className="text-right">{inv.unitPrice.toLocaleString("vi-VN")} đ</td>
-                    <td className="text-right">{inv.subtotal.toLocaleString("vi-VN")} đ</td>
-                    <td className="text-right" style={{ color: "var(--muted)" }}>{inv.vatRate}%</td>
-                    <td className="text-right" style={{ fontWeight: 800, color: "var(--brand-strong)" }}>
-                      {inv.totalAmount.toLocaleString("vi-VN")} đ
-                    </td>
-                    <td>
-                      {inv.paymentStatus === "PAID" ? (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: "#dcfce7",
-                            color: "#166534"
-                          }}
-                        >
-                          <AppIcon name="Check" size={12} />
-                          Đã thu đủ
-                        </span>
-                      ) : inv.paymentStatus === "PARTIAL" ? (
-                        <div>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
-                              padding: "2px 6px",
-                              borderRadius: 4,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: "#fef3c7",
-                              color: "#92400e"
-                            }}
-                          >
-                            <AppIcon name="Clock" size={12} />
-                            Thu 1 phần
-                          </span>
-                          <div style={{ fontSize: 10, marginTop: 2, color: "#b45309", fontWeight: 600 }}>
-                            Đã thu: {inv.paidAmount.toLocaleString("vi-VN")} đ<br />
-                            Còn nợ: {(inv.remainingAmount || (inv.totalAmount - inv.paidAmount)).toLocaleString("vi-VN")} đ
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
-                              padding: "2px 6px",
-                              borderRadius: 4,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: "#fee2e2",
-                              color: "#b91c1c"
-                            }}
-                          >
-                            <AppIcon name="AlertCircle" size={12} />
-                            Chưa thu
-                          </span>
-                          <div style={{ fontSize: 10, marginTop: 2, color: "#b91c1c" }}>
-                            Nợ: {inv.totalAmount.toLocaleString("vi-VN")} đ
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      {inv.paymentStatus !== "PAID" ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                          <button
-                            type="button"
-                            className="button"
-                            style={{ padding: "4px 8px", fontSize: 11, background: "var(--brand)", color: "#fff", border: "none", display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 4, cursor: "pointer", fontWeight: 600 }}
-                            onClick={() => handleOpenPayment(inv)}
-                          >
-                            <AppIcon name="Coins" size={13} />
-                            {inv.paymentStatus === "PARTIAL" ? "Thu tiếp" : "Thu tiền"}
-                          </button>
-                          {inv.paymentVouchers && inv.paymentVouchers.length > 0 && (
+                {pagedInvoices.map((inv) => {
+                  const def = PRODUCT_DEFINITIONS[inv.productType] || {
+                    name: inv.productName || "Sản phẩm",
+                    category: "OIL",
+                    badgeColor: "#0369a1",
+                    badgeBg: "#e0f2fe"
+                  };
+
+                  return (
+                    <tr key={inv.id}>
+                      {/* 1. Chứng từ */}
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
+                          <strong style={{ fontFamily: "monospace", fontSize: 13, color: "#0f172a", whiteSpace: "nowrap" }}>
+                            {inv.voucherNo}
+                          </strong>
+                          {inv.invoiceSeries && (
                             <span
-                              onClick={() => setViewHistoryInvoice(inv)}
-                              style={{ fontSize: 10, color: "#0f7bbf", cursor: "pointer", textDecoration: "underline" }}
-                              title="Xem lịch sử các đợt thu tiền"
+                              style={{
+                                display: "inline-block",
+                                padding: "1px 6px",
+                                borderRadius: 4,
+                                fontSize: 10.5,
+                                fontWeight: 600,
+                                background: "#f1f5f9",
+                                color: "#475569",
+                                border: "1px solid #e2e8f0",
+                                whiteSpace: "nowrap"
+                              }}
                             >
-                              Đã thu {inv.paymentVouchers.length} đợt
+                              {inv.invoiceSeries}
                             </span>
                           )}
                         </div>
-                      ) : (
-                        <div style={{ fontSize: 11 }}>
-                          <span
-                            onClick={() => setViewHistoryInvoice(inv)}
-                            style={{ color: "#0f7bbf", cursor: "pointer", fontWeight: 600, textDecoration: "underline" }}
-                            title="Bấm để xem lịch sử thanh toán"
-                          >
-                            {inv.paymentVouchers?.[0]?.voucherNo || "Đã tất toán"}
-                            {inv.paymentVouchers && inv.paymentVouchers.length > 1 && ` (+${inv.paymentVouchers.length - 1})`}
-                          </span>
+                        <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+                          <span>{inv.voucherDate}</span>
+                          {inv.paymentStatus === "PAID" ? (
+                            <span style={{ color: "#94a3b8", fontSize: 11 }}>• Hạn: {inv.dueDate || "-"}</span>
+                          ) : inv.isOverdue ? (
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: "#be123c", background: "#ffe4e6", padding: "1px 5px", borderRadius: 3 }}>
+                              Quá hạn {inv.overdueDays}N
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 10.5, color: "#0369a1", background: "#f0f9ff", padding: "1px 5px", borderRadius: 3 }}>
+                              Còn {inv.daysUntilDue}N
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      {/* 2. Khách hàng / MST */}
+                      <td>
+                        <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{inv.customerName}</div>
+                        <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
+                          {inv.taxCode ? `MST: ${inv.taxCode}` : "Khách lẻ / Chưa có MST"}
+                        </div>
+                      </td>
+
+                      {/* 3. Sản phẩm */}
+                      <td>
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 4,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            background: def.badgeBg,
+                            color: def.badgeColor,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            whiteSpace: "nowrap"
+                          }}
+                        >
+                          {def.category === "OIL" ? (
+                            <AppIcon name="Droplet" size={13} />
+                          ) : (
+                            <AppIcon name="Leaf" size={13} />
+                          )}
+                          {def.name}
+                        </span>
+                      </td>
+
+                      {/* 4. Khối lượng & Đơn giá */}
+                      <td style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 600, color: "#0f172a", fontSize: 13, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                          {inv.quantity.toLocaleString("vi-VN")} {inv.unit}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                          × {inv.unitPrice.toLocaleString("vi-VN")} đ
+                        </div>
+                      </td>
+
+                      {/* 5. Tổng tiền */}
+                      <td style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 700, color: "#0f172a", fontSize: 13.5, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                          {inv.totalAmount.toLocaleString("vi-VN")} đ
+                        </div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap" }}>
+                          VAT: {inv.vatRate}%
+                        </div>
+                      </td>
+
+                      {/* 6. Thanh toán */}
+                      <td style={{ textAlign: "center" }}>
+                        {inv.paymentStatus === "PAID" ? (
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "3px 9px",
+                              borderRadius: 9999,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                              background: "#dcfce7",
+                              color: "#15803d",
+                              border: "1px solid #bbf7d0"
+                            }}
+                          >
+                            Đã thu đủ
+                          </span>
+                        ) : inv.paymentStatus === "PARTIAL" ? (
+                          <div>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "2px 8px",
+                                borderRadius: 9999,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                                background: "#fef3c7",
+                                color: "#92400e",
+                                border: "1px solid #fde68a"
+                              }}
+                            >
+                              Thu 1 phần
+                            </span>
+                            <div style={{ fontSize: 10.5, marginTop: 2, color: "#b45309", fontWeight: 600, whiteSpace: "nowrap" }}>
+                              Còn nợ: {(inv.remainingAmount || (inv.totalAmount - inv.paidAmount)).toLocaleString("vi-VN")} đ
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "2px 8px",
+                                borderRadius: 9999,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                                background: "#fee2e2",
+                                color: "#b91c1c",
+                                border: "1px solid #fecaca"
+                              }}
+                            >
+                              Chưa thu
+                            </span>
+                            <div style={{ fontSize: 10.5, marginTop: 2, color: "#b91c1c", whiteSpace: "nowrap" }}>
+                              Nợ: {inv.totalAmount.toLocaleString("vi-VN")} đ
+                            </div>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* 7. Thao tác */}
+                      <td style={{ textAlign: "center" }}>
+                        {inv.paymentStatus !== "PAID" ? (
+                          <button
+                            type="button"
+                            className="button"
+                            style={{
+                              padding: "4px 8px",
+                              fontSize: 11,
+                              background: "#059669",
+                              color: "#fff",
+                              border: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              borderRadius: 4,
+                              cursor: "pointer",
+                              fontWeight: 600,
+                              whiteSpace: "nowrap"
+                            }}
+                            onClick={() => handleOpenPayment(inv)}
+                          >
+                            <AppIcon name="Coins" size={12} />
+                            {inv.paymentStatus === "PARTIAL" ? "Thu tiếp" : "Thu tiền"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="button"
+                            onClick={() => setViewHistoryInvoice(inv)}
+                            title="Bấm để xem lịch sử thanh toán"
+                            style={{
+                              padding: "3px 8px",
+                              fontSize: 11,
+                              color: "#475569",
+                              background: "#f8fafc",
+                              border: "1px solid #cbd5e1",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              whiteSpace: "nowrap"
+                            }}
+                          >
+                            <AppIcon name="FileText" size={12} />
+                            {inv.paymentVouchers?.[0]?.voucherNo || "Chi tiết"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={13} style={{ textAlign: "center", padding: "24px", color: "var(--muted)" }}>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "24px", color: "var(--muted)" }}>
                       Không có hóa đơn nào khớp với bộ lọc.
                     </td>
                   </tr>
@@ -695,7 +735,7 @@ export default function SalesInvoiceScreen() {
             </table>
           </div>
 
-          {/* Pagination */}
+{/* Pagination */}
           <Pagination
             currentPage={currentPage}
             totalItems={filtered.length}
@@ -854,7 +894,7 @@ export default function SalesInvoiceScreen() {
                         Mã số thuế (nếu có)
                       </label>
                       <span style={{ fontSize: 11, color: "var(--brand)", fontWeight: 600 }}>
-                        ⚡ Auto-fill tên DN
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><AppIcon name="Zap" size={11} /> Auto-fill tên DN</span>
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
@@ -905,12 +945,12 @@ export default function SalesInvoiceScreen() {
                     </div>
                     {taxLookupError && (
                       <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
-                        ⚠️ {taxLookupError}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name="AlertTriangle" size={11} /> {taxLookupError}</span>
                       </div>
                     )}
                     {taxLookupSuccess && (
                       <div style={{ fontSize: 11, color: "#059669", marginTop: 4, fontWeight: 500 }}>
-                        ✓ {taxLookupSuccess}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name="CheckCircle2" size={11} /> {taxLookupSuccess}</span>
                       </div>
                     )}
                   </div>
@@ -938,11 +978,11 @@ export default function SalesInvoiceScreen() {
                       onChange={(e) => handleProductChange(e.target.value as any)}
                       style={{ fontWeight: 700 }}
                     >
-                      <optgroup label="💧 Nhóm Dầu Dừa (Xuất xưởng / tinh chế)">
+                      <optgroup label="Nhóm Dầu Dừa (Xuất xưởng / tinh chế)">
                         <option value="CRUDE_OIL">Dầu dừa thô xuất xưởng</option>
                         <option value="FILTERED_OIL">Dầu dừa lọc sạch (khung bản / ly tâm)</option>
                       </optgroup>
-                      <optgroup label="🌾 Nhóm Cám Dừa (3 loại chuẩn xưởng)">
+                      <optgroup label="Nhóm Cám Dừa (3 loại chuẩn xưởng)">
                         <option value="MEAL_BROWN">Cám nâu (ép nguyên vỏ/lụa đậm)</option>
                         <option value="MEAL_WHITE">Cám trắng (gọt vỏ lụa, giá trị cao)</option>
                         <option value="MEAL_WHOLE">Cám nguyên (hỗn hợp tiêu chuẩn)</option>
@@ -1121,7 +1161,7 @@ export default function SalesInvoiceScreen() {
                   </div>
                   <div style={{ background: afterThisPayment === 0 ? "#ecfdf5" : "#fffbeb", padding: "8px 12px", borderRadius: 6, border: `1px solid ${afterThisPayment === 0 ? "#a7f3d0" : "#fef08a"}` }}>
                     <div style={{ fontSize: 11, color: afterThisPayment === 0 ? "#065f46" : "#854d0e" }}>
-                      {afterThisPayment === 0 ? "✓ Sẽ hoàn tất công nợ:" : "⏳ Còn nợ lại sau đợt này:"}
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AppIcon name={afterThisPayment === 0 ? "CheckCircle2" : "Clock"} size={12} /> {afterThisPayment === 0 ? "Sẽ hoàn tất công nợ:" : "Còn nợ lại sau đợt này:"}</span>
                     </div>
                     <div className="tabular-nums" style={{ fontSize: 14, fontWeight: 700, color: afterThisPayment === 0 ? "#065f46" : "#b45309" }}>
                       {afterThisPayment.toLocaleString("vi-VN")} đ

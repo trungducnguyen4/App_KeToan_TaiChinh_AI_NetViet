@@ -102,16 +102,16 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
       if (editingVoucherId) {
         const updated = await patchApi<VoucherRecord>(`/cash/vouchers/${editingVoucherId}`, payload);
         setVouchers((current) => current.map((voucher) => (voucher.id === updated.id ? updated : voucher)));
-        setFeedback(`Da cap nhat ${updated.voucherNo}`);
+        setFeedback(`Đã cập nhật chứng từ ${updated.voucherNo}`);
       } else {
         const created = await postApi<VoucherRecord>("/cash/vouchers", payload);
         setVouchers((current) => [created, ...current]);
         setEditingVoucherId(created.id);
         setForm(buildFormFromVoucher(created));
-        setFeedback(`Da tao ${created.voucherNo}`);
+        setFeedback(`Đã tạo thành công chứng từ ${created.voucherNo}`);
       }
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Khong luu duoc chung tu");
+      setFeedback(error instanceof Error ? error.message : "Không lưu được chứng từ");
     } finally {
       setIsSaving(false);
     }
@@ -120,57 +120,60 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
   function handleSelectVoucher(voucher: VoucherRecord) {
     setEditingVoucherId(voucher.id);
     setForm(buildFormFromVoucher(voucher));
-    setFeedback(`Dang sua ${voucher.voucherNo}`);
+    setFeedback(`Đang chỉnh sửa chứng từ ${voucher.voucherNo}`);
   }
 
   function handleResetForm() {
     setEditingVoucherId(null);
     setForm(buildInitialForm(voucherType));
-    setFeedback("Da chuyen sang tao moi");
+    setFeedback("Đã chuyển sang chế độ tạo mới");
   }
 
   function handleApplyFilters() {
-    setListMessage(`Da tim thay ${filteredVouchers.length} chung tu ${voucherType}`);
+    setListMessage(`Đã tìm thấy ${filteredVouchers.length} chứng từ loại ${voucherType}`);
   }
 
   function handleResetFilters() {
     setFilters(buildInitialFilters());
-    setListMessage("Da xoa bo loc");
+    setListMessage("Đã đặt lại bộ lọc");
   }
 
   return (
     <AppShell activeModule="cash">
       <div className="workspace">
         <div className="breadcrumb">
-          <span>Trang chu</span>
+          <a className="breadcrumb-link" href="/">Trang chủ</a>
           <span>/</span>
-          <span>So quy &amp; Ngan hang</span>
+          <a className="breadcrumb-link" href="/modules/cash">Sổ quỹ &amp; Ngân hàng</a>
           <span>/</span>
           <span>{screen.title}</span>
         </div>
 
         <section className="hero-panel">
           <div>
-            <div className="eyebrow">{screen.voucherType} voucher engine</div>
+            <div className="eyebrow">{screen.voucherType} • Sổ Quỹ &amp; Ngân Hàng</div>
             <h2 className="hero-title">{screen.title}</h2>
             <p className="hero-copy">{screen.description}</p>
           </div>
           <div className="sync-panel">
-            <strong>{filteredVouchers.length}/{vouchers.length} chung tu</strong>
+            <strong>{filteredVouchers.length}/{vouchers.length} chứng từ</strong>
             <span>
-              Rule rieng theo subtype: {screen.paymentChannel === "cash" ? "bat buoc so quy" : "bat buoc tai khoan ngan hang"}.
+              Quy tắc theo kênh: {screen.paymentChannel === "cash" ? "bắt buộc chọn Sổ quỹ tiền mặt" : "bắt buộc chọn Tài khoản ngân hàng"}.
             </span>
           </div>
         </section>
 
         <div className="section-title">
-          <h2>Danh sach chung tu</h2>
+          <h2>Danh sách chứng từ</h2>
           <div className="topbar-actions">
             <button className="button primary" onClick={handleResetForm} type="button">
-              <AppIcon name="FileText" />
-              Tao moi
+              <AppIcon name="Plus" />
+              Tạo mới
             </button>
-            <button className="button" type="button">Export</button>
+            <button className="button" type="button">
+              <AppIcon name="Download" />
+              Xuất Excel
+            </button>
           </div>
         </div>
 
@@ -180,29 +183,32 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
               className="field"
               type="date"
               value={filters.fromDate}
-              aria-label="Tu ngay"
+              aria-label="Từ ngày"
               onChange={(event) => setFilters((current) => ({ ...current, fromDate: event.target.value }))}
             />
             <input
               className="field"
               type="date"
               value={filters.toDate}
-              aria-label="Den ngay"
+              aria-label="Đến ngày"
               onChange={(event) => setFilters((current) => ({ ...current, toDate: event.target.value }))}
             />
-            <button className="button" type="button">{voucherType}</button>
+            <button className="button" type="button">{screen.voucherType} - {screen.title}</button>
             <input
               className="search"
-              placeholder="Tim so chung tu, doi tuong, hoa don"
-              aria-label="Tim kiem"
+              placeholder="Tìm số chứng từ, đối tượng, hóa đơn..."
+              aria-label="Tìm kiếm"
               value={filters.query}
               onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))}
             />
             <button className="button primary" type="button" onClick={handleApplyFilters}>
               <AppIcon name="Search" />
-              Tim
+              Tìm
             </button>
-            <button className="button" type="button" onClick={handleResetFilters}>Xoa loc</button>
+            <button className="button" type="button" onClick={handleResetFilters}>
+              <AppIcon name="RefreshCw" />
+              Xóa lọc
+            </button>
           </div>
           {listMessage ? (
             <div className="attachment-box" style={{ marginBottom: 12 }}>
@@ -227,16 +233,16 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
                     backgroundColor: voucher.id === editingVoucherId ? "rgba(15, 23, 42, 0.06)" : undefined
                   }}
                 >
-                  <td>{voucher.voucherType}</td>
-                  <td>{voucher.voucherNo}</td>
+                  <td><strong>{voucher.voucherType}</strong></td>
+                  <td style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>{voucher.voucherNo}</td>
                   <td>{voucher.voucherDate}</td>
                   <td>{voucher.cashBookCode ?? voucher.bankAccountCode ?? "-"}</td>
                   <td>{voucher.counterpartyName}</td>
                   <td>{voucher.content}</td>
-                  <td>{currency.format(voucher.amount)}</td>
+                  <td style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 600 }}>{currency.format(voucher.amount)}</td>
                   <td>
                     {voucherType === "BN" || voucherType === "BC" ? (
-                      <span>{voucher.reconciliationStatus ?? "unmatched"}</span>
+                      <span className="status-pill is-info">{voucher.reconciliationStatus === "matched" ? "Đã khớp" : voucher.reconciliationStatus === "partial" ? "Khớp một phần" : "Chưa khớp"}</span>
                     ) : (
                       <StatusPill status={voucher.status} />
                     )}
@@ -250,7 +256,7 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
         {!vouchers.length ? (
           <section className="panel">
             <div className="attachment-box">
-              Chua co chung tu trong database cho loai {voucherType}. Ban co the tao moi ngay tren form ben duoi.
+              Chưa có chứng từ trong hệ thống cho loại {voucherType}. Bạn có thể tạo mới ngay trên form bên dưới.
             </div>
           </section>
         ) : null}
@@ -258,26 +264,29 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
         {vouchers.length > 0 && !filteredVouchers.length ? (
           <section className="panel">
             <div className="attachment-box">
-              Khong co chung tu nao khop bo loc hien tai. Thu mo rong khoang ngay hoac doi tu khoa tim kiem.
+              Không có chứng từ nào khớp bộ lọc hiện tại. Thử mở rộng khoảng ngày hoặc đổi từ khóa tìm kiếm.
             </div>
           </section>
         ) : null}
 
         <div className="section-title">
-          <h2>Tao / sua chung tu</h2>
+          <h2>Tạo / Sửa chứng từ</h2>
           <div className="topbar-actions">
             <button className="button primary" onClick={handleSaveVoucher} type="button" disabled={isSaving}>
               <AppIcon name="Save" />
-              {isSaving ? "Dang luu..." : editingVoucherId ? "Luu cap nhat" : "Luu"}
+              {isSaving ? "Đang lưu..." : editingVoucherId ? "Lưu cập nhật" : "Lưu chứng từ"}
             </button>
-            <button className="button" onClick={handleResetForm} type="button">Lam moi form</button>
+            <button className="button" onClick={handleResetForm} type="button">
+              <AppIcon name="RefreshCw" />
+              Làm mới form
+            </button>
           </div>
         </div>
 
         <div className="split-grid">
           <section className="panel">
             <div className="subsection">
-              <h3>Header</h3>
+              <h3>Thông tin chung chứng từ (Header)</h3>
               <StatusPill status={selectedVoucher?.status ?? "draft"} />
             </div>
             <form className="form-grid">
@@ -304,26 +313,26 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
 
             <div className="attachments" style={{ marginTop: 16 }}>
               <div className="attachment-box">
-                <strong>Dong hach toan dau tien</strong>
-                <p>Nhap nhanh 1 dong de tao chung tu M2 xuong database that.</p>
+                <strong>Định khoản hạch toán ban đầu</strong>
+                <p>Nhập nhanh 1 dòng định khoản để ghi nhận chứng từ vào hệ thống.</p>
               </div>
             </div>
 
             <form className="form-grid" style={{ marginTop: 12 }}>
               <label className="form-field md">
-                <span>TK No *</span>
+                <span>TK Nợ *</span>
                 <input className="field" value={form.debitAccount} onChange={(event) => setForm((current) => ({ ...current, debitAccount: event.target.value }))} />
               </label>
               <label className="form-field md">
-                <span>TK Co *</span>
+                <span>TK Có *</span>
                 <input className="field" value={form.creditAccount} onChange={(event) => setForm((current) => ({ ...current, creditAccount: event.target.value }))} />
               </label>
               <label className="form-field md">
-                <span>So tien *</span>
+                <span>Số tiền *</span>
                 <input className="field" value={form.amount} onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))} />
               </label>
               <label className="form-field xl">
-                <span>Dien giai dong</span>
+                <span>Diễn giải dòng</span>
                 <input className="field" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
               </label>
             </form>
@@ -331,29 +340,29 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
 
           <aside className="panel">
             <div className="subsection">
-              <h3>Control</h3>
+              <h3>Kiểm soát &amp; Quy trình</h3>
             </div>
             <div className="attachments">
               <div className="attachment-box">
-                <strong>Approval</strong>
-                <p>Su dung chung approval_instances va approval_actions cho ca PT, PC, BN, BC.</p>
+                <strong>Quy trình Phê duyệt (Approval)</strong>
+                <p>Sử dụng chung quy trình phê duyệt điện tử cho toàn bộ Phiếu thu (PT), Phiếu chi (PC), Báo nợ (BN) và Báo có (BC).</p>
               </div>
               <div className="attachment-box">
-                <strong>Audit</strong>
-                <p>Moi thao tac tao, sua, import, match va unmatch deu can log vao audit_events.</p>
+                <strong>Nhật ký Kiểm toán (Audit)</strong>
+                <p>Mọi thao tác tạo mới, sửa đổi, import, đối chiếu và hủy đối chiếu đều được ghi nhật ký hệ thống đầy đủ.</p>
               </div>
               <div className="attachment-box">
-                <strong>Reference</strong>
-                <p>Hoa don tham chieu hien tai: {form.referenceInvoiceNo || "Chua gan"}.</p>
+                <strong>Tham chiếu Hóa đơn (Reference)</strong>
+                <p>Hóa đơn tham chiếu hiện tại: <strong>{form.referenceInvoiceNo || "Chưa gắn"}</strong>.</p>
               </div>
               <div className="attachment-box">
-                <strong>Mode</strong>
-                <p>{editingVoucherId ? `Dang sua ${form.voucherNo}` : `Dang tao moi ${voucherType}`}</p>
+                <strong>Chế độ Xử lý (Mode)</strong>
+                <p>{editingVoucherId ? `Đang chỉnh sửa chứng từ ${form.voucherNo}` : `Đang tạo mới ${screen.title} (${voucherType})`}</p>
               </div>
               {feedback ? (
-                <div className="attachment-box">
-                  <strong>Trang thai</strong>
-                  <p>{feedback}</p>
+                <div className="attachment-box" style={{ background: "#f0fdf4", borderColor: "#86efac" }}>
+                  <strong style={{ color: "#166534" }}>Trạng thái</strong>
+                  <p style={{ color: "#15803d" }}>{feedback}</p>
                 </div>
               ) : null}
             </div>
@@ -363,29 +372,32 @@ export default function CashVoucherScreen({ voucherType }: { voucherType: CashVo
         {selectedVoucher ? (
           <>
             <div className="section-title">
-              <h2>Dong hach toan da luu gan nhat</h2>
-              <button className="button" type="button">+ Dong moi</button>
+              <h2>Định khoản hạch toán đã lưu gần nhất</h2>
+              <button className="button" type="button">
+                <AppIcon name="Plus" />
+                + Thêm dòng định khoản
+              </button>
             </div>
             <section className="panel table-scroll">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>TK No</th>
-                    <th>YT1 No</th>
-                    <th>TK Co</th>
-                    <th>YT1 Co</th>
-                    <th>So tien</th>
-                    <th>Dien giai</th>
+                    <th>TK Nợ</th>
+                    <th>YT1 Nợ</th>
+                    <th>TK Có</th>
+                    <th>YT1 Có</th>
+                    <th style={{ textAlign: "right" }}>Số tiền</th>
+                    <th>Diễn giải</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedVoucher.lines.map((line) => (
                     <tr key={line.id}>
-                      <td>{line.debitAccount}</td>
+                      <td style={{ fontWeight: 600 }}>{line.debitAccount}</td>
                       <td>{line.debitDimension1 ?? ""}</td>
-                      <td>{line.creditAccount}</td>
+                      <td style={{ fontWeight: 600 }}>{line.creditAccount}</td>
                       <td>{line.creditDimension1 ?? ""}</td>
-                      <td>{currency.format(line.amount)}</td>
+                      <td style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 600 }}>{currency.format(line.amount)}</td>
                       <td>{line.description}</td>
                     </tr>
                   ))}
@@ -408,13 +420,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "TM-01",
       bankAccountCode: "",
       counterpartyCode: "KH-NEW",
-      counterpartyName: "Khach hang moi",
+      counterpartyName: "Khách hàng mới",
       referenceInvoiceNo: "INV-NEW",
-      content: "Thu tien mat",
+      content: "Thu tiền mặt",
       amount: "1000000",
       debitAccount: "1111",
       creditAccount: "131",
-      description: "Thu tien cong no"
+      description: "Thu tiền công nợ bán hàng"
     },
     PC: {
       voucherNo: `PC-${Date.now()}`,
@@ -423,13 +435,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "TM-01",
       bankAccountCode: "",
       counterpartyCode: "NCC-NEW",
-      counterpartyName: "Nha cung cap moi",
+      counterpartyName: "Nhà cung cấp mới",
       referenceInvoiceNo: "BILL-NEW",
-      content: "Chi tien mat",
+      content: "Chi tiền mặt",
       amount: "1000000",
       debitAccount: "331",
       creditAccount: "1111",
-      description: "Chi tien nha cung cap"
+      description: "Chi tiền trả nhà cung cấp"
     },
     BN: {
       voucherNo: `BN-${Date.now()}`,
@@ -438,13 +450,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "",
       bankAccountCode: "VCB-001",
       counterpartyCode: "NCC-NEW",
-      counterpartyName: "Nha cung cap moi",
+      counterpartyName: "Nhà cung cấp mới",
       referenceInvoiceNo: "BILL-NEW",
-      content: "Bao no ngan hang",
+      content: "Báo nợ ngân hàng",
       amount: "1000000",
       debitAccount: "331",
       creditAccount: "1121",
-      description: "Chuyen khoan thanh toan"
+      description: "Chuyển khoản thanh toán tiền dừa"
     },
     BC: {
       voucherNo: `BC-${Date.now()}`,
@@ -453,13 +465,13 @@ function buildInitialForm(voucherType: CashVoucherType): VoucherFormState {
       cashBookCode: "",
       bankAccountCode: "VCB-001",
       counterpartyCode: "KH-NEW",
-      counterpartyName: "Khach hang moi",
+      counterpartyName: "Khách hàng mới",
       referenceInvoiceNo: "INV-NEW",
-      content: "Bao co ngan hang",
+      content: "Báo có ngân hàng",
       amount: "1000000",
       debitAccount: "1121",
       creditAccount: "131",
-      description: "Thu tien qua ngan hang"
+      description: "Thu tiền bán dầu qua ngân hàng"
     }
   };
 

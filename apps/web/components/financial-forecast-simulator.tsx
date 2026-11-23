@@ -1,4 +1,5 @@
 import React from "react";
+import { AppIcon } from "./icons";
 
 interface FinancialForecastSimulatorProps {
   revAdjPct: number;
@@ -68,7 +69,8 @@ export function FinancialForecastSimulator({
       {/* Header & Presets */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div style={{ fontSize: "15px", fontWeight: 700, color: "#0f172a" }}>
+          <div style={{ fontSize: "15px", fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
+            <AppIcon name="Sliders" size={17} style={{ color: "#0284c7" }} />
             Mô phỏng Độ nhạy &amp; Dự báo Dòng tiền (What-If Analysis)
           </div>
           <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: 2 }}>
@@ -93,10 +95,14 @@ export function FinancialForecastSimulator({
               border: isConservative ? "1px solid #f87171" : "1px solid #e2e8f0",
               borderRadius: "6px",
               cursor: "pointer",
-              transition: "all 0.15s"
+              transition: "all 0.15s",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6
             }}
           >
-            🛡️ Thận trọng (-15% DT, +25% CP)
+            <AppIcon name="ShieldAlert" size={13} style={{ color: isConservative ? "#991b1b" : "#64748b" }} />
+            Thận trọng (-15% DT, +25% CP)
           </button>
           <button
             type="button"
@@ -113,10 +119,14 @@ export function FinancialForecastSimulator({
               border: isBase ? "1px solid #6ee7b7" : "1px solid #e2e8f0",
               borderRadius: "6px",
               cursor: "pointer",
-              transition: "all 0.15s"
+              transition: "all 0.15s",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6
             }}
           >
-            ⚖️ Cơ sở (Giữ mức 3T)
+            <AppIcon name="Scale" size={13} style={{ color: isBase ? "#065f46" : "#64748b" }} />
+            Cơ sở (Giữ mức 3T)
           </button>
           <button
             type="button"
@@ -133,10 +143,14 @@ export function FinancialForecastSimulator({
               border: isOptimistic ? "1px solid #7dd3fc" : "1px solid #e2e8f0",
               borderRadius: "6px",
               cursor: "pointer",
-              transition: "all 0.15s"
+              transition: "all 0.15s",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6
             }}
           >
-            🚀 Lạc quan (+15% DT, -5% CP)
+            <AppIcon name="TrendingUp" size={13} style={{ color: isOptimistic ? "#0369a1" : "#64748b" }} />
+            Lạc quan (+15% DT, -5% CP)
           </button>
         </div>
       </div>
@@ -257,10 +271,28 @@ export function FinancialForecastSimulator({
               fontSize: "12px",
               fontWeight: 700,
               color: isConservative ? "#b91c1c" : isBase ? "#047857" : "#0369a1",
-              marginTop: 4
+              marginTop: 4,
+              display: "flex",
+              alignItems: "center",
+              gap: 5
             }}
           >
-            {isConservative ? "⚠️ Cảnh báo Chi phí" : isBase ? "✅ Khả thi & Ổn định" : "🌟 Tăng trưởng Mạnh"}
+            {isConservative ? (
+              <>
+                <AppIcon name="AlertTriangle" size={13} style={{ color: "#b91c1c" }} />
+                <span>Cảnh báo Chi phí</span>
+              </>
+            ) : isBase ? (
+              <>
+                <AppIcon name="CheckCircle2" size={13} style={{ color: "#047857" }} />
+                <span>Khả thi &amp; Ổn định</span>
+              </>
+            ) : (
+              <>
+                <AppIcon name="TrendingUp" size={13} style={{ color: "#0369a1" }} />
+                <span>Tăng trưởng Mạnh</span>
+              </>
+            )}
           </div>
           <div style={{ fontSize: "9.5px", color: "var(--muted)", marginTop: 2, lineHeight: 1.25 }}>
             {isConservative

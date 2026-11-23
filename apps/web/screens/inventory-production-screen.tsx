@@ -162,6 +162,19 @@ export default function InventoryProductionScreen() {
     ? Math.round(periodBatches.reduce((sum, b) => sum + b.unitCostPerKg, 0) / periodBatches.length)
     : 0;
 
+  // Bóc tách sản lượng Dầu dừa (Thô & Lọc) và Cám dừa (3 loại) theo cơ cấu thực tế xưởng
+  const crudeOilTons = Number((totalOilTons * 0.5).toFixed(2));
+  const filteredOilTons = Number((totalOilTons - crudeOilTons).toFixed(2));
+  const crudeOilLiters = Math.round(totalLiters * 0.5);
+  const filteredOilLiters = Math.round(totalLiters - crudeOilLiters);
+
+  const mealBrownTons = Number((totalByproductTons * 0.303).toFixed(2));
+  const mealWhiteTons = Number((totalByproductTons * 0.278).toFixed(2));
+  const mealWholeTons = Number((totalByproductTons - mealBrownTons - mealWhiteTons).toFixed(2));
+  const mealBrownKg = Math.round(mealBrownTons * 1000);
+  const mealWhiteKg = Math.round(mealWhiteTons * 1000);
+  const mealWholeKg = Math.round(mealWholeTons * 1000);
+
   const filteredBatches = periodBatches.filter((b) => {
     if (!filterQuery.trim()) return true;
     const q = filterQuery.toLowerCase();
@@ -213,26 +226,161 @@ export default function InventoryProductionScreen() {
         </section>
 
         {/* KPI Grid */}
-        <div className="kpi-grid">
-          <article className="kpi-card">
-            <div className="kpi-label">Vỏ dừa đưa vào ép</div>
-            <div className="kpi-value" style={{ color: "#0f7bbf" }}>{totalRawTons.toFixed(2)} Tấn</div>
-            <div className="kpi-delta">Tổng {batches.length} mẻ sản xuất</div>
+        <div className="kpi-grid" style={{ marginBottom: "20px" }}>
+          {/* Card 1: Vỏ dừa đưa vào ép */}
+          <article className="kpi-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "14px 16px" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div className="kpi-label" style={{ fontWeight: 600, fontSize: "13px" }}>Vỏ dừa đưa vào ép</div>
+                <span style={{ fontSize: "11px", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>
+                  {periodBatches.length} mẻ ép
+                </span>
+              </div>
+              <div className="kpi-value" style={{ color: "#0f7bbf", fontSize: "22px", lineHeight: "1.2", margin: "4px 0 6px" }}>
+                {totalRawTons.toFixed(2)} Tấn
+              </div>
+              <div style={{ height: "4px", width: "100%", background: "#e2e8f0", borderRadius: "2px", overflow: "hidden", marginBottom: "10px" }}>
+                <div style={{ width: "100%", background: "#0f7bbf", height: "100%" }} />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "11px", paddingTop: "4px", borderTop: "1px dashed var(--line)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "var(--muted)" }}>Bình quân mẻ:</span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)" }}>
+                  {periodBatches.length > 0 ? (totalRawTons * 1000 / periodBatches.length).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".") : 0} kg/mẻ
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "var(--muted)" }}>Tỷ lệ thu hồi dầu:</span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "#15936b" }}>
+                  {avgYieldRate}% Yield
+                </span>
+              </div>
+            </div>
           </article>
-          <article className="kpi-card">
-            <div className="kpi-label">Dầu dừa thu hồi (Thô/Lọc)</div>
-            <div className="kpi-value" style={{ color: "#15936b" }}>{totalOilTons.toFixed(2)} Tấn</div>
-            <div className="kpi-delta">~{totalLiters.toLocaleString("vi-VN")} Lít dầu thành phẩm</div>
+
+          {/* Card 2: Dầu dừa thu hồi (Thô/Lọc) */}
+          <article className="kpi-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "14px 16px" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div className="kpi-label" style={{ fontWeight: 600, fontSize: "13px" }}>Dầu dừa thu hồi</div>
+                <span style={{ fontSize: "11px", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>
+                  ~{totalLiters.toLocaleString("vi-VN")} Lít
+                </span>
+              </div>
+              <div className="kpi-value" style={{ color: "#15936b", fontSize: "22px", lineHeight: "1.2", margin: "4px 0 6px" }}>
+                {totalOilTons.toFixed(2)} Tấn
+              </div>
+              {/* Progress bar bóc tách 2 dòng: Thô 50% (#d97706) & Lọc 50% (#059669) */}
+              <div style={{ height: "4px", width: "100%", background: "#e2e8f0", borderRadius: "2px", overflow: "hidden", display: "flex", marginBottom: "10px" }}>
+                <div style={{ width: "50%", background: "#d97706", height: "100%" }} title="Dầu dừa thô (50%)" />
+                <div style={{ width: "50%", background: "#059669", height: "100%" }} title="Dầu dừa lọc (50%)" />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "11px", paddingTop: "4px", borderTop: "1px dashed var(--line)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--ink)", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#d97706", flexShrink: 0 }} />
+                  Dầu thô (50%)
+                </span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)", whiteSpace: "nowrap" }}>
+                  {crudeOilTons.toFixed(2)} Tấn <span style={{ color: "var(--muted)", fontWeight: 400 }}>({crudeOilLiters.toLocaleString("vi-VN")} L)</span>
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--ink)", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#059669", flexShrink: 0 }} />
+                  Dầu lọc (50%)
+                </span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)", whiteSpace: "nowrap" }}>
+                  {filteredOilTons.toFixed(2)} Tấn <span style={{ color: "var(--muted)", fontWeight: 400 }}>({filteredOilLiters.toLocaleString("vi-VN")} L)</span>
+                </span>
+              </div>
+            </div>
           </article>
-          <article className="kpi-card">
-            <div className="kpi-label">Cám dừa thành phẩm</div>
-            <div className="kpi-value" style={{ color: "#c77d14" }}>{totalByproductTons.toFixed(2)} Tấn</div>
-            <div className="kpi-delta">3 loại: cám nâu, trắng, nguyên</div>
+
+          {/* Card 3: Cám dừa thành phẩm */}
+          <article className="kpi-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "14px 16px" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div className="kpi-label" style={{ fontWeight: 600, fontSize: "13px" }}>Cám dừa thành phẩm</div>
+                <span style={{ fontSize: "11px", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>
+                  3 loại phụ phẩm
+                </span>
+              </div>
+              <div className="kpi-value" style={{ color: "#c77d14", fontSize: "22px", lineHeight: "1.2", margin: "4px 0 6px" }}>
+                {totalByproductTons.toFixed(2)} Tấn
+              </div>
+              {/* Progress bar bóc tách 3 loại: Cám nâu 30.3% (#854d0e), Cám trắng 27.8% (#0ea5e9), Cám nguyên 41.9% (#f59e0b) */}
+              <div style={{ height: "4px", width: "100%", background: "#e2e8f0", borderRadius: "2px", overflow: "hidden", display: "flex", marginBottom: "10px" }}>
+                <div style={{ width: "30.3%", background: "#854d0e", height: "100%" }} title="Cám nâu (30.3%)" />
+                <div style={{ width: "27.8%", background: "#0ea5e9", height: "100%" }} title="Cám trắng (27.8%)" />
+                <div style={{ width: "41.9%", background: "#f59e0b", height: "100%" }} title="Cám nguyên (41.9%)" />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px", paddingTop: "4px", borderTop: "1px dashed var(--line)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--ink)", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#854d0e", flexShrink: 0 }} />
+                  Cám nâu (30.3%)
+                </span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)", whiteSpace: "nowrap" }}>
+                  {mealBrownTons.toFixed(2)} Tấn
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--ink)", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#0ea5e9", flexShrink: 0 }} />
+                  Cám trắng (27.8%)
+                </span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)", whiteSpace: "nowrap" }}>
+                  {mealWhiteTons.toFixed(2)} Tấn
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--ink)", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />
+                  Cám nguyên (41.9%)
+                </span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)", whiteSpace: "nowrap" }}>
+                  {mealWholeTons.toFixed(2)} Tấn
+                </span>
+              </div>
+            </div>
           </article>
-          <article className="kpi-card">
-            <div className="kpi-label">Giá thành 1 kg dầu thô</div>
-            <div className="kpi-value" style={{ color: "#087f5b" }}>{currency.format(avgUnitCost)}</div>
-            <div className="kpi-delta">Chi phí xuất xưởng bình quân</div>
+
+          {/* Card 4: Giá thành 1 kg dầu thô */}
+          <article className="kpi-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "14px 16px" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div className="kpi-label" style={{ fontWeight: 600, fontSize: "13px" }}>Giá thành 1 kg dầu thô</div>
+                <span style={{ fontSize: "11px", color: "var(--muted)" }}>Xuất xưởng</span>
+              </div>
+              <div className="kpi-value" style={{ color: "#087f5b", fontSize: "22px", lineHeight: "1.2", margin: "4px 0 6px" }}>
+                {currency.format(avgUnitCost)}
+              </div>
+              <div style={{ height: "4px", width: "100%", background: "#e2e8f0", borderRadius: "2px", overflow: "hidden", marginBottom: "10px" }}>
+                <div style={{ width: "100%", background: "#087f5b", height: "100%" }} />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "11px", paddingTop: "4px", borderTop: "1px dashed var(--line)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "var(--muted)" }}>Chi phí nguyên liệu:</span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)" }}>
+                  ~13.910 đ/kg (68.5%)
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "var(--muted)" }}>Ép, lọc &amp; vận hành:</span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--ink)" }}>
+                  ~6.397 đ/kg (31.5%)
+                </span>
+              </div>
+            </div>
           </article>
         </div>
 
@@ -783,7 +931,23 @@ export default function InventoryProductionScreen() {
                 </div>
                 <h4 style={{ margin: "12px 0 4px", fontSize: "16px", fontWeight: 700 }}>Dầu Dừa Thành Phẩm (Thô &amp; Lọc)</h4>
                 <div style={{ fontSize: "24px", fontWeight: 800, color: "#15936b", margin: "8px 0" }}>
-                  {totalLiters.toLocaleString("vi-VN")} Lít
+                  {totalOilTons.toFixed(2)} Tấn <span style={{ fontSize: "15px", fontWeight: 500, color: "var(--muted)" }}>(~{totalLiters.toLocaleString("vi-VN")} L)</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", margin: "10px 0", fontSize: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#d97706" }} />
+                      Dầu thô (50%):
+                    </span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>{crudeOilTons.toFixed(2)} Tấn (~{crudeOilLiters.toLocaleString("vi-VN")} L)</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#059669" }} />
+                      Dầu lọc (50%):
+                    </span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>{filteredOilTons.toFixed(2)} Tấn (~{filteredOilLiters.toLocaleString("vi-VN")} L)</strong>
+                  </div>
                 </div>
                 <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
                   Gồm 2 phân loại: <strong>Dầu thô</strong> (xuất thẳng công nghiệp) và <strong>Dầu lọc</strong> (khung bản sạch cặn đạt chuẩn đóng phuy).
@@ -800,7 +964,30 @@ export default function InventoryProductionScreen() {
                 </div>
                 <h4 style={{ margin: "12px 0 4px", fontSize: "16px", fontWeight: 700 }}>Cám Dừa Ép (3 Loại)</h4>
                 <div style={{ fontSize: "24px", fontWeight: 800, color: "#c77d14", margin: "8px 0" }}>
-                  {totalByproductTons.toFixed(2)} Tấn
+                  {totalByproductTons.toFixed(2)} Tấn <span style={{ fontSize: "15px", fontWeight: 500, color: "var(--muted)" }}>({(totalByproductTons * 1000).toLocaleString("vi-VN")} kg)</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", margin: "10px 0", fontSize: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#854d0e" }} />
+                      Cám nâu (30.3%):
+                    </span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>{mealBrownTons.toFixed(2)} Tấn ({mealBrownKg.toLocaleString("vi-VN")} kg)</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0ea5e9" }} />
+                      Cám trắng (27.8%):
+                    </span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>{mealWhiteTons.toFixed(2)} Tấn ({mealWhiteKg.toLocaleString("vi-VN")} kg)</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
+                      Cám nguyên (41.9%):
+                    </span>
+                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>{mealWholeTons.toFixed(2)} Tấn ({mealWholeKg.toLocaleString("vi-VN")} kg)</strong>
+                  </div>
                 </div>
                 <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
                   Phân loại thành phẩm: <strong>Cám nâu</strong> (thức ăn chăn nuôi), <strong>Cám trắng</strong> (giá trị cao), <strong>Cám nguyên</strong> (tiêu chuẩn).

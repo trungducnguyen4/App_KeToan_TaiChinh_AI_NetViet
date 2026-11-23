@@ -36,6 +36,23 @@ export default function CapitalInvestmentScreen() {
 
   // Modal State
   const [showAssetModal, setShowAssetModal] = useState(false);
+  // In-line Edit State for Assets
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [inlineEditData, setInlineEditData] = useState<{
+    assetName: string;
+    category: string;
+    acquisitionDate: string;
+    originalCost: number;
+    usefulLifeMonths: number;
+    supplierOrBrand: string;
+  }>({
+    assetName: "",
+    category: "MACHINERY",
+    acquisitionDate: "",
+    originalCost: 0,
+    usefulLifeMonths: 60,
+    supplierOrBrand: ""
+  });
   const [showContributionModal, setShowContributionModal] = useState(false);
 
   // New Asset Form
@@ -82,6 +99,43 @@ export default function CapitalInvestmentScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleStartInlineEdit = (a: CapitalAsset) => {
+    setInlineEditingId(a.id);
+    setInlineEditData({
+      assetName: a.assetName,
+      category: a.category,
+      acquisitionDate: a.acquisitionDate,
+      originalCost: a.originalCost,
+      usefulLifeMonths: a.usefulLifeMonths,
+      supplierOrBrand: a.supplierOrBrand || ""
+    });
+  };
+
+  const handleCancelInlineEdit = () => {
+    setInlineEditingId(null);
+  };
+
+  const handleSaveInlineEdit = async (id: string) => {
+    try {
+      await fetch(`http://localhost:4000/api/capital/assets/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assetName: inlineEditData.assetName,
+          category: inlineEditData.category,
+          acquisitionDate: inlineEditData.acquisitionDate,
+          originalCost: Number(inlineEditData.originalCost),
+          usefulLifeMonths: Number(inlineEditData.usefulLifeMonths),
+          supplierOrBrand: inlineEditData.supplierOrBrand
+        })
+      });
+      setInlineEditingId(null);
+      await loadData();
+    } catch (err) {
+      console.error("Failed to save inline asset edit:", err);
+    }
+  };
 
   const handleCreateAsset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -587,71 +641,328 @@ export default function CapitalInvestmentScreen() {
               </div>
             </div>
 
-            <div style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
-              <table className="data-table">
-                <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2" }}>
-                  <tr>
-                    <th>Mã TS</th>
-                    <th>Tên Máy móc / Tài sản</th>
-                    <th>Phân loại</th>
-                    <th>Ngày mua</th>
-                    <th style={{ textAlign: "right" }}>Nguyên giá (VNĐ)</th>
-                    <th style={{ textAlign: "center" }}>Thời gian</th>
-                    <th style={{ textAlign: "right" }}>Khấu hao/tháng</th>
-                    <th style={{ textAlign: "right" }}>Khấu hao lũy kế</th>
-                    <th style={{ textAlign: "right" }}>Giá trị còn lại</th>
-                    <th>Nhà cung cấp / Xuất xứ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAssets.map((a) => (
-                    <tr key={a.id}>
-                      <td style={{ fontWeight: 700, color: "#0284c7" }}>{a.assetCode}</td>
-                      <td>
-                        <strong>{a.assetName}</strong>
-                      </td>
-                      <td>
-                        <span
-                          className="badge"
-                          style={{
-                            padding: "3px 8px",
-                            borderRadius: "12px",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            background: a.category === "MACHINERY" ? "#e0f2fe" : "#fef3c7",
-                            color: a.category === "MACHINERY" ? "#0369a1" : "#92400e"
-                          }}
-                        >
-                          {a.category === "MACHINERY"
-                            ? "Máy ép/lọc"
-                            : a.category === "INFRASTRUCTURE"
-                            ? "Nhà xưởng"
-                            : a.category === "STORAGE_TANK"
-                            ? "Bồn Inox"
-                            : "Trạm cân"}
-                        </span>
-                      </td>
-                      <td>{a.acquisitionDate}</td>
-                      <td style={{ textAlign: "right", fontWeight: 700, fontFamily: "var(--font-mono, monospace)" }}>
-                        {currency.format(a.originalCost)}
-                      </td>
-                      <td style={{ textAlign: "center" }}>{a.usefulLifeMonths} tháng</td>
-                      <td style={{ textAlign: "right", color: "#d97706", fontFamily: "var(--font-mono, monospace)" }}>
-                        {currency.format(a.monthlyDepreciation)}
-                      </td>
-                      <td style={{ textAlign: "right", color: "#64748b", fontFamily: "var(--font-mono, monospace)" }}>
-                        {currency.format(a.accumulatedDepreciation)}
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a", fontFamily: "var(--font-mono, monospace)" }}>
-                        {currency.format(a.currentBookValue)}
-                      </td>
-                      <td style={{ fontSize: "12px", color: "var(--muted)" }}>{a.supplierOrBrand}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+            {(() => {
+              const totalOriginalCost = filteredAssets.reduce((sum, a) => {
+                const cost = a.id === inlineEditingId ? Number(inlineEditData.originalCost || 0) : a.originalCost;
+                return sum + cost;
+              }, 0);
+
+              const totalMonthlyDepreciation = filteredAssets.reduce((sum, a) => {
+                if (a.id === inlineEditingId) {
+                  const liveDepr = Math.round(Number(inlineEditData.originalCost || 0) / Math.max(1, Number(inlineEditData.usefulLifeMonths || 60)));
+                  return sum + liveDepr;
+                }
+                return sum + a.monthlyDepreciation;
+              }, 0);
+
+              const totalAccumulatedDepreciation = filteredAssets.reduce((sum, a) => sum + a.accumulatedDepreciation, 0);
+              const totalCurrentBookValue = filteredAssets.reduce((sum, a) => {
+                if (a.id === inlineEditingId) {
+                  return sum + Math.max(0, Number(inlineEditData.originalCost || 0) - a.accumulatedDepreciation);
+                }
+                return sum + a.currentBookValue;
+              }, 0);
+
+              return (
+                <div style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
+                  <table className="data-table compact" style={{ width: "100%", minWidth: "1050px" }}>
+                    <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2" }}>
+                      <tr>
+                        <th style={{ width: "85px" }}>Mã TS</th>
+                        <th style={{ minWidth: "180px" }}>Tên Máy móc / Tài sản</th>
+                        <th style={{ width: "95px" }}>Phân loại</th>
+                        <th style={{ width: "95px" }}>Ngày mua</th>
+                        <th style={{ textAlign: "right", width: "115px" }}>Nguyên giá</th>
+                        <th style={{ textAlign: "center", width: "75px" }}>Thời gian</th>
+                        <th style={{ textAlign: "right", width: "115px" }}>Khấu hao/tháng</th>
+                        <th style={{ textAlign: "right", width: "110px" }}>Khấu hao lũy kế</th>
+                        <th style={{ textAlign: "right", width: "115px" }}>Giá trị còn lại</th>
+                        <th style={{ width: "140px" }}>Nhà cung cấp</th>
+                        <th style={{ textAlign: "center", width: "95px", position: "sticky", right: 0, background: "#edf5f2", zIndex: 4, boxShadow: "-2px 0 4px rgba(0,0,0,0.04)" }}>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAssets.map((a) => {
+                        const isEditing = inlineEditingId === a.id;
+                        const liveMonthlyDepr = isEditing
+                          ? Math.round(Number(inlineEditData.originalCost || 0) / Math.max(1, Number(inlineEditData.usefulLifeMonths || 60)))
+                          : a.monthlyDepreciation;
+
+                        if (isEditing) {
+                          return (
+                            <tr
+                              key={a.id}
+                              style={{
+                                background: "#f0fdf4",
+                                borderTop: "2px solid #059669",
+                                borderBottom: "2px solid #059669"
+                              }}
+                            >
+                              <td style={{ fontWeight: 700, color: "#0284c7" }}>
+                                {a.assetCode}
+                                <div style={{ fontSize: "10px", color: "#059669", fontWeight: 700 }}>[Đang sửa]</div>
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  value={inlineEditData.assetName}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, assetName: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 6px",
+                                    fontSize: "12px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                  placeholder="Tên máy móc..."
+                                />
+                              </td>
+                              <td>
+                                <select
+                                  value={inlineEditData.category}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, category: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 4px",
+                                    fontSize: "11px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                >
+                                  <option value="MACHINERY">Máy ép/lọc</option>
+                                  <option value="INFRASTRUCTURE">Nhà xưởng</option>
+                                  <option value="STORAGE_TANK">Bồn Inox</option>
+                                  <option value="VEHICLE_SCALE">Trạm cân</option>
+                                </select>
+                              </td>
+                              <td>
+                                <input
+                                  type="date"
+                                  value={inlineEditData.acquisitionDate}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, acquisitionDate: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "3px 2px",
+                                    fontSize: "11px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                />
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                <input
+                                  type="number"
+                                  value={inlineEditData.originalCost}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, originalCost: Number(e.target.value) })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 4px",
+                                    fontSize: "12px",
+                                    textAlign: "right",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff",
+                                    fontFamily: "var(--font-mono, monospace)",
+                                    fontWeight: 700
+                                  }}
+                                />
+                              </td>
+                              <td style={{ textAlign: "center" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+                                  <input
+                                    type="number"
+                                    value={inlineEditData.usefulLifeMonths}
+                                    onChange={(e) => setInlineEditData({ ...inlineEditData, usefulLifeMonths: Number(e.target.value) })}
+                                    style={{
+                                      width: "40px",
+                                      boxSizing: "border-box",
+                                      padding: "3px 2px",
+                                      fontSize: "11.5px",
+                                      textAlign: "center",
+                                      borderRadius: "4px",
+                                      border: "1.5px solid #059669",
+                                      background: "#ffffff"
+                                    }}
+                                  />
+                                  <span style={{ fontSize: "10.5px", color: "var(--muted)" }}>th</span>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: "right", color: "#d97706", fontWeight: 800, fontFamily: "var(--font-mono, monospace)" }}>
+                                {currency.format(liveMonthlyDepr)}
+                              </td>
+                              <td style={{ textAlign: "right", color: "#64748b", fontFamily: "var(--font-mono, monospace)" }}>
+                                {currency.format(a.accumulatedDepreciation)}
+                              </td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a", fontFamily: "var(--font-mono, monospace)" }}>
+                                {currency.format(Math.max(0, Number(inlineEditData.originalCost || 0) - a.accumulatedDepreciation))}
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  value={inlineEditData.supplierOrBrand}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, supplierOrBrand: e.target.value })}
+                                  style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "4px 6px",
+                                    fontSize: "11px",
+                                    borderRadius: "4px",
+                                    border: "1.5px solid #059669",
+                                    background: "#ffffff"
+                                  }}
+                                  placeholder="Nhà cung ứng..."
+                                />
+                              </td>
+                              <td style={{ textAlign: "center", whiteSpace: "nowrap", position: "sticky", right: 0, background: "#f0fdf4", zIndex: 3, boxShadow: "-2px 0 4px rgba(0,0,0,0.06)" }}>
+                                <div style={{ display: "flex", gap: "4px", justifyContent: "center", alignItems: "center" }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveInlineEdit(a.id)}
+                                    style={{
+                                      padding: "4px 8px",
+                                      fontSize: "11px",
+                                      background: "#059669",
+                                      color: "#ffffff",
+                                      border: "none",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 2,
+                                      fontWeight: 700
+                                    }}
+                                    title="Lưu thay đổi vào hệ thống"
+                                  >
+                                    <AppIcon name="Check" size={12} />
+                                    Lưu
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelInlineEdit}
+                                    style={{
+                                      padding: "4px 7px",
+                                      fontSize: "11px",
+                                      background: "#f1f5f9",
+                                      color: "#64748b",
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 2
+                                    }}
+                                    title="Hủy sửa"
+                                  >
+                                    <AppIcon name="X" size={11} />
+                                    Hủy
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return (
+                          <tr key={a.id}>
+                            <td style={{ fontWeight: 700, color: "#0284c7" }}>{a.assetCode}</td>
+                            <td>
+                              <strong>{a.assetName}</strong>
+                            </td>
+                            <td>
+                              <span
+                                className="badge"
+                                style={{
+                                  padding: "3px 8px",
+                                  borderRadius: "12px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  background: a.category === "MACHINERY" ? "#e0f2fe" : "#fef3c7",
+                                  color: a.category === "MACHINERY" ? "#0369a1" : "#92400e"
+                                }}
+                              >
+                                {a.category === "MACHINERY"
+                                  ? "Máy ép/lọc"
+                                  : a.category === "INFRASTRUCTURE"
+                                  ? "Nhà xưởng"
+                                  : a.category === "STORAGE_TANK"
+                                  ? "Bồn Inox"
+                                  : "Trạm cân"}
+                              </span>
+                            </td>
+                            <td>{a.acquisitionDate}</td>
+                            <td style={{ textAlign: "right", fontWeight: 700, fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.originalCost)}
+                            </td>
+                            <td style={{ textAlign: "center" }}>{a.usefulLifeMonths} tháng</td>
+                            <td style={{ textAlign: "right", color: "#d97706", fontWeight: 600, fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.monthlyDepreciation)}
+                            </td>
+                            <td style={{ textAlign: "right", color: "#64748b", fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.accumulatedDepreciation)}
+                            </td>
+                            <td style={{ textAlign: "right", fontWeight: 700, color: "#16a34a", fontFamily: "var(--font-mono, monospace)" }}>
+                              {currency.format(a.currentBookValue)}
+                            </td>
+                            <td style={{ fontSize: "12px", color: "var(--muted)" }}>{a.supplierOrBrand}</td>
+                            <td style={{ textAlign: "center", position: "sticky", right: 0, background: "#ffffff", zIndex: 2, boxShadow: "-2px 0 4px rgba(0,0,0,0.04)" }}>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => handleStartInlineEdit(a)}
+                                style={{
+                                  padding: "4px 8px",
+                                  fontSize: "12px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                  color: "#0284c7",
+                                  borderColor: "#bae6fd",
+                                  background: "#f0f9ff"
+                                }}
+                                title="Chỉnh sửa in-line trực tiếp trên bảng"
+                              >
+                                <AppIcon name="Edit" size={13} />
+                                Sửa
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot style={{ position: "sticky", bottom: 0, zIndex: 2 }}>
+                      <tr style={{ background: "#f0fdf4", borderTop: "2px solid #059669", boxShadow: "0 -2px 6px rgba(0,0,0,0.04)" }}>
+                        <td colSpan={4} style={{ color: "#065f46", fontSize: "13px", padding: "12px 14px" }}>
+                          <strong>TỔNG CỘNG ({filteredAssets.length} máy móc &amp; tài sản):</strong>
+                        </td>
+                        <td style={{ textAlign: "right", color: "#0284c7", fontWeight: 800, fontSize: "13.5px", fontFamily: "var(--font-mono, monospace)" }}>
+                          {currency.format(totalOriginalCost)}
+                        </td>
+                        <td style={{ textAlign: "center", color: "var(--muted)" }}>—</td>
+                        <td style={{ textAlign: "right", color: "#b45309", fontWeight: 800, fontSize: "13.5px", fontFamily: "var(--font-mono, monospace)", background: "#fef3c7" }}>
+                          <div style={{ fontSize: "10px", color: "#92400e", fontWeight: 700, textTransform: "uppercase" }}>Tổng Khấu Hao 1 Tháng</div>
+                          {currency.format(totalMonthlyDepreciation)} / tháng
+                        </td>
+                        <td style={{ textAlign: "right", color: "#64748b", fontWeight: 700, fontSize: "13px", fontFamily: "var(--font-mono, monospace)" }}>
+                          {currency.format(totalAccumulatedDepreciation)}
+                        </td>
+                        <td style={{ textAlign: "right", color: "#16a34a", fontWeight: 800, fontSize: "13.5px", fontFamily: "var(--font-mono, monospace)" }}>
+                          {currency.format(totalCurrentBookValue)}
+                        </td>
+                        <td></td>
+                        <td style={{ textAlign: "center", color: "var(--muted)", position: "sticky", right: 0, background: "#f0fdf4", zIndex: 3, boxShadow: "-2px 0 4px rgba(0,0,0,0.04)" }}>—</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              );
+            })()}</section>
         )}
 
         {/* TAB 3: CƠ CẤU CỔ ĐÔNG SÁNG LẬP */}

@@ -109,22 +109,7 @@ export function AppShell({ children, activeModule = "accounting" }: { children: 
             <a
               href="/login"
               title="Đăng xuất khỏi hệ thống"
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#ffffff",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "6px 12px",
-                borderRadius: "6px",
-                background: "#dc2626",
-                border: "1px solid #b91c1c",
-                boxShadow: "0 1px 2px rgba(220, 38, 38, 0.2)",
-                cursor: "pointer",
-                transition: "background 0.15s ease"
-              }}
+              className="btn-logout"
             >
               <AppIcon name="LogOut" size={13} />
               Đăng xuất
