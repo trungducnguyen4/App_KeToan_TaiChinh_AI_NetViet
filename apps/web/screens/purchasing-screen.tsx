@@ -1070,40 +1070,40 @@ export default function PurchasingScreen() {
             </div>
 
             {/* Filter controls */}
-            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "nowrap" }}>
               <input
                 type="text"
                 placeholder="Tìm số HĐ, thương lái..."
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
-                style={{ width: "200px", padding: "6px 10px", fontSize: "13px" }}
+                style={{ width: "190px", padding: "6px 10px", fontSize: "13px" }}
               />
 
               <select
                 value={filterDocType}
                 onChange={(e) => setFilterDocType(e.target.value)}
-                style={{ padding: "6px 10px", fontSize: "13px", borderRadius: "6px", border: "1px solid var(--line)" }}
+                style={{ width: "135px", padding: "6px 8px", fontSize: "13px", borderRadius: "6px", border: "1px solid var(--line)" }}
               >
                 <option value="ALL">Tất cả chứng từ</option>
-                <option value="PURCHASE_SLIP">Phiếu cân vỏ dừa</option>
+                <option value="PURCHASE_SLIP">Phiếu cân</option>
                 <option value="VAT_INVOICE">Hóa đơn VAT</option>
               </select>
 
               <select
                 value={filterCostCategory}
                 onChange={(e) => setFilterCostCategory(e.target.value)}
-                style={{ padding: "6px 10px", fontSize: "13px", borderRadius: "6px", border: "1px solid var(--line)" }}
+                style={{ width: "135px", padding: "6px 8px", fontSize: "13px", borderRadius: "6px", border: "1px solid var(--line)" }}
               >
                 <option value="ALL">Tất cả chi phí</option>
-                <option value="RAW_MATERIAL">Nguyên liệu trực tiếp (Vỏ dừa)</option>
-                <option value="PROCESSING">Chi phí vận hành (nhân công, CSVC, điện nước)</option>
-                <option value="OVERHEAD">Chi phí phát sinh (tiếp khách, đột xuất...)</option>
+                <option value="RAW_MATERIAL">Nguyên liệu (Vỏ dừa)</option>
+                <option value="PROCESSING">Vận hành (Xưởng)</option>
+                <option value="OVERHEAD">Chi phí phát sinh</option>
               </select>
 
               <select
                 value={filterPaymentStatus}
                 onChange={(e) => setFilterPaymentStatus(e.target.value)}
-                style={{ padding: "6px 10px", fontSize: "13px", borderRadius: "6px", border: "1px solid var(--line)" }}
+                style={{ width: "130px", padding: "6px 8px", fontSize: "13px", borderRadius: "6px", border: "1px solid var(--line)" }}
               >
                 <option value="ALL">Mọi trạng thái TT</option>
                 <option value="UNPAID">Chưa thanh toán</option>
@@ -1115,167 +1115,237 @@ export default function PurchasingScreen() {
                 className="button"
                 onClick={loadInvoices}
                 title="Tải lại danh sách"
-                style={{ padding: "6px 10px" }}
+                style={{ padding: "6px 10px", display: "inline-flex", alignItems: "center", justifyContent: "center", height: "34px", flexShrink: 0 }}
               >
-                ↻
+                <AppIcon name="RefreshCw" size={13} />
               </button>
             </div>
           </div>
 
-          <div style={{ maxHeight: "calc(100vh - 280px)", minHeight: "360px", overflow: "auto" }}>
+          <div style={{ overflowX: "auto", width: "100%" }}>
             <table className="data-table">
-              <thead style={{ position: "sticky", top: 0, zIndex: 3, background: "#edf5f2", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>
+              <thead style={{ background: "#edf5f2", borderBottom: "1px solid #d1fae5" }}>
                 <tr>
-                  <th>Loại CT</th>
-                  <th>Số CT / Số HĐ</th>
-                  <th>Ngày</th>
-                  <th>Thương lái / Nhà cung cấp</th>
-                  <th>Nhóm chi phí</th>
-                  <th>Phân bổ</th>
-                  <th style={{ textAlign: "right" }}>KL Tịnh (kg)</th>
-                  <th style={{ textAlign: "right" }}>Đơn giá (đ/kg)</th>
-                  <th style={{ textAlign: "right" }}>Tổng tiền (VNĐ)</th>
-                  <th style={{ textAlign: "center" }}>Trạng thái TT</th>
-                  <th style={{ textAlign: "center" }}>Hành động</th>
+                  <th style={{ width: "160px", whiteSpace: "nowrap" }}>Chứng từ</th>
+                  <th style={{ minWidth: "220px" }}>Đối tác / Diễn giải</th>
+                  <th style={{ width: "160px", whiteSpace: "nowrap" }}>Phân loại</th>
+                  <th style={{ width: "140px", textAlign: "right", whiteSpace: "nowrap" }}>Khối lượng &amp; Đơn giá</th>
+                  <th style={{ width: "135px", textAlign: "right", whiteSpace: "nowrap" }}>Tổng tiền (VNĐ)</th>
+                  <th style={{ width: "125px", textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái TT</th>
+                  <th style={{ width: "155px", textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
                 </tr>
               </thead>
-            <tbody>
-              {filteredInvoices.length === 0 ? (
-                <tr>
-                  <td colSpan={11} style={{ textAlign: "center", padding: "32px", color: "var(--muted)" }}>
-                    {isLoading ? "Đang tải dữ liệu..." : "Chưa có chứng từ nào phù hợp với bộ lọc."}
-                  </td>
-                </tr>
-              ) : (
-                pagedInvoices.map((inv) => (
-                  <tr key={inv.id}>
-                    <td>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          background: inv.docType === "PURCHASE_SLIP" ? "#fef3c7" : "#e0e7ff",
-                          color: inv.docType === "PURCHASE_SLIP" ? "#92400e" : "#3730a3"
-                        }}
-                      >
-                        {inv.docType === "PURCHASE_SLIP" ? "Phiếu cân" : "HĐ VAT"}
-                      </span>
-                    </td>
-                    <td>
-                      <strong>{inv.voucherNo}</strong>
-                      {inv.invoiceSeries && (
-                        <div style={{ fontSize: "11px", color: "var(--muted)" }}>K/H: {inv.invoiceSeries}</div>
-                      )}
-                    </td>
-                    <td>{inv.voucherDate}</td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{inv.supplierName}</div>
-                      {inv.costCategory === "OVERHEAD" && inv.description && (
-                        <div style={{ fontSize: "11px", color: "#b45309", fontStyle: "italic", marginTop: 2 }}>
-                          Chi: {inv.description}
-                        </div>
-                      )}
-                      {inv.vehiclePlate && (
-                        <div style={{ fontSize: "11px", color: "var(--muted)" }}>Xe: {inv.vehiclePlate}</div>
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        style={{
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                          color:
-                            inv.costCategory === "RAW_MATERIAL"
-                              ? "#065f46"
-                              : inv.costCategory === "PROCESSING"
-                              ? "#1e40af"
-                              : "#92400e",
-                          background:
-                            inv.costCategory === "RAW_MATERIAL"
-                              ? "#dcfce7"
-                              : inv.costCategory === "PROCESSING"
-                              ? "#dbeafe"
-                              : "#fef3c7"
-                        }}
-                      >
-                        {inv.costCategory === "RAW_MATERIAL"
-                          ? "Nguyên liệu"
-                          : inv.costCategory === "PROCESSING"
-                          ? `Vận hành (${inv.processStage === "EP" ? "Nhân công" : inv.processStage === "LOC" ? "Điện nước" : "CSVC"})`
-                          : "Chi phí phát sinh"}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: "12px" }}>
-                        {inv.allocationMode === "BATCH" ? "Theo mẻ" : "Theo tháng"}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "right", fontWeight: 600 }}>
-                      {inv.netWeightKg ? inv.netWeightKg.toLocaleString("vi-VN") : "—"}
-                    </td>
-                    <td style={{ textAlign: "right", fontWeight: 600, color: inv.unitPrice ? "#0f766e" : "var(--muted)" }}>
-                      {inv.unitPrice ? `${inv.unitPrice.toLocaleString("vi-VN")} đ` : "—"}
-                    </td>
-                    <td style={{ textAlign: "right", fontWeight: 700, color: "#0f766e" }}>
-                      {currency.format(inv.totalAmount)}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 8px",
-                          borderRadius: "12px",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          background: inv.paymentStatus === "PAID" ? "#dcfce7" : "#fee2e2",
-                          color: inv.paymentStatus === "PAID" ? "#15803d" : "#b91c1c"
-                        }}
-                      >
-                        {inv.paymentStatus === "PAID" ? "Đã thanh toán" : "Chưa thanh toán"}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {inv.paymentStatus === "UNPAID" ? (
-                        <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                          <button
-                            type="button"
-                            className="button"
-                            onClick={() => handleCreatePayment(inv, "cash")}
-                            title="Lập phiếu chi tiền mặt ngay cho thương lái"
-                            style={{ padding: "4px 8px", fontSize: "11px", background: "#f0fdf4", color: "#166534", display: "inline-flex", alignItems: "center", gap: 4 }}
-                          >
-                            <AppIcon name="Coins" size={13} />
-                            Tiền mặt (PC)
-                          </button>
-                          <button
-                            type="button"
-                            className="button"
-                            onClick={() => handleCreatePayment(inv, "bank")}
-                            title="Lập lệnh chuyển khoản ngân hàng (Báo nợ)"
-                            style={{ padding: "4px 8px", fontSize: "11px", background: "#eff6ff", color: "#1e40af", display: "inline-flex", alignItems: "center", gap: 4 }}
-                          >
-                            <AppIcon name="Landmark" size={13} />
-                            Ngân hàng (BN)
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: "12px", color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <AppIcon name="Check" size={13} style={{ color: "#16a34a" }} />
-                          Đã tất toán
-                        </span>
-                      )}
+              <tbody>
+                {filteredInvoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "32px", color: "var(--muted)" }}>
+                      {isLoading ? "Đang tải dữ liệu..." : "Chưa có chứng từ nào phù hợp với bộ lọc."}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  pagedInvoices.map((inv) => {
+                    const isVat = inv.docType === "VAT_INVOICE" || inv.voucherNo?.startsWith("VAT") || /^\d{7,8}$/.test(inv.voucherNo);
+                    const isCashSlip = inv.voucherNo?.startsWith("PC-") || inv.costCategory === "OVERHEAD";
+                    const docLabel = isVat ? "HĐ VAT" : isCashSlip ? "Phiếu chi" : "Phiếu cân";
+
+                    const costCatLabel =
+                      inv.costCategory === "RAW_MATERIAL"
+                        ? "Nguyên liệu (Vỏ dừa)"
+                        : inv.costCategory === "PROCESSING"
+                        ? `Vận hành (${inv.processStage === "EP" ? "Nhân công" : inv.processStage === "LOC" ? "Điện nước" : "CSVC"})`
+                        : "Chi phí phát sinh";
+
+                    const costCatColor =
+                      inv.costCategory === "RAW_MATERIAL"
+                        ? "#065f46"
+                        : inv.costCategory === "PROCESSING"
+                        ? "#1e40af"
+                        : "#854d0e";
+
+                    const costCatBg =
+                      inv.costCategory === "RAW_MATERIAL"
+                        ? "#dcfce7"
+                        : inv.costCategory === "PROCESSING"
+                        ? "#dbeafe"
+                        : "#fef9c3";
+
+                    return (
+                      <tr key={inv.id}>
+                        {/* 1. Chứng từ */}
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
+                            <strong style={{ fontFamily: "monospace", fontSize: "13px", color: "#0f172a", whiteSpace: "nowrap" }}>
+                              {inv.voucherNo}
+                            </strong>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "1px 6px",
+                                borderRadius: "4px",
+                                fontSize: "10.5px",
+                                fontWeight: 600,
+                                background: "#f1f5f9",
+                                color: "#475569",
+                                border: "1px solid #e2e8f0",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              {docLabel}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "3px", whiteSpace: "nowrap" }}>
+                            {inv.voucherDate} {inv.invoiceSeries ? `• KH: ${inv.invoiceSeries}` : ""}
+                          </div>
+                        </td>
+
+                        {/* 2. Đối tác / Diễn giải */}
+                        <td>
+                          <div style={{ fontWeight: 600, color: "#1e293b", fontSize: "13px" }}>{inv.supplierName}</div>
+                          {inv.description && (
+                            <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "3px", lineHeight: "1.3" }}>
+                              {inv.description}
+                            </div>
+                          )}
+                          {inv.vehiclePlate && (
+                            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
+                              Xe: {inv.vehiclePlate}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* 3. Phân loại */}
+                        <td>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              color: costCatColor,
+                              background: costCatBg,
+                              whiteSpace: "nowrap"
+                            }}
+                          >
+                            {costCatLabel}
+                          </span>
+                          <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px", whiteSpace: "nowrap" }}>
+                            {inv.allocationMode === "BATCH" ? "Theo mẻ ép" : "Theo tháng"}
+                          </div>
+                        </td>
+
+                        {/* 4. Khối lượng & Đơn giá */}
+                        <td style={{ textAlign: "right" }}>
+                          <div style={{ fontWeight: 600, color: "#0f172a", fontSize: "13px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                            {inv.netWeightKg ? `${inv.netWeightKg.toLocaleString("vi-VN")} kg` : "—"}
+                          </div>
+                          <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "2px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                            {inv.unitPrice ? `× ${inv.unitPrice.toLocaleString("vi-VN")} đ` : "—"}
+                          </div>
+                        </td>
+
+                        {/* 5. Tổng tiền */}
+                        <td style={{ textAlign: "right" }}>
+                          <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "13.5px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                            {currency.format(inv.totalAmount)}
+                          </div>
+                        </td>
+
+                        {/* 6. Trạng thái */}
+                        <td style={{ textAlign: "center" }}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "3px 9px",
+                              borderRadius: "9999px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                              background: inv.paymentStatus === "PAID" ? "#dcfce7" : "#fee2e2",
+                              color: inv.paymentStatus === "PAID" ? "#15803d" : "#b91c1c"
+                            }}
+                          >
+                            {inv.paymentStatus === "PAID" ? "Đã thanh toán" : "Chưa thanh toán"}
+                          </span>
+                        </td>
+
+                        {/* 7. Thao tác */}
+                        <td style={{ textAlign: "center" }}>
+                          {inv.paymentStatus === "UNPAID" ? (
+                            <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => handleCreatePayment(inv, "cash")}
+                                title="Lập phiếu chi tiền mặt ngay cho thương lái"
+                                style={{
+                                  padding: "3px 6px",
+                                  fontSize: "11px",
+                                  background: "#f0fdf4",
+                                  color: "#166534",
+                                  border: "1px solid #bbf7d0",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "3px",
+                                  whiteSpace: "nowrap"
+                                }}
+                              >
+                                <AppIcon name="Coins" size={11} />
+                                Tiền mặt
+                              </button>
+                              <button
+                                type="button"
+                                className="button"
+                                onClick={() => handleCreatePayment(inv, "bank")}
+                                title="Lập lệnh chuyển khoản ngân hàng (Báo nợ)"
+                                style={{
+                                  padding: "3px 6px",
+                                  fontSize: "11px",
+                                  background: "#eff6ff",
+                                  color: "#1e40af",
+                                  border: "1px solid #bfdbfe",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "3px",
+                                  whiteSpace: "nowrap"
+                                }}
+                              >
+                                <AppIcon name="Landmark" size={11} />
+                                Ngân hàng
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={() => {
+                                alert(`Chứng từ: ${inv.voucherNo}\nĐối tác: ${inv.supplierName}\nSố tiền: ${currency.format(inv.totalAmount)}\nTrạng thái: Đã tất toán`);
+                              }}
+                              title="Xem chi tiết chứng từ"
+                              style={{
+                                padding: "3px 8px",
+                                fontSize: "11px",
+                                color: "#475569",
+                                background: "#f8fafc",
+                                border: "1px solid #e2e8f0",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              <AppIcon name="FileText" size={12} />
+                              Chi tiết
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
 
         {/* Pagination */}
         <Pagination
