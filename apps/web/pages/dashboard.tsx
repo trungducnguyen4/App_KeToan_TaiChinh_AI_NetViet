@@ -140,7 +140,7 @@ export default function DashboardPage() {
         <div className="kpi-grid">
           <article className="kpi-card">
             <div className="kpi-label">Tổng Doanh thu Bán hàng</div>
-            <div className="kpi-value tabular-nums" style={{ color: "#087f5b" }}>
+            <div className="kpi-value tabular-nums" style={{ color: "#0f172a" }}>
               {(totalSalesRevenue / 1_000_000).toFixed(1)} Tr
             </div>
             <div className="kpi-delta">
@@ -150,7 +150,7 @@ export default function DashboardPage() {
 
           <article className="kpi-card">
             <div className="kpi-label">Tổng Chi phí &amp; Mua vào</div>
-            <div className="kpi-value tabular-nums" style={{ color: "#b91c1c" }}>
+            <div className="kpi-value tabular-nums" style={{ color: "#0f172a" }}>
               {(totalPurchasingCost / 1_000_000).toFixed(1)} Tr
             </div>
             <div className="kpi-delta">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
 
           <article className="kpi-card">
             <div className="kpi-label">Sản lượng Dầu thô Thu hồi</div>
-            <div className="kpi-value tabular-nums" style={{ color: "#0369a1" }}>
+            <div className="kpi-value tabular-nums" style={{ color: "#0f172a" }}>
               {(totalCrudeOilKg / 1000).toFixed(1)} Tấn
             </div>
             <div className="kpi-delta">
@@ -188,29 +188,59 @@ export default function DashboardPage() {
               Cân đối Vật tư &amp; Sản xuất Kỳ
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Vỏ dừa thu mua nhập xưởng:</span>
-                <strong className="tabular-nums">{(totalRawPurchasedKg / 1000).toFixed(2)} Tấn</strong>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+                <span style={{ color: "var(--muted)", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#94a3b8", flexShrink: 0 }} />
+                  Vỏ dừa thu mua nhập xưởng:
+                </span>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap", textAlign: "right" }}>
+                  {(totalRawPurchasedKg / 1000).toFixed(2)} Tấn
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Vỏ dừa đã đưa vào máy ép:</span>
-                <strong className="tabular-nums">{(totalRawMaterialProcessedKg / 1000).toFixed(2)} Tấn</strong>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+                <span style={{ color: "var(--muted)", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#94a3b8", flexShrink: 0 }} />
+                  Vỏ dừa đã đưa vào máy ép:
+                </span>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap", textAlign: "right" }}>
+                  {(totalRawMaterialProcessedKg / 1000).toFixed(2)} Tấn
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Dầu dừa thu hồi (Thô &amp; Lọc):</span>
-                <strong className="tabular-nums" style={{ color: "#059669" }}>{(totalCrudeOilKg / 1000).toFixed(2)} Tấn</strong>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+                <span style={{ color: "var(--muted)", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#059669", flexShrink: 0 }} />
+                  Dầu dừa thu hồi (Thô &amp; Lọc):
+                </span>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap", textAlign: "right" }}>
+                  {(totalCrudeOilKg / 1000).toFixed(2)} Tấn
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Cám dừa thành phẩm (nâu, trắng, nguyên):</span>
-                <strong className="tabular-nums" style={{ color: "#b45309" }}>{(totalByproductKg / 1000).toFixed(2)} Tấn</strong>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+                <span style={{ color: "var(--muted)", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#d97706", flexShrink: 0 }} />
+                  Cám dừa thành phẩm (nâu, trắng, nguyên):
+                </span>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap", textAlign: "right" }}>
+                  {(totalByproductKg / 1000).toFixed(2)} Tấn
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Dầu dừa đã xuất bán giao khách:</span>
-                <strong className="tabular-nums" style={{ color: "#0369a1" }}>{(totalCrudeOilSoldKg / 1000).toFixed(2)} Tấn</strong>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+                <span style={{ color: "var(--muted)", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#0284c7", flexShrink: 0 }} />
+                  Dầu dừa đã xuất bán giao khách:
+                </span>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap", textAlign: "right" }}>
+                  {(totalCrudeOilSoldKg / 1000).toFixed(2)} Tấn
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
-                <span style={{ color: "var(--muted)" }}>Cám dừa đã xuất bán tiêu thụ:</span>
-                <strong className="tabular-nums" style={{ color: "#92400e" }}>{(totalByproductSoldKg / 1000).toFixed(2)} Tấn</strong>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 4 }}>
+                <span style={{ color: "var(--muted)", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#d97706", flexShrink: 0 }} />
+                  Cám dừa đã xuất bán tiêu thụ:
+                </span>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap", textAlign: "right" }}>
+                  {(totalByproductSoldKg / 1000).toFixed(2)} Tấn
+                </strong>
               </div>
             </div>
             <div style={{ marginTop: 16 }}>
@@ -228,33 +258,51 @@ export default function DashboardPage() {
               Thực trạng Dòng tiền &amp; Thanh toán
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Số dư Quỹ tiền mặt xưởng:</span>
-                <strong className="tabular-nums" style={{ color: "#059669" }}>
-                  {rawData.cash?.metrics?.[0]?.value || "-"}
-                </strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-                <span style={{ color: "var(--muted)" }}>Số dư Tài khoản Ngân hàng:</span>
-                <strong className="tabular-nums" style={{ color: "#0284c7" }}>
-                  {rawData.cash?.metrics?.[1]?.value || "-"}
-                </strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+              {(() => {
+                const cashVal: string = rawData.cash?.metrics?.[0]?.value || "-";
+                const bankVal: string = rawData.cash?.metrics?.[1]?.value || "-";
+                const isCashNeg = cashVal.trim().startsWith("-");
+                const isBankNeg = bankVal.trim().startsWith("-");
+                return (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+                      <span style={{ color: "var(--muted)" }}>Số dư Quỹ tiền mặt xưởng:</span>
+                      <strong className="tabular-nums" style={{ color: isCashNeg ? "#dc2626" : "#059669", whiteSpace: "nowrap", fontWeight: 700 }}>
+                        {cashVal}
+                      </strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+                      <span style={{ color: "var(--muted)" }}>Số dư Tài khoản Ngân hàng:</span>
+                      <strong className="tabular-nums" style={{ color: isBankNeg ? "#dc2626" : "#059669", whiteSpace: "nowrap", fontWeight: 700 }}>
+                        {bankVal}
+                      </strong>
+                    </div>
+                  </>
+                );
+              })()}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
                 <span style={{ color: "var(--muted)" }}>Số chứng từ Phiếu thu (PT):</span>
-                <strong className="tabular-nums">{rawData.cash?.vouchersByType?.find((v: any) => v.type === "PT")?.count || 0} phiếu</strong>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap" }}>
+                  {rawData.cash?.vouchersByType?.find((v: any) => v.type === "PT")?.count || 0} phiếu
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
                 <span style={{ color: "var(--muted)" }}>Số chứng từ Phiếu chi (PC):</span>
-                <strong className="tabular-nums">{rawData.cash?.vouchersByType?.find((v: any) => v.type === "PC")?.count || 0} phiếu</strong>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap" }}>
+                  {rawData.cash?.vouchersByType?.find((v: any) => v.type === "PC")?.count || 0} phiếu
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
                 <span style={{ color: "var(--muted)" }}>Giao dịch Báo có NH (BC):</span>
-                <strong className="tabular-nums">{rawData.cash?.vouchersByType?.find((v: any) => v.type === "BC")?.count || 0} món</strong>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap" }}>
+                  {rawData.cash?.vouchersByType?.find((v: any) => v.type === "BC")?.count || 0} món
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4 }}>
                 <span style={{ color: "var(--muted)" }}>Giao dịch Báo nợ NH (BN):</span>
-                <strong className="tabular-nums">{rawData.cash?.vouchersByType?.find((v: any) => v.type === "BN")?.count || 0} món</strong>
+                <strong className="tabular-nums" style={{ color: "#0f172a", whiteSpace: "nowrap" }}>
+                  {rawData.cash?.vouchersByType?.find((v: any) => v.type === "BN")?.count || 0} món
+                </strong>
               </div>
             </div>
             <div style={{ marginTop: 16 }}>
@@ -268,47 +316,53 @@ export default function DashboardPage() {
           {/* INSIGHT 3: HIỆU SUẤT THƯƠNG LÁI ĐẦU VÀO */}
           <div className="panel" style={{ padding: 18 }}>
             <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-              <AppIcon name="Award" size={18} style={{ color: "#d97706" }} />
+              <AppIcon name="Award" size={18} style={{ color: "#059669" }} />
               Top Thương Lái Hiệu Quả Nhất
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {rawData.supplierYields.slice(0, 4).map((sup: any, idx: number) => (
-                <div
-                  key={sup.supplierName}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: idx === 0 ? "#ecfdf5" : "#f8fafc",
-                    border: idx === 0 ? "1px solid #a7f3d0" : "1px solid #e2e8f0"
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
-                      #{idx + 1} {sup.supplierName}
+              {rawData.supplierYields.slice(0, 4).map((sup: any, idx: number) => {
+                const isChampion = idx === 0;
+                return (
+                  <div
+                    key={sup.supplierName}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "8px 10px",
+                      borderRadius: "8px",
+                      background: isChampion ? "#ecfdf5" : "#f8fafc",
+                      border: isChampion ? "1px solid #a7f3d0" : "1px solid #e2e8f0"
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: isChampion ? "#065f46" : "#1e293b", display: "flex", alignItems: "center", gap: 5 }}>
+                        {isChampion && <AppIcon name="Medal" size={14} style={{ color: "#059669" }} />}
+                        #{idx + 1} {sup.supplierName}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                        {sup.batchCount} mẻ | {(sup.totalRawKg / 1000).toFixed(1)} Tấn vỏ
+                      </div>
                     </div>
-                    <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                      {sup.batchCount} mẻ | {(sup.totalRawKg / 1000).toFixed(1)} Tấn vỏ
+                    <div style={{ textAlign: "right" }}>
+                      <span
+                        style={{
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: isChampion ? "#dcfce7" : "#f1f5f9",
+                          color: isChampion ? "#166534" : "#334155",
+                          border: isChampion ? "1px solid #bbf7d0" : "1px solid #e2e8f0",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {sup.avgYieldRate}% Dầu
+                      </span>
                     </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <span
-                      style={{
-                        padding: "2px 8px",
-                        borderRadius: "12px",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        background: sup.avgYieldRate >= 22 ? "#dcfce7" : sup.avgYieldRate >= 20 ? "#e0f2fe" : "#fee2e2",
-                        color: sup.avgYieldRate >= 22 ? "#166534" : sup.avgYieldRate >= 20 ? "#075985" : "#991b1b"
-                      }}
-                    >
-                      {sup.avgYieldRate}% Dầu
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div style={{ marginTop: 16 }}>
               <Link href="/modules/inventory" className="button" style={{ width: "100%", justifyContent: "center" }}>
@@ -346,7 +400,7 @@ export default function DashboardPage() {
                     <td>{b.supplierName}</td>
                     <td className="text-right tabular-nums">{Number(b.rawMaterialKg).toLocaleString("vi-VN")}</td>
                     <td className="text-right tabular-nums" style={{ fontWeight: 600 }}>{Number(b.crudeOilKg).toLocaleString("vi-VN")}</td>
-                    <td className="text-center tabular-nums" style={{ fontWeight: 700, color: b.oilYieldRate >= 22 ? "#059669" : b.oilYieldRate < 19 ? "#dc2626" : "#0284c7" }}>
+                    <td className="text-center tabular-nums" style={{ fontWeight: 700, color: b.oilYieldRate >= 22 ? "#059669" : b.oilYieldRate < 19 ? "#dc2626" : "#0f172a" }}>
                       {b.oilYieldRate}%
                     </td>
                   </tr>
@@ -407,7 +461,7 @@ export default function DashboardPage() {
                         </span>
                       </td>
                       <td className="text-right tabular-nums">{Number(s.quantity).toLocaleString("vi-VN")} {s.unit}</td>
-                      <td className="text-right tabular-nums" style={{ fontWeight: 700, color: "#059669" }}>
+                      <td className="text-right tabular-nums" style={{ fontWeight: 700, color: "#0f172a" }}>
                         {Number(s.totalAmount).toLocaleString("vi-VN")} đ
                       </td>
                     </tr>
